@@ -2,21 +2,51 @@
   "rules": {
     ".read": false,
     ".write": false,
-    "admins": { "$uid": { ".read": "auth != null && auth.uid === $uid" } },
-    "signals":   { ".read": "auth != null" },
-    "alerts":    { ".read": "auth != null", ".indexOn": ["ts"] },
-    "heartbeat": { ".read": "auth != null" },
-    "status":    { ".read": "auth != null" },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && !root.child('admins').exists()",
+        ".validate": "newData.val() === true"
+      }
+    },
+    "approved": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        ".validate": "newData.isBoolean()"
+      }
+    },
+    "signals": {
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)"
+    },
+    "alerts": {
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)",
+      ".indexOn": [
+        "ts"
+      ]
+    },
+    "heartbeat": {
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)"
+    },
+    "status": {
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)"
+    },
     "config": {
-      ".read": "auth != null",
-      ".write": "root.child('admins').child(auth.uid).val() === true",
-      "threshold": { ".validate": "newData.isNumber() && newData.val() >= 0.5 && newData.val() <= 0.9" },
-      "paused":    { ".validate": "newData.isBoolean()" },
-      "$other":    { ".validate": false }
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "threshold": {
+        ".validate": "newData.isNumber() && newData.val() >= 0.5 && newData.val() <= 0.9"
+      },
+      "paused": {
+        ".validate": "newData.isBoolean()"
+      },
+      "$other": {
+        ".validate": false
+      }
     },
     "commands": {
       "$id": {
-        ".write": "root.child('admins').child(auth.uid).val() === true",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
         ".validate": "newData.hasChildren(['type','ts','by']) && newData.child('type').val().matches(/^(refresh|retrain)$/)"
       }
     }
