@@ -67,11 +67,14 @@ canvas{width:100%;height:120px;display:block}
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
     <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+    <label class="mut" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="showpw" style="width:auto;margin:0;padding:0"> Show password</label>
+    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:6px 0 12px"><input type="checkbox" id="keep" style="width:auto;margin:0;padding:0"> Keep me signed in on this device</label>
     <button class="go" type="submit">Sign in</button>
   </form>
   <button id="rp" type="button" style="margin-top:10px;width:100%">Reset password</button>
   <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
   <div id="err" role="alert"></div>
+  <p class="mut" id="ver" style="font-size:12px">Page v3: script has not started</p>
 </section>
 <div id="app">
 <header>
@@ -96,6 +99,7 @@ canvas{width:100%;height:120px;display:block}
     <button id="bpause">Pause signals</button>
     <label class="mut">Min confidence <input id="thr" type="number" min="0.5" max="0.9" step="0.01"></label>
     <button id="bthr">Save</button><span id="toast" role="status"></span>
+    <label class="mut">Approve user ID <input id="apuid" style="width:220px" placeholder="paste their UID"></label><button id="bap">Approve</button>
   </div>
 </section>
 </div>
@@ -107,9 +111,11 @@ canvas{width:100%;height:120px;display:block}
 <script>
 // 1. Paste your Firebase web config here (Project settings > Your apps > Web).
 window.addEventListener("error", e => { const el = document.getElementById("err"); if (el) el.textContent = "Page error: " + e.message; });
+document.getElementById("ver").textContent = "Page v3: script running";
 const firebaseConfig = {
-  apiKey: "PASTE", authDomain: "PASTE", databaseURL: "PASTE",
-  projectId: "PASTE", appId: "PASTE"
+  apiKey: "PASTE", authDomain: "loyalty-fx.firebaseapp.com",
+  databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com",
+  projectId: "loyalty-fx", appId: "PASTE"
 };
 const configMissing = Object.values(firebaseConfig).some(v => !v || String(v).includes("PASTE"));
 if (location.protocol === "file:") console.warn("Opened as a local file. Serve it over http(s) or use your github.io URL.");
@@ -159,11 +165,16 @@ function showErr(e) {
 }
 if (fbError) $("err").textContent = fbError;
 else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
+async function setKeep() {
+  try { await auth.setPersistence($("keep").checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
+}
+$("showpw").onchange = () => { $("pw").type = $("showpw").checked ? "text" : "password"; };
+try { $("em").value = localStorage.getItem("fx_email") || ""; ($("em").value ? $("pw") : $("em")).focus(); } catch (e) {}
 $("lf").onsubmit = async e => {
   e.preventDefault();
   if (!ready) { $("err").textContent = fbError; return; }
   $("err").textContent = "";
-  try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
+  try { await setKeep(); await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); try { localStorage.setItem("fx_email", $("em").value.trim()); } catch (e) {} }
   catch (e) { showErr(e); }
   $("pw").value = "";
 };
@@ -172,7 +183,7 @@ $("su").onclick = async () => {
   const em = $("em").value.trim(), pw = $("pw").value;
   if (!em || pw.length < 8) { $("err").textContent = "Enter your email and a password of at least 8 characters, then click Create account."; return; }
   $("err").textContent = "";
-  try { await auth.createUserWithEmailAndPassword(em, pw); }
+  try { await setKeep(); await auth.createUserWithEmailAndPassword(em, pw); try { localStorage.setItem("fx_email", em); } catch (e) {} }
   catch (e) { showErr(e); }
   $("pw").value = "";
 };
@@ -221,7 +232,8 @@ if (ready) auth.onAuthStateChanged(async u => {
   let ok = isAdmin;
   if (!ok) { try { ok = (await dbr.ref("approved/" + u.uid).get()).val() === true; } catch { ok = false; } }
   if (!ok) {
-    $("list").innerHTML = '<p><b>Account created. Waiting for approval.</b></p><p class="mut">Send this ID to the admin so they can approve you:</p><p class="num" style="word-break:break-all">' + esc(u.uid) + '</p>';
+    $("list").innerHTML = '<p><b>Account created. Waiting for approval.</b></p><p class="mut">Send this ID to the admin so they can approve you:</p><p class="num" style="word-break:break-all">' + esc(u.uid) + '</p><p class="mut">Are you the owner and this is the first account? Claim admin once. It only works while no admin exists.</p><button id="claim" class="pri" style="background:var(--buy);color:#06231f;border:0;font-weight:600">Claim admin</button> <span id="claimmsg" class="mut"></span>';
+    $("claim").onclick = () => dbr.ref("admins/" + u.uid).set(true).then(() => location.reload()).catch(() => { $("claimmsg").textContent = "An admin already exists. Ask them to approve your ID."; });
     $("detail").innerHTML = ""; return;
   }
   const on = (path, fn) => { const r = dbr.ref(path); r.on("value", fn); subs.push([r, "value"]); };
@@ -270,6 +282,13 @@ async function send(type) {
 $("bref").onclick = () => send("refresh");
 $("bret").onclick = () => confirm("Retrain all models now? Signals pause updating for about a minute.") && send("retrain");
 $("bpause").onclick = () => dbr.ref("config/paused").set(!cfg.paused).catch(() => toast("Not allowed."));
+$("bap").onclick = () => {
+  if (!ready) return;
+  const v = $("apuid").value.trim();
+  if (!v) return toast("Paste the user ID first.");
+  try { dbr.ref("approved/" + v).set(true).then(() => { toast("Approved."); $("apuid").value = ""; }).catch(() => toast("Not allowed.")); }
+  catch (e) { toast("That is not a valid user ID."); }
+};
 $("bthr").onclick = () => {
   const v = parseFloat($("thr").value);
   if (!(v >= 0.5 && v <= 0.9)) return toast("Enter a value from 0.50 to 0.90.");
