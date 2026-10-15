@@ -106,15 +106,24 @@ canvas{width:100%;height:120px;display:block}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 // 1. Paste your Firebase web config here (Project settings > Your apps > Web).
+window.addEventListener("error", e => { const el = document.getElementById("err"); if (el) el.textContent = "Page error: " + e.message; });
 const firebaseConfig = {
   apiKey: "PASTE", authDomain: "PASTE", databaseURL: "PASTE",
   projectId: "PASTE", appId: "PASTE"
 };
 const configMissing = Object.values(firebaseConfig).some(v => !v || String(v).includes("PASTE"));
 if (location.protocol === "file:") console.warn("Opened as a local file. Serve it over http(s) or use your github.io URL.");
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(), dbr = firebase.database();
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);   // closing the tab signs you out
+let auth = null, dbr = null, fbError = "";
+if (typeof firebase === "undefined") fbError = "Could not load Firebase from gstatic.com. Check your internet connection or ad blocker, then reload.";
+else if (configMissing) fbError = "Setup needed: fill in firebaseConfig at the top of the script in index.html (values still say PASTE).";
+else {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth(); dbr = firebase.database();
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);   // closing the tab signs you out
+  } catch (e) { fbError = "Firebase setup failed: " + e.message; console.error(e); }
+}
+const ready = !!(auth && dbr);
 let data = {}, sel = null, hb = 0, soundOn = false, audio, lastSig = {}, st = {}, cfg = {},
     isAdmin = false, offset = 0, online = true, subs = [], idle;
 
@@ -148,18 +157,18 @@ function showErr(e) {
   $("err").textContent = (msg || "Sign-in failed.") + " (" + code + ")";
   console.error("Sign-in error:", e);
 }
-if (configMissing) $("err").textContent = "Setup needed: fill in firebaseConfig at the top of the script in index.html (values still say PASTE).";
+if (fbError) $("err").textContent = fbError;
 else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
 $("lf").onsubmit = async e => {
   e.preventDefault();
-  if (configMissing) return;
+  if (!ready) { $("err").textContent = fbError; return; }
   $("err").textContent = "";
   try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
   catch (e) { showErr(e); }
   $("pw").value = "";
 };
 $("su").onclick = async () => {
-  if (configMissing) return;
+  if (!ready) { $("err").textContent = fbError; return; }
   const em = $("em").value.trim(), pw = $("pw").value;
   if (!em || pw.length < 8) { $("err").textContent = "Enter your email and a password of at least 8 characters, then click Create account."; return; }
   $("err").textContent = "";
@@ -168,14 +177,15 @@ $("su").onclick = async () => {
   $("pw").value = "";
 };
 $("rp").onclick = async () => {
+  if (!ready) { $("err").textContent = fbError; return; }
   const em = $("em").value.trim();
   if (!em) { $("err").textContent = "Type your email above, then click Reset password."; return; }
   try { await auth.sendPasswordResetEmail(em); $("err").textContent = "Reset email sent. Check your inbox and spam folder."; }
   catch (e) { showErr(e); }
 };
-$("out").onclick = () => auth.signOut();
+$("out").onclick = () => auth && auth.signOut();
 function resetIdle() { clearTimeout(idle); idle = setTimeout(() => auth.signOut(), 30 * 60 * 1000); }   // 30 min idle logout
-["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth.currentUser && resetIdle()));
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth && auth.currentUser && resetIdle()));
 
 $("snd").onclick = () => {
   soundOn = !soundOn;
@@ -198,10 +208,10 @@ function banner(msg) {
 }
 function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 4000); }
 
-dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
-dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
+if (ready) dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
+if (ready) dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
 
-auth.onAuthStateChanged(async u => {
+if (ready) auth.onAuthStateChanged(async u => {
   subs.forEach(([r, ev]) => r.off(ev)); subs = [];
   $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
   if (!u) { data = {}; lastSig = {}; isAdmin = false; return; }
@@ -249,7 +259,7 @@ function status() {
   const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
   return stt;
 }
-setInterval(() => { if (auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
+setInterval(() => { if (auth && auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
 
 async function send(type) {
   try {
