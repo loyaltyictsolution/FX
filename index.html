@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forex Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12202e;--panel:#1a2c3f;--line:#2b4259;--tx:#e8eef4;--mut:#8fa5ba;
+--buy:#2ec4b6;--sell:#ef6a5b;--wait:#f2b84b;--danger:#ff3b5c;--off:#6b7b8c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
+.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{font-size:20px;margin:0;font-weight:600}
+.bar{display:flex;gap:10px;align-items:center}
+.status{padding:6px 14px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid currentColor}
+.LIVE{color:var(--buy)}.STALE{color:var(--wait)}.OFFLINE{color:var(--danger)}
+button{background:var(--panel);color:var(--tx);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+button:focus-visible,.row:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
+#banner{display:none;margin-bottom:14px;padding:12px 16px;border-radius:10px;background:var(--danger);color:#fff;font-weight:600}
+#banner.show{display:block}
+main{display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-left:4px solid transparent}
+.row:last-child{border-bottom:0}.row.sel{background:#223a52}
+.row.BUY{border-left-color:var(--buy)}.row.SELL{border-left-color:var(--sell)}.row.WAIT{border-left-color:var(--wait)}.row.DANGER{border-left-color:var(--danger)}
+.tag{font-weight:600;font-size:13px;padding:3px 10px;border-radius:6px;min-width:70px;text-align:center}
+.tag.BUY{background:var(--buy);color:#06231f}.tag.SELL{background:var(--sell);color:#2b0904}
+.tag.WAIT{background:var(--wait);color:#2b1d03}.tag.DANGER{background:var(--danger);color:#fff;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+@media(prefers-reduced-motion:reduce){.tag.DANGER{animation:none}}
+.mut{color:var(--mut);font-size:13px}
+.big{font-size:34px;margin:2px 0 8px}
+.bars div{display:grid;grid-template-columns:50px 1fr 46px;gap:8px;align-items:center;margin:4px 0;font-size:13px}
+.bars i{display:block;height:8px;border-radius:4px}
+.tfs{display:flex;gap:8px;margin:10px 0}
+.tfs span{flex:1;text-align:center;padding:6px 0;border-radius:8px;border:1px solid var(--line);font-size:13px}
+.up{color:var(--buy)}.dn{color:var(--sell)}
+canvas{width:100%;height:120px;display:block}
+#alerts div{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.note{margin-top:14px;font-size:12px;color:var(--mut)}
+
+#login{max-width:360px;margin:12vh auto}
+#login input,.f input{width:100%;padding:10px 12px;margin:6px 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+#login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
+#err{color:var(--danger);min-height:22px;font-size:13px}
+#app{display:none}
+#admin{display:none;margin-top:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.grid div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.grid b{display:block;font-size:15px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctl button.pri{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.ctl input{width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+#toast{margin-left:8px;font-size:13px;color:var(--mut)}
+.PAUSED{background:var(--off);color:#fff}
+.row.PAUSED{border-left-color:var(--off)}
+</style>
+</head>
+<body>
+<section id="login" class="panel">
+  <h1>Forex Radar</h1>
+  <p class="mut">Sign in to view live signals.</p>
+  <form id="lf">
+    <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
+    <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+    <button class="go" type="submit">Sign in</button>
+  </form>
+  <div id="err" role="alert"></div>
+</section>
+<div id="app">
+<header>
+  <h1>Forex Radar</h1>
+  <div class="bar">
+    <button id="snd">Turn on sound</button><button id="out">Sign out</button>
+    <span id="status" class="status OFFLINE">OFFLINE</span>
+  </div>
+</header>
+<div id="banner" role="alert"></div>
+<main>
+  <section class="panel" id="list" aria-label="Currency pairs"><p class="mut">Waiting for the backend to send data.</p></section>
+  <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
+</main>
+<section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"></div></section>
+<section class="panel" id="admin" aria-label="Admin controls">
+  <b>Admin controls</b>
+  <div class="grid" id="health"></div>
+  <div class="ctl">
+    <button class="pri" id="bref">Refresh signals now</button>
+    <button id="bret">Retrain models</button>
+    <button id="bpause">Pause signals</button>
+    <label class="mut">Min confidence <input id="thr" type="number" min="0.5" max="0.9" step="0.01"></label>
+    <button id="bthr">Save</button><span id="toast" role="status"></span>
+  </div>
+</section>
+</div>
+<p class="note">Alerts only. This tool places no orders. Probabilities are model estimates, not guarantees. Check the hit rate shown for each pair.</p>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// 1. Paste your Firebase web config here (Project settings > Your apps > Web).
+const firebaseConfig = {
+  apiKey: "PASTE", authDomain: "PASTE", databaseURL: "PASTE",
+  projectId: "PASTE", appId: "PASTE"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), dbr = firebase.database();
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);   // closing the tab signs you out
+let data = {}, sel = null, hb = 0, soundOn = false, audio, lastSig = {}, st = {}, cfg = {},
+    isAdmin = false, offset = 0, online = true, subs = [], idle;
+
+const $ = id => document.getElementById(id);
+const pct = x => Math.round(x * 100) + "%";
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const now = () => Date.now() + offset;
+const ago = ms => !ms ? "never" : Math.max(0, Math.round((now() - ms) / 1000)) + "s ago";
+
+$("lf").onsubmit = async e => {
+  e.preventDefault(); $("err").textContent = "";
+  try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
+  catch { $("err").textContent = "Wrong email or password."; }
+  $("pw").value = "";
+};
+$("out").onclick = () => auth.signOut();
+function resetIdle() { clearTimeout(idle); idle = setTimeout(() => auth.signOut(), 30 * 60 * 1000); }   // 30 min idle logout
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth.currentUser && resetIdle()));
+
+$("snd").onclick = () => {
+  soundOn = !soundOn;
+  if (soundOn && !audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+  $("snd").textContent = soundOn ? "Sound on" : "Turn on sound";
+  if (soundOn) beep(660, .12);
+};
+function beep(freq, dur, n = 1) {
+  if (!soundOn || !audio) return;
+  for (let i = 0; i < n; i++) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = freq; o.connect(g); g.connect(audio.destination);
+    g.gain.value = .15; const t = audio.currentTime + i * (dur + .08);
+    o.start(t); o.stop(t + dur);
+  }
+}
+function banner(msg) {
+  const b = $("banner"); b.textContent = msg; b.classList.add("show");
+  setTimeout(() => b.classList.remove("show"), 12000);
+}
+function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 4000); }
+
+dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
+dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
+
+auth.onAuthStateChanged(async u => {
+  subs.forEach(([r, ev]) => r.off(ev)); subs = [];
+  $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
+  if (!u) { data = {}; lastSig = {}; isAdmin = false; return; }
+  resetIdle();
+  try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
+  $("admin").style.display = isAdmin ? "block" : "none";
+  const on = (path, fn) => { const r = dbr.ref(path); r.on("value", fn); subs.push([r, "value"]); };
+  on("heartbeat", s => { hb = s.val() || 0; });
+  on("status", s => { st = s.val() || {}; renderAdmin(); });
+  on("config", s => { cfg = s.val() || {}; renderAdmin(); });
+  on("signals", s => {
+    data = s.val() || {};
+    for (const [p, d] of Object.entries(data)) {
+      const prev = lastSig[p];
+      if (prev && prev !== d.signal) {
+        if (d.signal === "DANGER") { banner(`${p}: DANGER. ${d.reason}. Do not enter.`); beep(300, .25, 3); }
+        else if (d.signal === "BUY" || d.signal === "SELL") { banner(`${p}: ${d.signal} conditions`); beep(880, .15); }
+      }
+      lastSig[p] = d.signal;
+    }
+    if (!sel || !data[sel]) sel = Object.keys(data)[0];
+    render();
+  });
+  const ar = dbr.ref("alerts").limitToLast(12);
+  ar.on("value", s => {
+    const rows = Object.values(s.val() || {}).reverse();
+    $("alerts").innerHTML = rows.map(a =>
+      `<div><span class="num mut">${new Date(a.ts).toLocaleTimeString()}</span> <b>${esc(a.pair)}</b> ${esc(a.from)} to ${esc(a.to)}${a.reason ? " (" + esc(a.reason) + ")" : ""}</div>`
+    ).join("") || '<p class="mut">No alerts yet.</p>';
+  });
+  subs.push([ar, "value"]);
+});
+
+// A pair is stale if the broker feed stopped OR its last write is older than 10 s.
+const pairStale = d => d.stale || (d.ts && now() - d.ts > 10000);
+function status() {
+  const age = now() - hb;
+  const stt = !online || !hb || age > 15000 ? "OFFLINE" : (st.mt5Connected === false || Object.values(data).some(pairStale)) ? "STALE" : "LIVE";
+  const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
+  return stt;
+}
+setInterval(() => { if (auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
+
+async function send(type) {
+  try {
+    await dbr.ref("commands").push({ type, by: auth.currentUser.email, ts: firebase.database.ServerValue.TIMESTAMP });
+    toast(type === "retrain" ? "Retraining. This can take a minute." : "Refresh sent.");
+  } catch { toast("Not allowed. This account is not an admin."); }
+}
+$("bref").onclick = () => send("refresh");
+$("bret").onclick = () => confirm("Retrain all models now? Signals pause updating for about a minute.") && send("retrain");
+$("bpause").onclick = () => dbr.ref("config/paused").set(!cfg.paused).catch(() => toast("Not allowed."));
+$("bthr").onclick = () => {
+  const v = parseFloat($("thr").value);
+  if (!(v >= 0.5 && v <= 0.9)) return toast("Enter a value from 0.50 to 0.90.");
+  dbr.ref("config/threshold").set(v).then(() => toast("Saved.")).catch(() => toast("Not allowed."));
+};
+function renderAdmin() {
+  if (!isAdmin) return;
+  if (document.activeElement !== $("thr")) $("thr").value = cfg.threshold ?? 0.55;
+  $("bpause").textContent = cfg.paused ? "Resume signals" : "Pause signals";
+  const ages = Object.values(data).map(d => d.tickAgeSec ?? 0);
+  $("health").innerHTML = [
+    ["Backend heartbeat", ago(hb)], ["MT5 terminal", st.mt5Connected === false ? "Disconnected" : "Connected"],
+    ["Last refresh", ago(st.lastRefresh)], ["Last retrain", ago(st.lastRetrain)],
+    ["Backend started", ago(st.startedAt)], ["Oldest tick", ages.length ? Math.max(...ages) + "s" : "-"],
+    ["Signals", cfg.paused ? "Paused" : "Running"]
+  ].map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
+}
+
+function render(offline) {
+  const stt = status();
+  $("list").innerHTML = Object.entries(data).map(([p, d]) => {
+    const sig = stt === "OFFLINE" ? "WAIT" : d.signal;
+    return `<div class="row ${sig} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${p}">
+      <div><b>${esc(p)}</b><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}</div></div>
+      <div class="num">${d.bid}</div>
+      <span class="tag ${sig}">${stt === "OFFLINE" ? "NO DATA" : sig}</span></div>`;
+  }).join("");
+  document.querySelectorAll(".row").forEach(r => {
+    r.onclick = () => { sel = r.dataset.p; render(); };
+    r.onkeydown = e => { if (e.key === "Enter") r.onclick(); };
+  });
+  const d = data[sel]; if (!d) return;
+  const m = d.model || {};
+  const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
+  $("detail").innerHTML = `
+    <div class="mut">${sel}${stt === "OFFLINE" ? " (backend offline, last known data)" : ""}</div>
+    <div class="big num">${d.bid} <span class="mut" style="font-size:14px">spread ${d.spread ?? "-"} pts</span></div>
+    <canvas id="cv" width="600" height="120"></canvas>
+    <div class="tfs">${["M5", "M15", "H1", "H4"].map(t => {
+      const v = (d.tf || {})[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`;
+    }).join("")}</div>
+    <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
+    <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${d.reason}.</b> Previous setup is invalid.` : ""}</p>
+    <p class="mut">Tested on unseen data: ${m.holdout_hit_rate != null ? pct(m.holdout_hit_rate) + " of strong signals were right (" + m.holdout_signals + " signals)" : "not enough strong signals to measure"}.
+    Last tick ${d.tickAgeSec}s ago.</p>`;
+  draw(d.spark || []);
+}
+function draw(a) {
+  const c = $("cv"); if (!c || a.length < 2) return;
+  const x = c.getContext("2d"), w = c.width, h = c.height;
+  const lo = Math.min(...a), hi = Math.max(...a), r = hi - lo || 1;
+  x.clearRect(0, 0, w, h); x.strokeStyle = "#2ec4b6"; x.lineWidth = 2; x.beginPath();
+  a.forEach((v, i) => { const px = i / (a.length - 1) * w, py = h - 6 - (v - lo) / r * (h - 12); i ? x.lineTo(px, py) : x.moveTo(px, py); });
+  x.stroke();
+}
+</script>
+</body>
+</html>
