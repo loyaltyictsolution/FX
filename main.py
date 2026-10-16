@@ -1,6 +1,7 @@
 """Forex Radar backend. READ-ONLY: reads MT5 data, writes signals to Firebase.
 There is no order_send anywhere in this project. Keep it that way."""
-import os, time, queue
+import os, time, queue, threading
+import requests
 import numpy as np
 import pandas as pd
 import MetaTrader5 as mt5
@@ -8,7 +9,7 @@ import lightgbm as lgb
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import TimeSeriesSplit
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, messaging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -36,6 +37,35 @@ def on_cmd(ev):
     if ev.path == "/": return                  # ignore anything queued before startup
     if isinstance(ev.data, dict) and ev.data.get("type") in ("refresh", "retrain"):
         CMDS.put((ev.path.strip("/"), ev.data))
+
+
+def push_web(title, body):
+    """Web push to every browser/phone that enabled alerts on the dashboard."""
+    tree = db.reference("fcmTokens").get() or {}
+    items = [(f"{uid}/{k}", t) for uid, toks in tree.items() for k, t in (toks or {}).items()]
+    if not items: return
+    link = os.getenv("DASHBOARD_URL")
+    wp = messaging.WebpushConfig(headers={"Urgency": "high"},
+                                 fcm_options=messaging.WebpushFCMOptions(link=link) if link else None)
+    msgs = [messaging.Message(token=t, notification=messaging.Notification(title=title, body=body or None),
+                              webpush=wp) for _, t in items]
+    for (path, _), r in zip(items, messaging.send_each(msgs).responses):
+        if not r.success and "registered" in str(r.exception).lower():   # dead token: remove it
+            db.reference("fcmTokens/" + path).delete()
+
+
+def notify(text):
+    """Telegram + web push. Runs in a thread so it never slows the signal loop."""
+    title, _, body = text.partition("\n")
+    def go():
+        tok, chat = os.getenv("TELEGRAM_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")
+        if tok and chat:
+            try: requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
+                               json={"chat_id": chat, "text": text}, timeout=8)
+            except Exception as e: print("telegram error", e)
+        try: push_web(title, body)
+        except Exception as e: print("web push error", e)
+    threading.Thread(target=go, daemon=True).start()
 
 
 def init_mt5():
@@ -120,6 +150,7 @@ def main():
     root.child("config").listen(on_config)
     root.child("commands").listen(on_cmd)
     meta = {"startedAt": db.ServerValue.TIMESTAMP}
+    notify("Forex Radar backend started.")
 
     syms = [p + SUFFIX for p in PAIRS]
     for s in syms: mt5.symbol_select(s, True)
@@ -193,6 +224,10 @@ def main():
                     root.child("alerts").push({"pair": payload["pair"], "from": prev, "to": sig,
                                                "reason": d["reason"], "conf": round(conf, 2),
                                                "ts": db.ServerValue.TIMESTAMP})
+                    if sig in ("BUY", "SELL", "DANGER"):
+                        emoji = {"BUY": "🟢", "SELL": "🔴", "DANGER": "⚠️"}[sig]
+                        notify(f"{emoji} {payload['pair']} {sig}" +
+                               (f"\n{d['reason']}. Do not enter." if sig == "DANGER" else f"\nConfidence {conf:.0%}"))
                 d["sig"], d["conf"] = sig, conf if sig in ("BUY", "SELL") else d["conf"]
             except Exception as e:
                 print("loop error", s, e)
