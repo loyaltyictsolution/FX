@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forex Radar</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#12202e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12202e">
 <style>
 :root{--bg:#12202e;--panel:#1a2c3f;--line:#2b4259;--tx:#e8eef4;--mut:#8fa5ba;
 --buy:#2ec4b6;--sell:#ef6a5b;--wait:#f2b84b;--danger:#ff3b5c;--off:#6b7b8c}
@@ -48,7 +48,7 @@ canvas{width:100%;height:120px;display:block}
 #login{max-width:360px;margin:12vh auto}
 #login input,.f input{width:100%;padding:10px 12px;margin:6px 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
 #login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
-#err{color:var(--danger);min-height:22px;font-size:13px}
+#err{color:var(--danger);min-height:22px;font-size:13px;margin-top:10px}
 #app{display:none}
 #admin{display:none;margin-top:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
@@ -69,9 +69,14 @@ canvas{width:100%;height:120px;display:block}
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
     <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+    <label class="mut" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="showpw" style="width:auto;margin:0;padding:0"> Show password</label>
+    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:6px 0 12px"><input type="checkbox" id="keep" style="width:auto;margin:0;padding:0"> Keep me signed in on this device</label>
     <button class="go" type="submit">Sign in</button>
   </form>
+  <button id="rp" type="button" style="margin-top:10px;width:100%">Reset password</button>
+  <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
   <div id="err" role="alert"></div>
+  <p class="mut" id="ver" style="font-size:12px">Page v3: script has not started</p>
 </section>
 <div id="app">
 <header>
@@ -96,6 +101,7 @@ canvas{width:100%;height:120px;display:block}
     <button id="bpause">Pause signals</button>
     <label class="mut">Min confidence <input id="thr" type="number" min="0.5" max="0.9" step="0.01"></label>
     <button id="bthr">Save</button><span id="toast" role="status"></span>
+    <label class="mut">Approve user ID <input id="apuid" style="width:220px" placeholder="paste their UID"></label><button id="bap">Approve</button>
   </div>
 </section>
 </div>
@@ -107,15 +113,28 @@ canvas{width:100%;height:120px;display:block}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 <script>
 // 1. Paste your Firebase web config here (Project settings > Your apps > Web).
+window.addEventListener("error", e => { const el = document.getElementById("err"); if (el) el.textContent = "Page error: " + e.message; });
+document.getElementById("ver").textContent = "Page v3: script running";
 const firebaseConfig = {
-  apiKey: "PASTE", authDomain: "PASTE", databaseURL: "PASTE",
-  projectId: "PASTE", messagingSenderId: "PASTE", appId: "PASTE"
+  apiKey: "PASTE", authDomain: "loyalty-fx.firebaseapp.com",
+  databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com",
+  projectId: "loyalty-fx", messagingSenderId: "754089568350", appId: "PASTE"
 };
 // Project settings > Cloud Messaging > Web Push certificates > Generate key pair
 const VAPID_KEY = "PASTE";
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(), dbr = firebase.database();
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);   // closing the tab signs you out
+const configMissing = Object.values(firebaseConfig).some(v => !v || String(v).includes("PASTE"));
+if (location.protocol === "file:") console.warn("Opened as a local file. Serve it over http(s) or use your github.io URL.");
+let auth = null, dbr = null, fbError = "";
+if (typeof firebase === "undefined") fbError = "Could not load Firebase from gstatic.com. Check your internet connection or ad blocker, then reload.";
+else if (configMissing) fbError = "Setup needed: fill in firebaseConfig at the top of the script in index.html (values still say PASTE).";
+else {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth(); dbr = firebase.database();
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);   // closing the tab signs you out
+  } catch (e) { fbError = "Firebase setup failed: " + e.message; console.error(e); }
+}
+const ready = !!(auth && dbr);
 let data = {}, sel = null, hb = 0, soundOn = false, audio, lastSig = {}, st = {}, cfg = {},
     isAdmin = false, offset = 0, online = true, subs = [], idle;
 
@@ -125,15 +144,64 @@ const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const now = () => Date.now() + offset;
 const ago = ms => !ms ? "never" : Math.max(0, Math.round((now() - ms) / 1000)) + "s ago";
 
+const AUTH_MSG = {
+  "auth/user-not-found": "No account with this email. Add the user in Firebase > Authentication > Users.",
+  "auth/wrong-password": "Wrong password.",
+  "auth/invalid-credential": "Wrong email or password, or this user does not exist in Firebase yet.",
+  "auth/invalid-email": "That email address is not valid.",
+  "auth/invalid-api-key": "The apiKey in firebaseConfig is wrong. Copy it from Project settings > Your apps > Web.",
+  "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The apiKey in firebaseConfig is wrong.",
+  "auth/operation-not-allowed": "Email/Password sign-in is not enabled in Firebase > Authentication > Sign-in method.",
+  "auth/email-already-in-use": "This email already has an account. Use Sign in instead.",
+  "auth/weak-password": "Password too weak. Use at least 8 characters.",
+  "auth/admin-restricted-operation": "Sign-ups are switched off in Firebase. Turn them on in Authentication > Settings > User actions, create your account, then switch them off again.",
+  "auth/user-disabled": "This account is disabled in Firebase.",
+  "auth/too-many-requests": "Too many attempts. Wait a few minutes or reset the password.",
+  "auth/network-request-failed": "Network error. Check your connection.",
+  "auth/unauthorized-domain": "This domain is not authorised. Add it in Authentication > Settings > Authorized domains.",
+  "auth/requests-from-referer-" : ""
+};
+function showErr(e) {
+  const code = (e && e.code) || "unknown";
+  let msg = AUTH_MSG[code];
+  if (!msg && code.startsWith("auth/requests-from-referer")) msg = "Your API key is restricted to another website. Open the page from the allowed github.io URL, or edit the key restriction in Google Cloud.";
+  $("err").textContent = (msg || "Sign-in failed.") + " (" + code + ")";
+  console.error("Sign-in error:", e);
+}
+if (fbError) $("err").textContent = fbError;
+else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
+async function setKeep() {
+  try { await auth.setPersistence($("keep").checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
+}
+$("showpw").onchange = () => { $("pw").type = $("showpw").checked ? "text" : "password"; };
+try { $("em").value = localStorage.getItem("fx_email") || ""; ($("em").value ? $("pw") : $("em")).focus(); } catch (e) {}
 $("lf").onsubmit = async e => {
-  e.preventDefault(); $("err").textContent = "";
-  try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
-  catch { $("err").textContent = "Wrong email or password."; }
+  e.preventDefault();
+  if (!ready) { $("err").textContent = fbError; return; }
+  $("err").textContent = "";
+  try { await setKeep(); await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); try { localStorage.setItem("fx_email", $("em").value.trim()); } catch (e) {} }
+  catch (e) { showErr(e); }
   $("pw").value = "";
 };
-$("out").onclick = () => auth.signOut();
+$("su").onclick = async () => {
+  if (!ready) { $("err").textContent = fbError; return; }
+  const em = $("em").value.trim(), pw = $("pw").value;
+  if (!em || pw.length < 8) { $("err").textContent = "Enter your email and a password of at least 8 characters, then click Create account."; return; }
+  $("err").textContent = "";
+  try { await setKeep(); await auth.createUserWithEmailAndPassword(em, pw); try { localStorage.setItem("fx_email", em); } catch (e) {} }
+  catch (e) { showErr(e); }
+  $("pw").value = "";
+};
+$("rp").onclick = async () => {
+  if (!ready) { $("err").textContent = fbError; return; }
+  const em = $("em").value.trim();
+  if (!em) { $("err").textContent = "Type your email above, then click Reset password."; return; }
+  try { await auth.sendPasswordResetEmail(em); $("err").textContent = "Reset email sent. Check your inbox and spam folder."; }
+  catch (e) { showErr(e); }
+};
+$("out").onclick = () => auth && auth.signOut();
 function resetIdle() { clearTimeout(idle); idle = setTimeout(() => auth.signOut(), 30 * 60 * 1000); }   // 30 min idle logout
-["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth.currentUser && resetIdle()));
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth && auth.currentUser && resetIdle()));
 
 $("snd").onclick = () => {
   soundOn = !soundOn;
@@ -154,18 +222,41 @@ function banner(msg) {
   const b = $("banner"); b.textContent = msg; b.classList.add("show");
   setTimeout(() => b.classList.remove("show"), 12000);
 }
+if (ready && "Notification" in window && "serviceWorker" in navigator && firebase.messaging && firebase.messaging.isSupported)
+  firebase.messaging.isSupported().then(ok => { if (ok) $("push").hidden = false; }).catch(() => {});
+$("push").onclick = async () => {
+  if (!ready) return;
+  if (VAPID_KEY.includes("PASTE")) return banner("Set VAPID_KEY in index.html first (Cloud Messaging > Web Push certificates).");
+  try {
+    if (await Notification.requestPermission() !== "granted")
+      return banner("Alerts blocked. Allow notifications for this site in your browser settings.");
+    const reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    const token = await firebase.messaging().getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (!token) throw new Error("no token");
+    let h = 0; for (const c of token) h = (h * 31 + c.charCodeAt(0)) | 0;
+    await dbr.ref(`fcmTokens/${auth.currentUser.uid}/t${(h >>> 0).toString(36)}`).set(token);
+    $("push").textContent = "Alerts enabled"; banner("Alerts enabled on this device.");
+  } catch (e) { console.error(e); banner("Could not enable alerts: " + (e.code || e.message) + ". Check the VAPID key, config and that your account is approved."); }
+};
 function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 4000); }
 
-dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
-dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
+if (ready) dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
+if (ready) dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
 
-auth.onAuthStateChanged(async u => {
+if (ready) auth.onAuthStateChanged(async u => {
   subs.forEach(([r, ev]) => r.off(ev)); subs = [];
   $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
   if (!u) { data = {}; lastSig = {}; isAdmin = false; return; }
   resetIdle();
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
   $("admin").style.display = isAdmin ? "block" : "none";
+  let ok = isAdmin;
+  if (!ok) { try { ok = (await dbr.ref("approved/" + u.uid).get()).val() === true; } catch { ok = false; } }
+  if (!ok) {
+    $("list").innerHTML = '<p><b>Account created. Waiting for approval.</b></p><p class="mut">Send this ID to the admin so they can approve you:</p><p class="num" style="word-break:break-all">' + esc(u.uid) + '</p><p class="mut">Are you the owner and this is the first account? Claim admin once. It only works while no admin exists.</p><button id="claim" class="pri" style="background:var(--buy);color:#06231f;border:0;font-weight:600">Claim admin</button> <span id="claimmsg" class="mut"></span>';
+    $("claim").onclick = () => dbr.ref("admins/" + u.uid).set(true).then(() => location.reload()).catch(() => { $("claimmsg").textContent = "An admin already exists. Ask them to approve your ID."; });
+    $("detail").innerHTML = ""; return;
+  }
   const on = (path, fn) => { const r = dbr.ref(path); r.on("value", fn); subs.push([r, "value"]); };
   on("heartbeat", s => { hb = s.val() || 0; });
   on("status", s => { st = s.val() || {}; renderAdmin(); });
@@ -193,21 +284,6 @@ auth.onAuthStateChanged(async u => {
   subs.push([ar, "value"]);
 });
 
-if ("Notification" in window && "serviceWorker" in navigator)
-  firebase.messaging.isSupported().then(ok => { if (ok) $("push").hidden = false; });
-$("push").onclick = async () => {
-  try {
-    if (await Notification.requestPermission() !== "granted")
-      return banner("Alerts blocked. Allow notifications for this site in your browser settings.");
-    const reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
-    const token = await firebase.messaging().getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-    if (!token) throw new Error("no token");
-    let h = 0; for (const c of token) h = (h * 31 + c.charCodeAt(0)) | 0;
-    await dbr.ref(`fcmTokens/${auth.currentUser.uid}/t${(h >>> 0).toString(36)}`).set(token);
-    $("push").textContent = "Alerts enabled"; banner("Alerts enabled on this device.");
-  } catch (e) { banner("Could not enable alerts. Check the VAPID key and config."); }
-};
-
 // A pair is stale if the broker feed stopped OR its last write is older than 10 s.
 const pairStale = d => d.stale || (d.ts && now() - d.ts > 10000);
 function status() {
@@ -216,7 +292,7 @@ function status() {
   const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
   return stt;
 }
-setInterval(() => { if (auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
+setInterval(() => { if (auth && auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
 
 async function send(type) {
   try {
@@ -227,6 +303,13 @@ async function send(type) {
 $("bref").onclick = () => send("refresh");
 $("bret").onclick = () => confirm("Retrain all models now? Signals pause updating for about a minute.") && send("retrain");
 $("bpause").onclick = () => dbr.ref("config/paused").set(!cfg.paused).catch(() => toast("Not allowed."));
+$("bap").onclick = () => {
+  if (!ready) return;
+  const v = $("apuid").value.trim();
+  if (!v) return toast("Paste the user ID first.");
+  try { dbr.ref("approved/" + v).set(true).then(() => { toast("Approved."); $("apuid").value = ""; }).catch(() => toast("Not allowed.")); }
+  catch (e) { toast("That is not a valid user ID."); }
+};
 $("bthr").onclick = () => {
   const v = parseFloat($("thr").value);
   if (!(v >= 0.5 && v <= 0.9)) return toast("Enter a value from 0.50 to 0.90.");
