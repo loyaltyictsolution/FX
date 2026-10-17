@@ -155,7 +155,7 @@ function tfTrend(c, step) {
 
 const PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD"];
 // Paste apiKey and appId from Firebase > Project settings > Your apps > Web app. The rest is filled in.
-const firebaseConfig = { apiKey: "PASTE", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "PASTE" };
+const firebaseConfig = { apiKey: "PASTE", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf" };
 if (Object.values(firebaseConfig).includes("PASTE")) {
   document.getElementById("err").textContent = "Setup needed: open index.html and paste your Firebase apiKey and appId into firebaseConfig.";
   throw new Error("firebaseConfig incomplete");
