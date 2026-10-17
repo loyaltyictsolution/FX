@@ -150,11 +150,22 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <div class="adduser">
     <input id="nu_em" type="email" placeholder="New user email" autocomplete="off">
     <input id="nu_pw" type="password" placeholder="Temporary password (6+)" autocomplete="new-password">
+    <label class="mut"><input id="nu_sh" type="checkbox"> Show</label>
+    <button id="nu_gen" type="button">Generate</button>
     <label class="mut"><input id="nu_ad" type="checkbox"> Admin</label>
     <button class="pri" id="nu_go">Add user</button>
     <span id="nu_msg" class="mut" role="status"></span>
   </div>
   <div id="ulist"></div>
+  <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:600">Change my password</summary>
+    <div class="adduser">
+      <input id="cp_old" type="password" placeholder="Current password" autocomplete="current-password">
+      <input id="cp_new" type="password" placeholder="New password (6+)" autocomplete="new-password">
+      <label class="mut"><input id="cp_sh" type="checkbox"> Show</label>
+      <button class="pri" id="cp_go">Update password</button>
+      <span id="cp_msg" class="mut" role="status"></span>
+    </div>
+  </details>
 </section>
 </div>
 <p class="note">Alerts only. No orders. Signals are rule-based scores from public price data, not guarantees, and prices can differ slightly from your Exness quotes. Check the tested hit rate on each pair. Alerts work only while this page stays open.</p>
@@ -449,6 +460,7 @@ function renderUsers() {
     <div class="uact">${id === me ? '<span class="mut">Your account</span>' :
       `${adm ? "" : `<button data-a="apr" data-id="${esc(id)}">${apr ? "Unapprove" : "Approve"}</button>`}
        <button data-a="adm" data-id="${esc(id)}">${adm ? "Remove admin" : "Make admin"}</button>
+       <button data-a="rst" data-id="${esc(id)}">Reset password</button>
        <button data-a="blk" data-id="${esc(id)}">${blk ? "Unblock" : "Block"}</button>
        <button class="bad" data-a="del" data-id="${esc(id)}">Remove</button>`}</div></div>`).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
 }
@@ -460,6 +472,7 @@ $("ulist").onclick = async e => {
     if (a === "blk") await dbr.ref("users/" + id + "/blocked").set(!blk);
     if (a === "adm") await dbr.ref("admins/" + id).set(AD[id] === true ? null : true);
     if (a === "apr") await dbr.ref("approved/" + id).set(AP[id] === true ? null : true);
+    if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); } }
     if (a === "del" && confirm("Remove " + ((U[id] && U[id].email) || id) + "? They will be blocked and hidden.")) {
       await dbr.ref("users/" + id).update({ blocked: true, removed: true });
       await dbr.ref("approved/" + id).remove();
@@ -478,6 +491,24 @@ $("nu_go").onclick = async () => {
     else await dbr.ref("approved/" + c.user.uid).set(true);
     msg.textContent = "User added. Send them the email and password."; $("nu_em").value = $("nu_pw").value = ""; $("nu_ad").checked = false;
   } catch (err) { msg.textContent = err.code === "auth/email-already-in-use" ? "That email already has an account." : err.message; }
+};
+
+// ---------- password tools ----------
+$("nu_sh").onchange = () => { $("nu_pw").type = $("nu_sh").checked ? "text" : "password"; };
+$("nu_gen").onclick = () => {
+  const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = crypto.getRandomValues(new Uint32Array(12));
+  $("nu_pw").value = Array.from(r, x => ch[x % ch.length]).join("");
+  $("nu_sh").checked = true; $("nu_pw").type = "text";
+};
+$("cp_sh").onchange = () => { $("cp_old").type = $("cp_new").type = $("cp_sh").checked ? "text" : "password"; };
+$("cp_go").onclick = async () => {
+  const u = auth.currentUser, o = $("cp_old").value, n = $("cp_new").value, m = $("cp_msg"); m.textContent = "";
+  if (!u || !o || n.length < 6) return m.textContent = "Enter your current password and a new one of 6+ characters.";
+  try {
+    await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email, o));
+    await u.updatePassword(n);
+    m.textContent = "Password updated."; $("cp_old").value = $("cp_new").value = ""; $("cp_sh").checked = false; $("cp_old").type = $("cp_new").type = "password";
+  } catch (err) { m.textContent = /wrong-password|invalid-credential/.test(err.code) ? "Current password is wrong." : err.message; }
 };
 
 // ---------- admin settings + auth state ----------
