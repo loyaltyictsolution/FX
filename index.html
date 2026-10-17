@@ -110,11 +110,7 @@ canvas{width:100%;height:120px;display:block}
 </div>
 <div id="diag">diag: waiting for script</div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
-<script>
+<script id="main" type="text/plain">
 const diag = m => { const d = document.getElementById("diag"); if (d) d.textContent = "diag: " + m; };
 function showBanner(m) { const b = document.getElementById("banner"); if (b) { b.textContent = m; b.classList.add("show"); } }
 window.addEventListener("error", e => {
@@ -256,8 +252,11 @@ function banner(msg) {
   const b = $("banner"); b.textContent = msg; b.classList.add("show");
   setTimeout(() => b.classList.remove("show"), 12000);
 }
-if (ready && "Notification" in window && "serviceWorker" in navigator && firebase.messaging && firebase.messaging.isSupported)
-  firebase.messaging.isSupported().then(ok => { if (ok) $("push").hidden = false; }).catch(() => {});
+if (ready && "Notification" in window && "serviceWorker" in navigator && firebase.messaging && firebase.messaging.isSupported) {
+  try {
+    Promise.resolve(firebase.messaging.isSupported()).then(ok => { if (ok) $("push").hidden = false; }).catch(() => {});
+  } catch (e) { console.warn("Push check failed:", e); }
+}
 $("push").onclick = async () => {
   if (!ready) return;
   if (VAPID_KEY.includes("PASTE")) return banner("Set VAPID_KEY in index.html first (Cloud Messaging > Web Push certificates).");
@@ -406,6 +405,47 @@ function draw(a) {
   a.forEach((v, i) => { const px = i / (a.length - 1) * w, py = h - 6 - (v - lo) / r * (h - 12); i ? x.lineTo(px, py) : x.moveTo(px, py); });
   x.stroke();
 }
+</script>
+<script>
+// Loads Firebase from gstatic first, then backup CDNs, then starts the app.
+(function () {
+  var V = "10.12.2";
+  var SRC = [
+    function (f) { return "https://www.gstatic.com/firebasejs/" + V + "/firebase-" + f + "-compat.js"; },
+    function (f) { return "https://cdn.jsdelivr.net/npm/firebase@" + V + "/firebase-" + f + "-compat.js"; },
+    function (f) { return "https://unpkg.com/firebase@" + V + "/firebase-" + f + "-compat.js"; }
+  ];
+  var d = document.getElementById("diag");
+  function say(m) { if (d) d.textContent = "diag: " + m; }
+  function load(url) {
+    return new Promise(function (res, rej) {
+      var el = document.createElement("script"), t;
+      el.src = url;
+      el.onload = function () { clearTimeout(t); res(); };
+      el.onerror = function () { clearTimeout(t); el.remove(); rej(new Error("blocked " + url)); };
+      t = setTimeout(function () { rej(new Error("timeout " + url)); }, 10000);
+      document.head.appendChild(el);
+    });
+  }
+  async function lib(f) {
+    for (var i = 0; i < SRC.length; i++) {
+      try { say("loading " + f + " (source " + (i + 1) + " of " + SRC.length + ")"); await load(SRC[i](f)); return i + 1; }
+      catch (e) { console.warn(e.message); }
+    }
+    return 0;
+  }
+  (async function () {
+    var used = [];
+    for (var f of ["app", "auth", "database"]) used.push(f + ":" + (await lib(f)));
+    var m = await lib("messaging"); used.push("messaging:" + m);
+    window.__fbLoad = used.join(" ");
+    var s = document.createElement("script");
+    s.textContent = document.getElementById("main").textContent;
+    document.body.appendChild(s);
+    var dd = document.getElementById("diag");
+    if (dd && /running/.test(dd.textContent)) dd.textContent += " | load " + window.__fbLoad + " (0 = failed)";
+  })();
+})();
 </script>
 </body>
 </html>
