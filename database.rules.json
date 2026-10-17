@@ -2,61 +2,13 @@
   "rules": {
     ".read": false,
     ".write": false,
-    "admins": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid && !root.child('admins').exists()",
-        ".validate": "newData.val() === true"
-      }
-    },
-    "approved": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
-        ".validate": "newData.isBoolean()"
-      }
-    },
-    "signals": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)"
-    },
-    "alerts": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)",
-      ".indexOn": [
-        "ts"
-      ]
-    },
-    "heartbeat": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)"
-    },
-    "status": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)"
-    },
-    "config": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)",
-      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
-      "threshold": {
-        ".validate": "newData.isNumber() && newData.val() >= 0.5 && newData.val() <= 0.9"
-      },
-      "paused": {
-        ".validate": "newData.isBoolean()"
-      },
-      "$other": {
-        ".validate": false
-      }
-    },
-    "commands": {
-      "$id": {
-        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
-        ".validate": "newData.hasChildren(['type','ts','by']) && newData.child('type').val().matches(/^(refresh|retrain)$/)"
-      }
-    },
-    "fcmTokens": {
-      "$uid": {
-        ".write": "auth != null && auth.uid === $uid && (root.child('admins').child(auth.uid).val() === true || root.child('approved').child(auth.uid).val() === true)",
-        "$k": {
-          ".validate": "newData.isString() && newData.val().length < 400"
-        }
-      }
+    "admins": { "$uid": { ".read": "auth != null && auth.uid === $uid" } },
+    "settings": {
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      ".write": "root.child('admins').child(auth.uid).val() === true",
+      "dataKey":   { ".validate": "newData.isString() && newData.val().length < 200" },
+      "threshold": { ".validate": "newData.isNumber() && newData.val() >= 0.4 && newData.val() <= 0.9" },
+      "$other":    { ".validate": false }
     }
   }
 }
