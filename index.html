@@ -16,9 +16,9 @@ body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans"
 .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
 h1{font-size:20px;margin:0;font-weight:600}
-.bar{display:flex;gap:10px;align-items:center}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .status{padding:6px 14px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid currentColor}
-.LIVE{color:var(--buy)}.STALE{color:var(--wait)}.OFFLINE{color:var(--danger)}
+.DEMO{color:#a99bff}.LIVE{color:var(--buy)}.STALE{color:var(--wait)}.OFFLINE{color:var(--danger)}
 button{background:var(--panel);color:var(--tx);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
 button:focus-visible,.row:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
 #banner{display:none;margin-bottom:14px;padding:12px 16px;border-radius:10px;background:var(--danger);color:#fff;font-weight:600}
@@ -60,7 +60,8 @@ canvas{width:100%;height:120px;display:block}
 #toast{margin-left:8px;font-size:13px;color:var(--mut)}
 .PAUSED{background:var(--off);color:#fff}
 .row.PAUSED{border-left-color:var(--off)}
-#diag{position:fixed;left:0;right:0;bottom:0;z-index:99;background:#000;color:#0f0;font:12px monospace;padding:6px 8px;word-break:break-all}
+#diag{display:none;position:fixed;left:0;right:0;bottom:0;z-index:99;background:#000;color:#0f0;font:12px monospace;padding:6px 8px;word-break:break-all}
+body.debug #diag{display:block}
 </style>
 </head>
 <body>
@@ -78,17 +79,18 @@ canvas{width:100%;height:120px;display:block}
   <button id="fg" type="button" style="margin-top:10px;width:100%">Clear saved email</button>
   <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
   <div id="err" role="alert"></div>
-  <p class="mut" id="ver" style="font-size:12px">Page v9: script has not started</p>
+  <p class="mut" id="ver" style="font-size:12px">Page v10: script has not started</p>
 </section>
 <div id="app">
 <header>
   <h1>Forex Radar</h1>
   <div class="bar">
-    <button id="snd">Turn on sound</button><button id="push" hidden>Enable phone alerts</button><button id="out">Sign out</button>
+    <button id="demo">Demo data</button><button id="snd">Turn on sound</button><button id="push" hidden>Enable phone alerts</button><button id="out">Sign out</button>
     <span id="status" class="status OFFLINE">OFFLINE</span>
   </div>
 </header>
 <div id="banner" role="alert"></div>
+<div id="demobar" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:#3a3470;color:#fff;font-weight:600">DEMO MODE: simulated prices and signals for testing this screen. Not real market data. Do not trade on these.</div>
 <main>
   <section class="panel" id="list" aria-label="Currency pairs"><p class="mut">Waiting for the backend to send data.</p></section>
   <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
@@ -111,6 +113,7 @@ canvas{width:100%;height:120px;display:block}
 <div id="diag">diag: waiting for script</div>
 
 <script id="main" type="text/plain">
+if (/debug/.test(location.search)) document.body.classList.add("debug");
 const diag = m => { const d = document.getElementById("diag"); if (d) d.textContent = "diag: " + m; };
 function showBanner(m) { const b = document.getElementById("banner"); if (b) { b.textContent = m; b.classList.add("show"); } }
 window.addEventListener("error", e => {
@@ -123,7 +126,7 @@ window.addEventListener("unhandledrejection", e => {
   const el = document.getElementById("err"); if (el) { el.style.color = ""; el.textContent = m; }
   showBanner(m); diag(m);
 });
-document.getElementById("ver").textContent = "Page v9: script running";
+document.getElementById("ver").textContent = "Page v10: script running";
 diag("script running");
 
 const firebaseConfig = {
@@ -189,7 +192,7 @@ function showErr(e) {
   $("err").textContent = (msg || "Sign-in failed.") + " (" + code + ")";
   console.error("Sign-in error:", e);
 }
-$("ver").textContent = ready ? "Page v9: script running, connected to " + firebaseConfig.projectId : "Page v9: script running, Firebase not ready";
+$("ver").textContent = ready ? "Page v10: script running, connected to " + firebaseConfig.projectId : "Page v10: script running, Firebase not ready";
 if (fbError) { $("err").textContent = fbError; diag(fbError); }
 else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
 async function setKeep() {
@@ -280,7 +283,7 @@ if (ready) auth.onAuthStateChanged(async u => {
   subs.forEach(([r, ev]) => r.off(ev)); subs = [];
   // Show the right screen FIRST so nothing below can leave the login form on screen.
   $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
-  if (!u) { data = {}; lastSig = {}; isAdmin = false; diag("signed out"); return; }
+  if (!u) { if (demo) setDemo(false); realData = {}; data = {}; lastSig = {}; isAdmin = false; diag("signed out"); return; }
   diag("signed in as " + u.email + " | uid " + u.uid + " | checking access...");
   try {
     resetIdle();
@@ -300,33 +303,91 @@ if (ready) auth.onAuthStateChanged(async u => {
     on("heartbeat", s => { hb = s.val() || 0; });
     on("status", s => { st = s.val() || {}; renderAdmin(); });
     on("config", s => { cfg = s.val() || {}; renderAdmin(); });
-    on("signals", s => {
-      data = s.val() || {};
-      for (const [p, d] of Object.entries(data)) {
-        const prev = lastSig[p];
-        if (prev && prev !== d.signal) {
-          if (d.signal === "DANGER") { banner(`${p}: DANGER. ${d.reason}. Do not enter.`); beep(300, .25, 3); }
-          else if (d.signal === "BUY" || d.signal === "SELL") { banner(`${p}: ${d.signal} conditions`); beep(880, .15); }
-        }
-        lastSig[p] = d.signal;
-      }
-      if (!sel || !data[sel]) sel = Object.keys(data)[0];
-      render();
-    });
+    on("signals", s => { realData = s.val() || {}; if (!demo) applySignals(realData); });
     const ar = dbr.ref("alerts").limitToLast(12);
     ar.on("value", s => {
       const rows = Object.values(s.val() || {}).reverse();
-      $("alerts").innerHTML = rows.map(a =>
+      realAlertsHtml = rows.map(a =>
         `<div><span class="num mut">${new Date(a.ts).toLocaleTimeString()}</span> <b>${esc(a.pair)}</b> ${esc(a.from)} to ${esc(a.to)}${a.reason ? " (" + esc(a.reason) + ")" : ""}</div>`
       ).join("") || '<p class="mut">No alerts yet.</p>';
+      if (!demo) $("alerts").innerHTML = realAlertsHtml;
     }, denied);
     subs.push([ar, "value"]);
   } catch (e) { showBanner("Dashboard error: " + (e.message || e)); diag("dashboard error: " + (e.message || e)); console.error(e); }
 }, e => diag("auth error: " + e.message));
 
+
+// ---- Shared signal handling + demo mode (simulated, local only, nothing is written to Firebase) ----
+let realData = {}, demo = false, demoTimer = null, demoSim = null, demoAlerts = [], realAlertsHtml = '<p class="mut">No alerts yet.</p>';
+function showDemoAlerts() {
+  $("alerts").innerHTML = demoAlerts.slice(0, 12).map(a =>
+    `<div><span class="num mut">${new Date(a.ts).toLocaleTimeString()}</span> <b>${esc(a.pair)}</b> ${esc(a.from)} to ${esc(a.to)}${a.reason ? " (" + esc(a.reason) + ")" : ""}</div>`
+  ).join("") || '<p class="mut">No alerts yet.</p>';
+}
+function applySignals(obj) {
+  data = obj || {};
+  for (const [p, d] of Object.entries(data)) {
+    const prev = lastSig[p];
+    if (prev && prev !== d.signal) {
+      if (d.signal === "DANGER") { banner(`${p}: DANGER. ${d.reason}. Do not enter.`); beep(300, .25, 3); }
+      else if (d.signal === "BUY" || d.signal === "SELL") { banner(`${p}: ${d.signal} conditions`); beep(880, .15); }
+      if (demo) demoAlerts.unshift({ ts: Date.now(), pair: p, from: prev, to: d.signal, reason: d.reason || "" });
+    }
+    lastSig[p] = d.signal;
+  }
+  if (demo) showDemoAlerts();
+  if (!sel || !data[sel]) sel = Object.keys(data)[0];
+  render();
+}
+// [start price, decimals, typical step]
+const DEMO_PAIRS = { EURUSD: [1.0850, 5, 0.0004], GBPUSD: [1.2700, 5, 0.0005], USDJPY: [150.20, 3, 0.04], AUDUSD: [0.6600, 5, 0.0003], USDCAD: [1.3600, 5, 0.0004], XAUUSD: [2350.0, 2, 0.6] };
+function demoInit() {
+  demoSim = {};
+  for (const [p, [px, dec, stp]] of Object.entries(DEMO_PAIRS)) {
+    const spark = []; let v = px;
+    for (let i = 0; i < 60; i++) { v += (Math.random() - .5) * stp; spark.push(v); }
+    demoSim[p] = { px: v, dec, stp, spark, drift: (Math.random() - .5) * stp * .3, hot: 0 };
+  }
+}
+function demoTick() {
+  const out = {};
+  for (const [p, m] of Object.entries(demoSim)) {
+    if (Math.random() < .05) m.drift = (Math.random() - .5) * m.stp * .5;
+    if (!m.hot && Math.random() < .01) m.hot = 8;
+    m.px += m.drift + (Math.random() - .5) * m.stp * (m.hot ? 4 : 1);
+    m.spark.push(m.px); if (m.spark.length > 60) m.spark.shift();
+    if (m.hot) m.hot--;
+    const avg = n => m.spark.slice(-n).reduce((a, b) => a + b, 0) / n;
+    const z = (avg(5) - avg(20)) / (m.stp * 2);
+    const s1 = 1 / (1 + Math.exp(-3 * z)), conf = Math.abs(z) / (1 + Math.abs(z));
+    const pWait = .55 * (1 - conf) + .05, rest = 1 - pWait;
+    const pBuy = rest * s1, pSell = rest * (1 - s1);
+    const sig = m.hot ? "DANGER" : pBuy > .55 ? "BUY" : pSell > .55 ? "SELL" : "WAIT";
+    const last10 = m.spark.slice(-10), rng = (Math.max(...last10) - Math.min(...last10)) / m.stp;
+    out[p] = {
+      signal: sig, reason: sig === "DANGER" ? "Volatility spike" : "",
+      trend: z > .3 ? "up" : z < -.3 ? "down" : "sideways",
+      volatility: m.hot ? "HIGH" : rng > 3.5 ? "MEDIUM" : "LOW",
+      bid: m.px.toFixed(m.dec), spread: 12, ts: now(), tickAgeSec: 0,
+      tf: { M5: Math.sign(avg(5) - avg(20)), M15: Math.sign(avg(10) - avg(30)), H1: Math.sign(avg(20) - avg(45)), H4: Math.sign(avg(30) - avg(60)) },
+      pBuy, pSell, pWait, spark: m.spark.slice(), model: {}
+    };
+  }
+  applySignals(out);
+}
+function setDemo(on) {
+  demo = on; clearInterval(demoTimer); lastSig = {}; sel = null;
+  $("demo").textContent = on ? "Stop demo" : "Demo data";
+  $("demobar").style.display = on ? "block" : "none";
+  if (on) { demoInit(); demoAlerts = []; demoTick(); demoTimer = setInterval(demoTick, 2000); }
+  else { $("alerts").innerHTML = realAlertsHtml; applySignals(realData); }
+}
+$("demo").onclick = () => setDemo(!demo);
+
 // A pair is stale if the broker feed stopped OR its last write is older than 10 s.
 const pairStale = d => d.stale || (d.ts && now() - d.ts > 10000);
 function status() {
+  if (demo) { const e = $("status"); e.textContent = "DEMO"; e.className = "status DEMO"; return "DEMO"; }
   const age = now() - hb;
   const stt = !online || !hb || age > 15000 ? "OFFLINE" : (st.mt5Connected === false || Object.values(data).some(pairStale)) ? "STALE" : "LIVE";
   const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
@@ -381,7 +442,7 @@ function render() {
     r.onclick = () => { sel = r.dataset.p; render(); };
     r.onkeydown = e => { if (e.key === "Enter") r.onclick(); };
   });
-  const d = data[sel]; if (!d) return;
+  const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
   const m = d.model || {};
   const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${(v || 0) * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
   $("detail").innerHTML = `
@@ -394,7 +455,7 @@ function render() {
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
     <p><span class="tag ${esc(d.signal)}">${esc(d.signal)}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
     <p class="mut">Tested on unseen data: ${m.holdout_hit_rate != null ? pct(m.holdout_hit_rate) + " of strong signals were right (" + esc(m.holdout_signals) + " signals)" : "not enough strong signals to measure"}.
-    Last tick ${esc(d.tickAgeSec)}s ago.</p>`;
+    Last tick ${esc(d.tickAgeSec)}s ago.</p>${demo ? '<p class="mut">Simulated data for demonstration only.</p>' : ""}`;
   draw(d.spark || []);
 }
 function draw(a) {
