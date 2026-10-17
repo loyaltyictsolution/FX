@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forex Radar</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#12202e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#12202e;--panel:#1a2c3f;--line:#2b4259;--tx:#e8eef4;--mut:#8fa5ba;
 --buy:#2ec4b6;--sell:#ef6a5b;--wait:#f2b84b;--danger:#ff3b5c;--off:#6b7b8c}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:16px 16px 48px;max-width:1100px;margin-inline:auto}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
 .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
 h1{font-size:20px;margin:0;font-weight:600}
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bar{display:flex;gap:10px;align-items:center}
 .status{padding:6px 14px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid currentColor}
-.DEMO{color:#a99bff}.LIVE{color:var(--buy)}.STALE{color:var(--wait)}.OFFLINE{color:var(--danger)}
+.LIVE{color:var(--buy)}.STALE{color:var(--wait)}.OFFLINE{color:var(--danger)}
 button{background:var(--panel);color:var(--tx);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
 button:focus-visible,.row:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
 #banner{display:none;margin-bottom:14px;padding:12px 16px;border-radius:10px;background:var(--danger);color:#fff;font-weight:600}
@@ -48,7 +48,7 @@ canvas{width:100%;height:120px;display:block}
 #login{max-width:360px;margin:12vh auto}
 #login input,.f input{width:100%;padding:10px 12px;margin:6px 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
 #login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
-#err{color:var(--danger);min-height:22px;font-size:13px;margin-top:10px}
+#err{color:var(--danger);min-height:22px;font-size:13px}
 #app{display:none}
 #admin{display:none;margin-top:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
@@ -60,8 +60,17 @@ canvas{width:100%;height:120px;display:block}
 #toast{margin-left:8px;font-size:13px;color:var(--mut)}
 .PAUSED{background:var(--off);color:#fff}
 .row.PAUSED{border-left-color:var(--off)}
-#diag{display:none;position:fixed;left:0;right:0;bottom:0;z-index:99;background:#000;color:#0f0;font:12px monospace;padding:6px 8px;word-break:break-all}
-body.debug #diag{display:block}
+
+header{position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5;margin-bottom:10px}
+.DEMO{color:#b69cff}
+#why{margin-bottom:14px;padding:12px 16px}
+#why.OFFLINE{border-color:var(--danger)}#why.STALE{border-color:var(--wait)}#why.LIVE{border-color:var(--buy)}#why.DEMO{border-color:#b69cff}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chips span{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
+details#admin summary{cursor:pointer;font-weight:600;padding:2px 0}
+details#admin[open] summary{margin-bottom:8px}
+code{background:var(--bg);padding:1px 6px;border-radius:4px}
+@media(max-width:600px){body{padding:10px}.row{grid-template-columns:1fr auto}.row .num{display:none}.big{font-size:28px}.bar{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -71,519 +80,301 @@ body.debug #diag{display:block}
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
     <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
-    <label class="mut" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="showpw" style="width:auto;margin:0;padding:0"> Show password</label>
-    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:6px 0 12px"><input type="checkbox" id="keep" style="width:auto;margin:0;padding:0"> Keep me signed in on this device</label>
+    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 6px"><input id="sp" type="checkbox" style="width:auto;margin:0"> Show password</label>
+    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 12px"><input id="rm" type="checkbox" style="width:auto;margin:0"> Remember my email on this device</label>
     <button class="go" type="submit">Sign in</button>
   </form>
-  <button id="rp" type="button" style="margin-top:10px;width:100%">Reset password</button>
-  <button id="fg" type="button" style="margin-top:10px;width:100%">Clear saved email</button>
-  <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
   <div id="err" role="alert"></div>
-  <p class="mut" id="ver" style="font-size:12px">Page v12: script has not started</p>
 </section>
 <div id="app">
-<header>
-  <h1>Forex Radar</h1>
-  <div class="bar">
-    <button id="demo">Demo data</button><button id="snd">Turn on sound</button><button id="push" hidden>Enable phone alerts</button><button id="out">Sign out</button>
-    <span id="status" class="status OFFLINE">OFFLINE</span>
-  </div>
+<header><h1>Forex Radar</h1>
+  <div class="bar"><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
-<div id="demobar" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:#3a3470;color:#fff;font-weight:600">DEMO MODE: simulated prices and signals for testing this screen. Not real market data. Do not trade on these.</div>
+<div id="why" class="panel OFFLINE" role="status"></div>
 <main>
-  <section class="panel" id="list" aria-label="Currency pairs"><p class="mut">Waiting for the backend to send data.</p></section>
+  <section class="panel" id="list" aria-label="Currency pairs"></section>
   <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
 </main>
-<section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"></div></section>
-<section class="panel" id="admin" aria-label="Admin controls">
-  <b>Admin controls</b>
-  <div class="grid" id="health"></div>
+<section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
+<details class="panel" id="admin"><summary>Admin settings</summary>
+  <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
-    <button class="pri" id="bref">Refresh signals now</button>
-    <button id="bret">Retrain models</button>
-    <button id="bpause">Pause signals</button>
-    <label class="mut">Min confidence <input id="thr" type="number" min="0.5" max="0.9" step="0.01"></label>
-    <button id="bthr">Save</button><span id="toast" role="status"></span>
-    <label class="mut">Approve user ID <input id="apuid" style="width:220px" placeholder="paste their UID"></label><button id="bap">Approve</button>
+    <label class="mut">API key <input id="key" type="password" style="width:230px" autocomplete="off" placeholder="paste key"></label>
+    <label class="mut">Min strength <input id="thr" type="number" min="0.4" max="0.9" step="0.05"></label>
+    <button class="pri" id="save">Save</button><span id="toast" role="status"></span>
   </div>
-  <details id="connect" style="margin-top:14px">
-    <summary><b>Connect MT5 (no Python)</b> <span id="feedst" class="mut">○ MT5 feed not connected</span></summary>
-    <ol class="mut" style="line-height:1.7;padding-left:20px">
-      <li>Firebase > Authentication > Users > <b>Add user</b>: a separate email and password just for the feed. Copy its UID.</li>
-      <li>Realtime Database > Data: add <span class="num">feeders</span> > <span class="num">&lt;feed UID&gt;</span> = <span class="num">true</span>.</li>
-      <li>Rules: add the <span class="num">feed</span> block (given in chat), then Publish.</li>
-      <li>On the Windows PC or VPS with MT5: File > Open Data Folder > MQL5 > Experts, paste <b>RadarFeed.mq5</b>, open MetaEditor (F4), press F7 to compile.</li>
-      <li>MT5 > Tools > Options > Expert Advisors > tick Allow WebRequest and add <span class="num">https://identitytoolkit.googleapis.com</span> and <span class="num">https://loyalty-fx-default-rtdb.firebaseio.com</span>.</li>
-      <li>Drag RadarFeed onto a chart, enter the feed email and password in Inputs, turn on Algo Trading. This light turns green within seconds.</li>
-    </ol>
-  </details>
-</section>
-<p class="note">Alerts only. This tool places no orders. Probabilities are model estimates, not guarantees. Check the hit rate shown for each pair.</p>
+  <div class="grid" id="health"></div>
+</details>
 </div>
-<div id="diag">diag: waiting for script</div>
+<p class="note">Alerts only. No orders. Signals are rule-based scores from public price data, not guarantees, and prices can differ slightly from your Exness quotes. Check the tested hit rate on each pair. Alerts work only while this page stays open.</p>
 
-<script id="main" type="text/plain">
-if (/debug/.test(location.search)) document.body.classList.add("debug");
-const diag = m => { const d = document.getElementById("diag"); if (d) d.textContent = "diag: " + m; };
-function showBanner(m) { const b = document.getElementById("banner"); if (b) { b.textContent = m; b.classList.add("show"); } }
-window.addEventListener("error", e => {
-  if (e.message === "Script error." && !e.lineno) { diag("vague cross-site script error (ignored)"); console.warn("Vague cross-site script error", e); return; }
-  const m = "Page error: " + e.message + " (line " + e.lineno + ")";
-  const el = document.getElementById("err"); if (el) el.textContent = m;
-  showBanner(m); diag(m);
-});
-window.addEventListener("unhandledrejection", e => {
-  const m = "Error: " + ((e.reason && (e.reason.code || e.reason.message)) || "unknown");
-  const el = document.getElementById("err"); if (el) { el.style.color = ""; el.textContent = m; }
-  showBanner(m); diag(m);
-});
-document.getElementById("ver").textContent = "Page v12: script running";
-diag("script running");
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com",
-  databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com",
-  projectId: "loyalty-fx", messagingSenderId: "754089568350", appId: "1:754089568350:web:6258778a93f4c941c16ccf"
-};
-// Project settings > Cloud Messaging > Web Push certificates > Generate key pair
-const VAPID_KEY = "PASTE";
-const configMissing = Object.values(firebaseConfig).some(v => !v || String(v).includes("PASTE"));
-if (location.protocol === "file:") console.warn("Opened as a local file. Serve it over http(s) or use your github.io URL.");
-let auth = null, dbr = null, fbError = "";
-if (typeof firebase === "undefined") fbError = "Could not load Firebase from gstatic.com. Check your internet connection or ad blocker, then reload.";
-else if (configMissing) fbError = "Setup needed: fill in firebaseConfig at the top of the script in index.html (values still say PASTE).";
-else {
-  try {
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth(); dbr = firebase.database();
-  } catch (e) { fbError = "Firebase setup failed: " + e.message; console.error(e); }
-}
-const ready = !!(auth && dbr);
-if (ready) {
-  // Closing the tab signs you out. If the browser blocks storage, fall back to in-memory so login still works.
-  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
-    .catch(() => auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {}));
-}
-let data = {}, sel = null, hb = 0, soundOn = false, audio, lastSig = {}, st = {}, cfg = {},
-    isAdmin = false, offset = 0, online = true, subs = [], idle;
-
-const $ = id => document.getElementById(id);
-const pct = x => Math.round((x || 0) * 100) + "%";
-const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const now = () => Date.now() + offset;
-const ago = ms => !ms ? "never" : Math.max(0, Math.round((now() - ms) / 1000)) + "s ago";
-
-const AUTH_MSG = {
-  "auth/user-not-found": "No account with this email. Add the user in Firebase > Authentication > Users.",
-  "auth/wrong-password": "Wrong password.",
-  "auth/invalid-credential": "Wrong email or password, or this user does not exist in Firebase yet.",
-  "auth/invalid-email": "That email address is not valid.",
-  "auth/invalid-api-key": "The apiKey in firebaseConfig is wrong. Copy it from Project settings > Your apps > Web.",
-  "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The apiKey in firebaseConfig is wrong.",
-  "auth/operation-not-allowed": "Email/Password sign-in is not enabled in Firebase > Authentication > Sign-in method.",
-  "auth/email-already-in-use": "This email already has an account. Use Sign in instead.",
-  "auth/weak-password": "Password too weak. Use at least 8 characters.",
-  "auth/admin-restricted-operation": "Sign-ups are switched off in Firebase. Add your user in Authentication > Users > Add user, then sign in.",
-  "auth/user-disabled": "This account is disabled in Firebase.",
-  "auth/too-many-requests": "Too many attempts. Wait a few minutes or reset the password.",
-  "auth/network-request-failed": "Network error. Check your connection.",
-  "auth/unauthorized-domain": "This domain is not authorised. Add it in Authentication > Settings > Authorized domains."
-};
-let busyT;
-function busy(msg) {
-  clearTimeout(busyT); $("err").style.color = "var(--mut)"; $("err").textContent = msg;
-  busyT = setTimeout(() => { $("err").style.color = ""; $("err").textContent = "No reply from Firebase after 15 seconds. Check your internet, turn off ad blockers for this site, and check the API key is not restricted to a different website."; }, 15000);
-}
-function done() { clearTimeout(busyT); $("err").style.color = ""; }
-function showErr(e) {
-  done();
-  const code = (e && e.code) || "unknown";
-  let msg = AUTH_MSG[code];
-  if (!msg && code.startsWith("auth/requests-from-referer")) msg = "Your API key is restricted to another website. Open the page from the allowed github.io URL, or edit the key restriction in Google Cloud.";
-  $("err").textContent = (msg || "Sign-in failed.") + " (" + code + ")";
-  console.error("Sign-in error:", e);
-}
-$("ver").textContent = ready ? "Page v12: script running, connected to " + firebaseConfig.projectId : "Page v12: script running, Firebase not ready";
-if (fbError) { $("err").textContent = fbError; diag(fbError); }
-else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
-async function setKeep() {
-  try { await auth.setPersistence($("keep").checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
-}
-$("fg").onclick = () => {
-  try { localStorage.removeItem("fx_email"); } catch (e) {}
-  $("em").value = ""; $("pw").value = ""; $("err").textContent = "Cleared. Type the correct email and password."; $("em").focus();
-};
-$("showpw").onchange = () => { $("pw").type = $("showpw").checked ? "text" : "password"; };
-try { $("em").value = localStorage.getItem("fx_email") || ""; ($("em").value ? $("pw") : $("em")).focus(); } catch (e) {}
-$("lf").onsubmit = async e => {
-  e.preventDefault();
-  if (!ready) { $("err").textContent = fbError; return; }
-  busy("Signing in...");
-  try {
-    await setKeep();
-    await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value);
-    try { localStorage.setItem("fx_email", $("em").value.trim()); } catch (e) {}
-    done(); $("err").textContent = "Signed in, loading...";
-  } catch (e) { showErr(e); }
-  $("pw").value = "";
-};
-$("su").onclick = async () => {
-  if (!ready) { $("err").textContent = fbError; return; }
-  const em = $("em").value.trim(), pw = $("pw").value;
-  if (!em || pw.length < 8) { $("err").textContent = "Enter your email and a password of at least 8 characters, then click Create account."; return; }
-  busy("Creating account...");
-  try { await setKeep(); await auth.createUserWithEmailAndPassword(em, pw); try { localStorage.setItem("fx_email", em); } catch (e) {} done(); $("err").textContent = ""; }
-  catch (e) { showErr(e); }
-  $("pw").value = "";
-};
-$("rp").onclick = async () => {
-  if (!ready) { $("err").textContent = fbError; return; }
-  const em = $("em").value.trim();
-  if (!em) { $("err").textContent = "Type your email above, then click Reset password."; return; }
-  try { await auth.sendPasswordResetEmail(em); $("err").textContent = "Reset email sent. Check your inbox and spam folder."; }
-  catch (e) { showErr(e); }
-};
-$("out").onclick = () => auth && auth.signOut();
-function resetIdle() { clearTimeout(idle); idle = setTimeout(() => auth.signOut(), 30 * 60 * 1000); }   // 30 min idle logout
-["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth && auth.currentUser && resetIdle()));
-
-$("snd").onclick = () => {
-  soundOn = !soundOn;
-  if (soundOn && !audio) audio = new (window.AudioContext || window.webkitAudioContext)();
-  $("snd").textContent = soundOn ? "Sound on" : "Turn on sound";
-  if (soundOn) beep(660, .12);
-};
-function beep(freq, dur, n = 1) {
-  if (!soundOn || !audio) return;
-  for (let i = 0; i < n; i++) {
-    const o = audio.createOscillator(), g = audio.createGain();
-    o.frequency.value = freq; o.connect(g); g.connect(audio.destination);
-    g.gain.value = .15; const t = audio.currentTime + i * (dur + .08);
-    o.start(t); o.stop(t + dur);
-  }
-}
-function banner(msg) {
-  const b = $("banner"); b.textContent = msg; b.classList.add("show");
-  setTimeout(() => b.classList.remove("show"), 12000);
-}
-if (ready && "Notification" in window && "serviceWorker" in navigator && firebase.messaging && firebase.messaging.isSupported) {
-  try {
-    Promise.resolve(firebase.messaging.isSupported()).then(ok => { if (ok) $("push").hidden = false; }).catch(() => {});
-  } catch (e) { console.warn("Push check failed:", e); }
-}
-$("push").onclick = async () => {
-  if (!ready) return;
-  if (VAPID_KEY.includes("PASTE")) return banner("Set VAPID_KEY in index.html first (Cloud Messaging > Web Push certificates).");
-  try {
-    if (await Notification.requestPermission() !== "granted")
-      return banner("Alerts blocked. Allow notifications for this site in your browser settings.");
-    const reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
-    const token = await firebase.messaging().getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-    if (!token) throw new Error("no token");
-    let h = 0; for (const c of token) h = (h * 31 + c.charCodeAt(0)) | 0;
-    await dbr.ref(`fcmTokens/${auth.currentUser.uid}/t${(h >>> 0).toString(36)}`).set(token);
-    $("push").textContent = "Alerts enabled"; banner("Alerts enabled on this device.");
-  } catch (e) { console.error(e); banner("Could not enable alerts: " + (e.code || e.message) + ". Check the VAPID key, config and that your account is approved."); }
-};
-function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 4000); }
-
-if (ready) dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
-if (ready) dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
-
-if (ready) auth.onAuthStateChanged(async u => {
-  subs.forEach(([r, ev]) => r.off(ev)); subs = [];
-  // Show the right screen FIRST so nothing below can leave the login form on screen.
-  $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
-  if (!u) { if (demo) setDemo(false); realData = {}; feedTicks = null; feedBars = null; feedData = {}; feedTs = 0; data = {}; lastSig = {}; isAdmin = false; diag("signed out"); return; }
-  diag("signed in as " + u.email + " | uid " + u.uid + " | checking access...");
-  try {
-    resetIdle();
-    try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; }
-    catch (e) { isAdmin = false; showBanner("Database read denied (" + (e.code || e.message) + "). Publish database.rules.json in Realtime Database > Rules."); }
-    $("admin").style.display = isAdmin ? "block" : "none";
-    let ok = isAdmin;
-    if (!ok) { try { ok = (await dbr.ref("approved/" + u.uid).get()).val() === true; } catch { ok = false; } }
-    diag("signed in as " + u.email + " | uid " + u.uid + " | admin=" + isAdmin + " approved=" + ok);
-    if (!ok) {
-      $("list").innerHTML = '<p><b>Account created. Waiting for approval.</b></p><p class="mut">Send this ID to the admin so they can approve you:</p><p class="num" style="word-break:break-all">' + esc(u.uid) + '</p><p class="mut">Are you the owner and this is the first account? Claim admin once. It only works while no admin exists.</p><button id="claim" class="pri" style="background:var(--buy);color:#06231f;border:0;font-weight:600">Claim admin</button> <span id="claimmsg" class="mut"></span>';
-      $("claim").onclick = () => dbr.ref("admins/" + u.uid).set(true).then(() => location.reload()).catch(e => { $("claimmsg").textContent = "Could not claim admin (" + (e.code || e.message) + "). An admin may already exist, or the database rules are not published."; });
-      $("detail").innerHTML = ""; return;
-    }
-    const denied = e => showBanner("Database read denied: " + (e.code || e.message));
-    const on = (path, fn, quiet) => { const r = dbr.ref(path); r.on("value", fn, quiet ? (() => {}) : denied); subs.push([r, "value"]); };
-    on("heartbeat", s => { hb = s.val() || 0; });
-    on("status", s => { st = s.val() || {}; renderAdmin(); });
-    on("config", s => { cfg = s.val() || {}; renderAdmin(); });
-    on("feed/ticks", s => { feedTicks = s.val() || null; rebuildFeed(); }, true);
-    on("feed/bars", s => { feedBars = s.val() || null; rebuildFeed(); }, true);
-    on("signals", s => { realData = s.val() || {}; refreshView(); });
-    const ar = dbr.ref("alerts").limitToLast(12);
-    ar.on("value", s => {
-      const rows = Object.values(s.val() || {}).reverse();
-      realAlertsHtml = rows.map(a =>
-        `<div><span class="num mut">${new Date(a.ts).toLocaleTimeString()}</span> <b>${esc(a.pair)}</b> ${esc(a.from)} to ${esc(a.to)}${a.reason ? " (" + esc(a.reason) + ")" : ""}</div>`
-      ).join("") || '<p class="mut">No alerts yet.</p>';
-      if (!demo) $("alerts").innerHTML = realAlertsHtml;
-    }, denied);
-    subs.push([ar, "value"]);
-  } catch (e) { showBanner("Dashboard error: " + (e.message || e)); diag("dashboard error: " + (e.message || e)); console.error(e); }
-}, e => diag("auth error: " + e.message));
-
-
-// ---- Shared signal handling + demo mode (simulated, local only, nothing is written to Firebase) ----
-let realData = {}, demo = false, demoTimer = null, demoSim = null, demoAlerts = [], realAlertsHtml = '<p class="mut">No alerts yet.</p>';
-function showDemoAlerts() {
-  $("alerts").innerHTML = demoAlerts.slice(0, 12).map(a =>
-    `<div><span class="num mut">${new Date(a.ts).toLocaleTimeString()}</span> <b>${esc(a.pair)}</b> ${esc(a.from)} to ${esc(a.to)}${a.reason ? " (" + esc(a.reason) + ")" : ""}</div>`
-  ).join("") || '<p class="mut">No alerts yet.</p>';
-}
-function applySignals(obj) {
-  data = obj || {};
-  const local = demo || Object.values(data).some(d => d.source === "feed");
-  for (const [p, d] of Object.entries(data)) {
-    const prev = lastSig[p];
-    if (prev && prev !== d.signal) {
-      if (d.signal === "DANGER") { banner(`${p}: DANGER. ${d.reason}. Do not enter.`); beep(300, .25, 3); }
-      else if (d.signal === "BUY" || d.signal === "SELL") { banner(`${p}: ${d.signal} conditions`); beep(880, .15); }
-      if (local) demoAlerts.unshift({ ts: Date.now(), pair: p, from: prev, to: d.signal, reason: d.reason || "" });
-    }
-    lastSig[p] = d.signal;
-  }
-  if (local) showDemoAlerts();
-  if (!sel || !data[sel]) sel = Object.keys(data)[0];
-  render();
-}
-// [start price, decimals, typical step]
-const DEMO_PAIRS = { EURUSD: [1.0850, 5, 0.0004], GBPUSD: [1.2700, 5, 0.0005], USDJPY: [150.20, 3, 0.04], AUDUSD: [0.6600, 5, 0.0003], USDCAD: [1.3600, 5, 0.0004], XAUUSD: [2350.0, 2, 0.6] };
-function demoInit() {
-  demoSim = {};
-  for (const [p, [px, dec, stp]] of Object.entries(DEMO_PAIRS)) {
-    const spark = []; let v = px;
-    for (let i = 0; i < 60; i++) { v += (Math.random() - .5) * stp; spark.push(v); }
-    demoSim[p] = { px: v, dec, stp, spark, drift: (Math.random() - .5) * stp * .3, hot: 0 };
-  }
-}
-function demoTick() {
-  const out = {};
-  for (const [p, m] of Object.entries(demoSim)) {
-    if (Math.random() < .05) m.drift = (Math.random() - .5) * m.stp * .5;
-    if (!m.hot && Math.random() < .01) m.hot = 8;
-    m.px += m.drift + (Math.random() - .5) * m.stp * (m.hot ? 4 : 1);
-    m.spark.push(m.px); if (m.spark.length > 60) m.spark.shift();
-    if (m.hot) m.hot--;
-    const avg = n => m.spark.slice(-n).reduce((a, b) => a + b, 0) / n;
-    const z = (avg(5) - avg(20)) / (m.stp * 2);
-    const s1 = 1 / (1 + Math.exp(-3 * z)), conf = Math.abs(z) / (1 + Math.abs(z));
-    const pWait = .55 * (1 - conf) + .05, rest = 1 - pWait;
-    const pBuy = rest * s1, pSell = rest * (1 - s1);
-    const sig = m.hot ? "DANGER" : pBuy > .55 ? "BUY" : pSell > .55 ? "SELL" : "WAIT";
-    const last10 = m.spark.slice(-10), rng = (Math.max(...last10) - Math.min(...last10)) / m.stp;
-    out[p] = {
-      signal: sig, reason: sig === "DANGER" ? "Volatility spike" : "",
-      trend: z > .3 ? "up" : z < -.3 ? "down" : "sideways",
-      volatility: m.hot ? "HIGH" : rng > 3.5 ? "MEDIUM" : "LOW",
-      bid: m.px.toFixed(m.dec), spread: 12, ts: now(), tickAgeSec: 0,
-      tf: { M5: Math.sign(avg(5) - avg(20)), M15: Math.sign(avg(10) - avg(30)), H1: Math.sign(avg(20) - avg(45)), H4: Math.sign(avg(30) - avg(60)) },
-      pBuy, pSell, pWait, spark: m.spark.slice(), model: {}
-    };
-  }
-  applySignals(out);
-}
-function setDemo(on) {
-  demo = on; clearInterval(demoTimer); lastSig = {}; sel = null;
-  $("demo").textContent = on ? "Stop demo" : "Demo data";
-  $("demobar").style.display = on ? "block" : "none";
-  if (on) { demoInit(); demoAlerts = []; demoTick(); demoTimer = setInterval(demoTick, 2000); }
-  else { $("alerts").innerHTML = realAlertsHtml; refreshView(); }
-}
-$("demo").onclick = () => setDemo(!demo);
-
-
-// ---- Live MT5 feed (RadarFeed.mq5 writes feed/ticks and feed/bars; signals are worked out here) ----
-let feedTicks = null, feedBars = null, feedData = {}, feedTs = 0, feedConn = null, spreadAvg = {};
-const ema = (a, n) => { const k = 2 / (n + 1); let e = a[0]; for (let i = 1; i < a.length; i++) e = a[i] * k + e * (1 - k); return e; };
-const sdev = a => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length); };
-// Trend direction for one timeframe: fast vs slow average, ignoring differences that are just noise.
-function tfSign(a) {
-  if (!Array.isArray(a) || a.length < 30) return 0;
-  const r = []; for (let i = 1; i < a.length; i++) r.push(a[i] - a[i - 1]);
-  const d = ema(a, 10) - ema(a, 30), s = sdev(r) || 1e-12;
-  return Math.abs(d) > TREND_K * s ? Math.sign(d) : 0;
-}
-const TREND_K = 2.5;
-function rsi14(a) {
-  if (!a || a.length < 15) return 50;
-  let g = 0, l = 0;
-  for (let i = a.length - 14; i < a.length; i++) { const d = a[i] - a[i - 1]; if (d > 0) g += d; else l -= d; }
-  return l === 0 ? 100 : 100 - 100 / (1 + g / l);
-}
-function analyse(p, t, b) {
-  const tf = { M5: tfSign(b.M5), M15: tfSign(b.M15), H1: tfSign(b.H1), H4: tfSign(b.H4) };
-  const a = (tf.M5 * 1 + tf.M15 * 2 + tf.H1 * 3 + tf.H4 * 2) / 8;      // -1 (all down) .. +1 (all up)
-  const m5 = Array.isArray(b.M5) ? b.M5 : [];
-  const r = rsi14(m5);
-  const rets = []; for (let i = 1; i < m5.length; i++) rets.push(m5[i] - m5[i - 1]);
-  const ratio = rets.length >= 30 ? sdev(rets.slice(-12)) / (sdev(rets.slice(0, -12)) || 1e-12) : 1;
-  const sp = Number(t.spread) || 0;
-  spreadAvg[p] = spreadAvg[p] == null ? sp : spreadAvg[p] * 0.98 + sp * 0.02;
-  const thr = cfg.threshold ?? 0.55;
-  let signal = "WAIT", reason = "";
-  if (ratio > 3.5) { signal = "DANGER"; reason = "Volatility spike"; }
-  else if (sp > 5 && sp > spreadAvg[p] * 3) { signal = "DANGER"; reason = "Spread widened"; }
-  else if (a >= thr && tf.M5 > 0 && tf.M15 > 0 && r < 75) signal = "BUY";
-  else if (-a >= thr && tf.M5 < 0 && tf.M15 < 0 && r > 25) signal = "SELL";
-  const bid = t.digits != null ? Number(t.bid).toFixed(t.digits) : t.bid;
-  return {
-    signal, reason, source: "feed",
-    trend: a > .25 ? "up" : a < -.25 ? "down" : "sideways",
-    volatility: ratio > 2.5 ? "HIGH" : ratio > 1.3 ? "MEDIUM" : "LOW",
-    bid, spread: t.spread, ts: feedTs, tickAgeSec: Math.max(0, Math.round((now() - feedTs) / 1000)),
-    tf, pBuy: Math.max(a, 0), pSell: Math.max(-a, 0), pWait: 1 - Math.abs(a),
-    spark: m5.concat([Number(t.bid)]).slice(-60), model: {}
-  };
-}
-function rebuildFeed() {
-  feedTs = (feedTicks && feedTicks.ts) || 0;
-  feedConn = feedTicks ? feedTicks.connected !== false : null;
-  const tp = (feedTicks && feedTicks.pairs) || {}, bp = (feedBars && feedBars.pairs) || {}, out = {};
-  for (const [p, t] of Object.entries(tp)) out[p] = analyse(p, t, bp[p] || {});
-  feedData = out;
-  refreshView();
-}
-// Use the Python backend's signals when it is alive, otherwise the MT5 feed, otherwise whatever the backend last wrote.
-function refreshView() {
-  if (demo) return;
-  const backendLive = hb && now() - hb < 15000 && Object.keys(realData).length > 0;
-  applySignals(backendLive ? realData : (Object.keys(feedData).length ? feedData : realData));
-}
-// A pair is stale if the broker feed stopped OR its last write is older than 10 s.
-const pairStale = d => d.stale || (d.ts && now() - d.ts > 10000);
-function status() {
-  if (demo) { const e = $("status"); e.textContent = "DEMO"; e.className = "status DEMO"; return "DEMO"; }
-  const beat = Math.max(hb || 0, feedTs || 0), age = now() - beat;
-  const mt5ok = (feedTs && feedTs >= (hb || 0)) ? feedConn : st.mt5Connected;
-  const stt = !online || !beat || age > 15000 ? "OFFLINE" : (mt5ok === false || Object.values(data).some(pairStale)) ? "STALE" : "LIVE";
-  const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
-  return stt;
-}
-setInterval(() => { if (auth && auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
-
-async function send(type) {
-  try {
-    await dbr.ref("commands").push({ type, by: auth.currentUser.email, ts: firebase.database.ServerValue.TIMESTAMP });
-    toast(type === "retrain" ? "Retraining. This can take a minute." : "Refresh sent.");
-  } catch { toast("Not allowed. This account is not an admin."); }
-}
-$("bref").onclick = () => send("refresh");
-$("bret").onclick = () => confirm("Retrain all models now? Signals pause updating for about a minute.") && send("retrain");
-$("bpause").onclick = () => dbr.ref("config/paused").set(!cfg.paused).catch(() => toast("Not allowed."));
-$("bap").onclick = () => {
-  if (!ready) return;
-  const v = $("apuid").value.trim();
-  if (!v) return toast("Paste the user ID first.");
-  try { dbr.ref("approved/" + v).set(true).then(() => { toast("Approved."); $("apuid").value = ""; }).catch(() => toast("Not allowed.")); }
-  catch (e) { toast("That is not a valid user ID."); }
-};
-$("bthr").onclick = () => {
-  const v = parseFloat($("thr").value);
-  if (!(v >= 0.5 && v <= 0.9)) return toast("Enter a value from 0.50 to 0.90.");
-  dbr.ref("config/threshold").set(v).then(() => toast("Saved.")).catch(() => toast("Not allowed."));
-};
-function renderAdmin() {
-  if (!isAdmin) return;
-  if (document.activeElement !== $("thr")) $("thr").value = cfg.threshold ?? 0.55;
-  $("bpause").textContent = cfg.paused ? "Resume signals" : "Pause signals";
-  $("feedst").textContent = feedTs && now() - feedTs < 15000 ? "● MT5 feed live" : "○ MT5 feed not connected";
-  const ages = Object.values(data).map(d => d.tickAgeSec ?? 0);
-  $("health").innerHTML = [
-    ["Backend heartbeat", ago(hb)], ["MT5 feed", feedTs ? ago(feedTs) : "not connected"],
-    ["MT5 terminal", ((feedTs && feedTs >= (hb || 0)) ? feedConn : st.mt5Connected) === false ? "Disconnected" : "Connected"],
-    ["Last refresh", ago(st.lastRefresh)], ["Last retrain", ago(st.lastRetrain)],
-    ["Backend started", ago(st.startedAt)], ["Oldest tick", ages.length ? Math.max(...ages) + "s" : "-"],
-    ["Signals", cfg.paused ? "Paused" : "Running"]
-  ].map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
-}
-
-function render() {
-  const stt = status();
-  $("list").innerHTML = Object.entries(data).map(([p, d]) => {
-    const sig = stt === "OFFLINE" ? "WAIT" : d.signal;
-    return `<div class="row ${esc(sig)} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
-      <div><b>${esc(p)}</b><div class="mut">${esc(d.trend)} / vol ${esc((d.volatility || "").toLowerCase())}</div></div>
-      <div class="num">${esc(d.bid)}</div>
-      <span class="tag ${esc(sig)}">${stt === "OFFLINE" ? "NO DATA" : esc(sig)}</span></div>`;
-  }).join("") || '<p class="mut">Waiting for the backend to send data.</p>';
-  document.querySelectorAll(".row").forEach(r => {
-    r.onclick = () => { sel = r.dataset.p; render(); };
-    r.onkeydown = e => { if (e.key === "Enter") r.onclick(); };
-  });
-  const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
-  const m = d.model || {};
-  const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${(v || 0) * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
-  $("detail").innerHTML = `
-    <div class="mut">${esc(sel)}${stt === "OFFLINE" ? " (backend offline, last known data)" : ""}</div>
-    <div class="big num">${esc(d.bid)} <span class="mut" style="font-size:14px">spread ${esc(d.spread ?? "-")} pts</span></div>
-    <canvas id="cv" width="600" height="120"></canvas>
-    <div class="tfs">${["M5", "M15", "H1", "H4"].map(t => {
-      const v = (d.tf || {})[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`;
-    }).join("")}</div>
-    <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
-    <p><span class="tag ${esc(d.signal)}">${esc(d.signal)}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
-    <p class="mut">${d.source === "feed" ? "Rule-based signal from live MT5 prices: trend agreement across M5, M15, H1 and H4, plus RSI and spike checks. Bars show indicator strength, not probabilities. No hit rate has been measured." : "Tested on unseen data: " + (m.holdout_hit_rate != null ? pct(m.holdout_hit_rate) + " of strong signals were right (" + esc(m.holdout_signals) + " signals)" : "not enough strong signals to measure") + "."}
-    Last tick ${esc(d.tickAgeSec)}s ago.</p>${demo ? '<p class="mut">Simulated data for demonstration only.</p>' : ""}`;
-  draw(d.spark || []);
-}
-function draw(a) {
-  const c = $("cv"); if (!c || a.length < 2) return;
-  const x = c.getContext("2d"), w = c.width, h = c.height;
-  const lo = Math.min(...a), hi = Math.max(...a), r = hi - lo || 1;
-  x.clearRect(0, 0, w, h); x.strokeStyle = "#2ec4b6"; x.lineWidth = 2; x.beginPath();
-  a.forEach((v, i) => { const px = i / (a.length - 1) * w, py = h - 6 - (v - lo) / r * (h - 12); i ? x.lineTo(px, py) : x.moveTo(px, py); });
-  x.stroke();
-}
-</script>
 <script>
-// Loads Firebase from gstatic first, then backup CDNs, then starts the app.
+// Loads Firebase from Google first, then jsDelivr if Google is blocked, then starts the app.
 (function () {
-  var V = "10.12.2";
-  var SRC = [
-    function (f) { return "https://www.gstatic.com/firebasejs/" + V + "/firebase-" + f + "-compat.js"; },
-    function (f) { return "https://cdn.jsdelivr.net/npm/firebase@" + V + "/firebase-" + f + "-compat.js"; },
-    function (f) { return "https://unpkg.com/firebase@" + V + "/firebase-" + f + "-compat.js"; }
-  ];
-  var d = document.getElementById("diag");
-  function say(m) { if (d) d.textContent = "diag: " + m; }
-  function load(url) {
-    return new Promise(function (res, rej) {
-      var el = document.createElement("script"), t;
-      el.crossOrigin = "anonymous";
-      el.src = url;
-      el.onload = function () { clearTimeout(t); res(); };
-      el.onerror = function () { clearTimeout(t); el.remove(); rej(new Error("blocked " + url)); };
-      t = setTimeout(function () { rej(new Error("timeout " + url)); }, 10000);
-      document.head.appendChild(el);
-    });
-  }
-  async function lib(f) {
-    for (var i = 0; i < SRC.length; i++) {
-      try { say("loading " + f + " (source " + (i + 1) + " of " + SRC.length + ")"); await load(SRC[i](f)); return i + 1; }
-      catch (e) { console.warn(e.message); }
-    }
-    return 0;
-  }
-  (async function () {
-    var used = [];
-    for (var f of ["app", "auth", "database"]) used.push(f + ":" + (await lib(f)));
-    var m = await lib("messaging"); used.push("messaging:" + m);
-    window.__fbLoad = used.join(" ");
-    var s = document.createElement("script");
-    s.textContent = document.getElementById("main").textContent;
-    document.body.appendChild(s);
-    var dd = document.getElementById("diag");
-    if (dd && /running/.test(dd.textContent)) dd.textContent += " | load " + window.__fbLoad + " (0 = failed)";
+  const bases = ["https://www.gstatic.com/firebasejs/10.12.2/", "https://cdn.jsdelivr.net/npm/firebase@10.12.2/"];
+  const load = u => new Promise((ok, no) => { const e = document.createElement("script"); e.src = u; e.onload = ok; e.onerror = no; document.head.appendChild(e); });
+  async function lib(n) { for (const b of bases) { try { await load(b + "firebase-" + n + "-compat.js"); return; } catch {} } throw new Error("Could not load Firebase (" + n + ")."); }
+  (async () => {
+    try { await lib("app"); await lib("auth"); await lib("database"); }
+    catch (e) { document.getElementById("err").textContent = e.message + " Check your internet connection, turn off ad blockers for this site, or try another browser."; return; }
+    const m = document.createElement("script"); m.textContent = document.getElementById("mainjs").textContent; document.body.appendChild(m);
   })();
 })();
+</script>
+<script>
+window.addEventListener("error", e => { const x = document.getElementById("err"); if (x && !x.textContent) x.textContent = "Page error: " + e.message; });
+</script>
+<script type="text/plain" id="mainjs">
+// ENGINE START
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+function ema(a, n) { const k = 2 / (n + 1), o = [a[0]]; for (let i = 1; i < a.length; i++) o.push(a[i] * k + o[i - 1] * (1 - k)); return o; }
+function series(cd) {
+  const c = cd.map(x => x.c), n = c.length, e9 = ema(c, 9), e21 = ema(c, 21), e50 = ema(c, 50);
+  const atr = [cd[0].h - cd[0].l], rs = [50]; let g = 0, l = 0;
+  for (let i = 1; i < n; i++) {
+    const tr = Math.max(cd[i].h - cd[i].l, Math.abs(cd[i].h - c[i - 1]), Math.abs(cd[i].l - c[i - 1]));
+    atr.push((atr[i - 1] * 13 + tr) / 14);
+    const d = c[i] - c[i - 1]; g = (g * 13 + Math.max(d, 0)) / 14; l = (l * 13 + Math.max(-d, 0)) / 14;
+    rs.push(100 - 100 / (1 + g / (l || 1e-12)));
+  }
+  return { c, e9, e21, e50, atr, rs };
+}
+function dirAt(S, i) {                       // -1 (strong sell) .. +1 (strong buy)
+  const { c, e9, e21, e50, atr, rs } = S, a = atr[i] || 1e-9;
+  const trend = e9[i] > e21[i] && e21[i] > e50[i] ? 1 : e9[i] < e21[i] && e21[i] < e50[i] ? -1 : (e9[i] > e21[i] ? .3 : -.3);
+  const mom = clamp((c[i] - c[i - 5]) / a, -2, 2) / 2 * .8, r = rs[i];
+  const rt = r >= 75 ? -.5 : r > 55 ? .5 : r <= 25 ? .5 : r < 45 ? -.5 : 0;
+  return Math.tanh((trend + mom + rt) / 1.5);
+}
+function volRatio(S, i) { let m = 0, k = 0; for (let j = Math.max(0, i - 100); j <= i; j++) { m += S.atr[j]; k++; } return S.atr[i] / (m / k || 1e-9); }
+function backtest(S, thr, H = 10) {          // hit = price moved >0.3 ATR our way within 10 bars; miss = against
+  let hit = 0, miss = 0, n = S.c.length;
+  for (let i = 120; i < n - H; i++) {
+    const d = dirAt(S, i); if (Math.abs(d) < thr) continue;
+    const f = (S.c[i + H] - S.c[i]) / S.atr[i] * Math.sign(d);
+    if (f > .3) hit++; else if (f < -.3) miss++;
+  }
+  return { hit, miss, rate: hit + miss ? hit / (hit + miss) : null };
+}
+function tfTrend(c, step) {
+  const r = []; for (let i = c.length - 1; i >= 0 && r.length < 60; i -= step) r.unshift(c[i]);
+  if (r.length < 22) return 0; const a = ema(r, 9), b = ema(r, 21); return a[a.length - 1] > b[b.length - 1] ? 1 : -1;
+}
+// ENGINE END
+
+const PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD"];
+// Paste apiKey and appId from Firebase > Project settings > Your apps > Web app. The rest is filled in.
+const firebaseConfig = { apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf" };
+if (Object.values(firebaseConfig).includes("PASTE")) {
+  document.getElementById("err").textContent = "Setup needed: open index.html and paste your Firebase apiKey and appId into firebaseConfig.";
+  throw new Error("firebaseConfig incomplete");
+}
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), dbr = firebase.database();
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+const $ = id => document.getElementById(id);
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = x => Math.round(x * 100) + "%";
+const fmt = (s, v) => v == null ? "-" : v.toFixed(s.includes("JPY") ? 3 : 5);
+const ago = ms => !ms ? "never" : Math.round((Date.now() - ms) / 1000) + "s ago";
+
+let KEY = "", THR = 0.6, isAdmin = false, data = {}, sel = null, P = {}, ws, hbT, wsUp = false, lastAny = 0,
+    lastPoll = 0, loaded = 0, loadErr = "", soundOn = false, audio, demo = false, demoTimer, alerts = [], lock, idle, timers = [];
+const POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000;   // keeps a 800-credit/day plan under budget
+
+function weekend() { const d = new Date(), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); }
+const wsLive = () => wsUp && Date.now() - lastAny < 30000;
+
+// ---------- login ----------
+try { const e0 = localStorage.getItem("fr_email"); if (e0) { $("em").value = e0; $("rm").checked = true; } } catch {}
+$("sp").onchange = () => { $("pw").type = $("sp").checked ? "text" : "password"; };
+$("lf").onsubmit = async e => {
+  e.preventDefault(); $("err").textContent = "";
+  try { $("rm").checked ? localStorage.setItem("fr_email", $("em").value.trim()) : localStorage.removeItem("fr_email"); } catch {}
+  try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
+  catch { $("err").textContent = "Wrong email or password."; }
+  $("pw").value = ""; $("sp").checked = false; $("pw").type = "password";
+};
+$("out").onclick = () => auth.signOut();
+function resetIdle() { clearTimeout(idle); idle = setTimeout(() => auth.signOut(), 30 * 60 * 1000); }
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth.currentUser && resetIdle()));
+
+// ---------- alerts ----------
+$("snd").onclick = async () => {
+  soundOn = !soundOn;
+  if (soundOn) {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)(); beep(660, .12);
+    if ("Notification" in window && Notification.permission === "default") await Notification.requestPermission();
+  }
+  $("snd").textContent = soundOn ? "Alerts on" : "Turn on alerts";
+};
+$("awake").onclick = async () => {
+  try { if (lock) { await lock.release(); lock = null; $("awake").textContent = "Keep screen on"; }
+        else { lock = await navigator.wakeLock.request("screen"); $("awake").textContent = "Screen stays on"; } }
+  catch { banner("Your browser does not allow keeping the screen on."); }
+};
+document.addEventListener("visibilitychange", async () => { if (lock && document.visibilityState === "visible") try { lock = await navigator.wakeLock.request("screen"); } catch {} });
+function beep(f, d, n = 1) { if (!audio) return; for (let i = 0; i < n; i++) { const o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = f; o.connect(g); g.connect(audio.destination); g.gain.value = .15; const t = audio.currentTime + i * (d + .08); o.start(t); o.stop(t + d); } }
+function banner(m) { const b = $("banner"); b.textContent = m; b.classList.add("show"); setTimeout(() => b.classList.remove("show"), 12000); }
+function raise(pair, from, to, reason, strength) {
+  const msg = to === "DANGER" ? `${pair}: DANGER. ${reason}. Do not enter.` : `${pair}: ${to} conditions (${pct(strength)})`;
+  alerts.unshift({ t: Date.now(), msg }); alerts = alerts.slice(0, 15);
+  $("alerts").innerHTML = alerts.map(a => `<div><span class="num mut">${new Date(a.t).toLocaleTimeString()}</span> ${esc(a.msg)}</div>`).join("");
+  if (!soundOn) return;
+  banner(msg); to === "DANGER" ? beep(300, .25, 3) : beep(880, .15);
+  if ("Notification" in window && Notification.permission === "granted") try { new Notification("Forex Radar", { body: msg }); } catch {}
+}
+
+// ---------- data ----------
+async function fetchCandles(sym, n) {
+  const r = await fetch(`https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym)}&interval=1min&outputsize=${n}&timezone=UTC&apikey=${encodeURIComponent(KEY)}`);
+  const j = await r.json(); if (j.status === "error" || !j.values) throw new Error(j.message || "No data");
+  return j.values.reverse().map(v => ({ t: Date.parse(v.datetime.replace(" ", "T") + "Z") / 1000, o: +v.open, h: +v.high, l: +v.low, c: +v.close }));
+}
+function onTick(sym, price, ts) {
+  const p = P[sym]; if (!p || !p.candles.length) return;
+  const m = Math.floor(ts / 60) * 60, c = p.candles, last = c[c.length - 1];
+  if (last.t === m) { last.c = price; last.h = Math.max(last.h, price); last.l = Math.min(last.l, price); }
+  else if (m > last.t) { c.push({ t: m, o: price, h: price, l: price, c: price }); if (c.length > 1500) c.shift(); }
+  p.price = price; p.tickAt = lastAny = Date.now(); p.dirty = true;
+}
+function merge(p, fresh) {
+  for (const f of fresh) { const last = p.candles[p.candles.length - 1];
+    if (last && f.t === last.t) Object.assign(last, f); else if (!last || f.t > last.t) p.candles.push(f); }
+  p.price = p.candles[p.candles.length - 1].c; p.tickAt = Date.now(); p.dirty = true;
+}
+async function bootstrap() {
+  loaded = 0; loadErr = "";
+  for (const s of PAIRS) {
+    try {
+      const cd = await fetchCandles(s, 1000);
+      P[s] = { candles: cd, price: cd[cd.length - 1].c, tickAt: 0, dirty: true, sig: "WAIT", dir: 0, dangerUntil: 0, reason: "", bt: null };
+      P[s].bt = backtest(series(cd), THR); loaded++;
+    } catch (e) { loadErr = e.message; if (/key|api|credit|limit/i.test(e.message)) break; }
+    await new Promise(r => setTimeout(r, 1500));
+  }
+}
+function connectWS() {
+  if (!KEY || !auth.currentUser) return;
+  ws = new WebSocket("wss://ws.twelvedata.com/v1/quotes/price?apikey=" + encodeURIComponent(KEY));
+  ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.join(",") } }));
+    hbT = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ action: "heartbeat" })), 10000); };
+  ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "price") onTick(m.symbol, +m.price, m.timestamp || Date.now() / 1000); } catch {} };
+  ws.onclose = () => { wsUp = false; clearInterval(hbT); if (auth.currentUser && KEY) setTimeout(connectWS, 8000); };
+  ws.onerror = () => ws.close();
+}
+async function pollOnce() {
+  lastPoll = Date.now();
+  for (const s of PAIRS) { try { if (P[s]) merge(P[s], await fetchCandles(s, 5)); } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, 1200)); }
+}
+function every(fn, ms) { timers.push(setInterval(fn, ms)); }
+async function start() {
+  stop(); if (!KEY) return;
+  await bootstrap(); connectWS();
+  every(() => { if (!demo && KEY && !weekend() && !wsLive() && loaded && Date.now() - lastPoll > POLL_MS) pollOnce(); }, 15000);
+  every(compute, 1000);
+}
+function stop() { timers.forEach(clearInterval); timers = []; clearInterval(hbT); if (ws) { ws.onclose = null; ws.close(); } wsUp = false; P = {}; data = {}; loaded = 0; }
+
+// ---------- signals ----------
+function compute() {
+  if (demo) return; let changed = false;
+  for (const s of PAIRS) {
+    const p = P[s]; if (!p || !p.dirty || p.candles.length < 130) continue; p.dirty = false; changed = true;
+    const S = series(p.candles), i = S.c.length - 1, dir = dirAt(S, i), str = Math.abs(dir), vr = volRatio(S, i), t = Date.now();
+    let sig = str >= THR ? (dir > 0 ? "BUY" : "SELL") : "WAIT", reason = "";
+    if (vr > 2) reason = "Volatility spike";
+    else if ((p.sig === "BUY" || p.sig === "SELL") && (sig === "BUY" || sig === "SELL") && sig !== p.sig) reason = "Momentum reversed";
+    else if ((p.sig === "BUY" || p.sig === "SELL") && p.str - str > .25) reason = "Strength collapsed";
+    if (reason) { p.dangerUntil = t + 60000; p.reason = reason; }
+    if (t < p.dangerUntil) sig = "DANGER"; else p.reason = "";
+    if (sig !== p.sig && (sig !== "WAIT" || ["BUY", "SELL", "DANGER"].includes(p.sig)) && sig !== "WAIT") raise(s, p.sig, sig, p.reason, str);
+    p.sig = sig; if (sig === "BUY" || sig === "SELL") p.str = str; else p.str = p.str || 0;
+    const stale = weekend() ? true : wsLive() ? t - p.tickAt > 120000 : t - lastPoll > POLL_MS * 2.2;
+    data[s] = { pair: s, bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
+      trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
+      tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt };
+  }
+  if (!sel || !data[sel]) sel = Object.keys(data)[0] || null;
+  if (changed) render();
+}
+
+// ---------- status + render ----------
+function status() {
+  const vals = Object.values(data), c = k => vals.filter(d => d.signal === k).length;
+  let st, why;
+  if (demo) { st = "DEMO"; why = "Demo data. These are not real signals."; }
+  else if (!isAdmin) { st = "OFFLINE"; why = "This account is not an admin, so it cannot load the price key."; }
+  else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
+  else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
+  else if (weekend()) { st = "STALE"; why = "Forex market is closed for the weekend. Prices resume Sunday about 22:00 UTC."; }
+  else if (wsLive()) { st = vals.some(d => d.stale) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
+  else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
+  const el = $("status"); el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
+  $("why").className = "panel " + st;
+  $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>Pairs loaded ${loaded}/${PAIRS.length}</span></div>`;
+  if (isAdmin) $("health").innerHTML = [["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", weekend() ? "Closed" : "Open"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
+    .map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
+  return st;
+}
+setInterval(() => auth.currentUser && status(), 2000);
+
+function render() {
+  const st = status();
+  $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
+    Object.entries(data).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
+      <div><b>${esc(p)}</b><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}</div></div>
+      <div class="num">${fmt(p, d.bid)}</div><span class="tag ${d.signal}">${d.signal}</span></div>`).join("");
+  document.querySelectorAll(".row").forEach(r => { r.onclick = () => { sel = r.dataset.p; render(); }; r.onkeydown = e => e.key === "Enter" && r.onclick(); });
+  const d = data[sel]; if (!d) return;
+  const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
+  const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~16 hours, spread ignored)` : "not enough past signals to measure";
+  $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div><canvas id="cv" width="600" height="120"></canvas>
+    <div class="tfs">${["M5", "M15", "M30"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
+    <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
+    <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
+    <p class="mut">Bars show signal strength, not a probability. Tested: ${bt}. Last tick ${d.age ?? 0}s ago.</p>`;
+  const c = $("cv"), a = d.spark; if (!c || a.length < 2) return;
+  const x = c.getContext("2d"), w = c.width, h = c.height, lo = Math.min(...a), r = Math.max(...a) - lo || 1;
+  x.strokeStyle = "#2ec4b6"; x.lineWidth = 2; x.beginPath();
+  a.forEach((v, i) => { const px = i / (a.length - 1) * w, py = h - 6 - (v - lo) / r * (h - 12); i ? x.lineTo(px, py) : x.moveTo(px, py); }); x.stroke();
+}
+
+// ---------- demo ----------
+function demoTick() {
+  const sigs = ["BUY", "SELL", "WAIT", "WAIT", "DANGER"], t = Math.floor(Date.now() / 2000); data = {};
+  PAIRS.forEach((p, i) => {
+    const base = p.includes("JPY") ? 150 : 1.3 - i * .15, sp = Array.from({ length: 60 }, (_, k) => base + Math.sin((k + t) / 6 + i) * base * .0008);
+    const sig = sigs[(i + Math.floor(Date.now() / 8000)) % 5], b = sig === "BUY" ? .7 : sig === "SELL" ? .12 : .25, s = sig === "SELL" ? .7 : sig === "BUY" ? .12 : .25;
+    data[p] = { pair: p, bid: sp[59], signal: sig, reason: sig === "DANGER" ? "Volatility spike" : "", pBuy: b, pSell: s, pWait: 1 - b - s, trend: b > s ? "BULLISH" : "BEARISH", volatility: "NORMAL", tf: { M5: 1, M15: 1, M30: -1 }, spark: sp, age: 0, stale: false, bt: null };
+  });
+  if (!sel || !data[sel]) sel = PAIRS[0]; render();
+}
+$("demo").onclick = () => {
+  demo = !demo; $("demo").textContent = demo ? "Stop demo" : "Demo data"; clearInterval(demoTimer);
+  if (demo) { demoTick(); demoTimer = setInterval(demoTick, 2000); } else { data = {}; sel = null; P = {}; start(); render(); }
+};
+
+// ---------- admin settings + auth state ----------
+$("save").onclick = async () => {
+  const v = parseFloat($("thr").value), k = $("key").value.trim(), u = {};
+  if (v >= .4 && v <= .9) u.threshold = v; else return toast("Min strength must be 0.40 to 0.90.");
+  if (k) u.dataKey = k;
+  try { await dbr.ref("settings").update(u); THR = v; if (k) { KEY = k; $("key").value = ""; $("key").placeholder = "saved (hidden)"; } toast("Saved."); start(); }
+  catch { toast("Not allowed. This account is not an admin."); }
+};
+function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 5000); }
+auth.onAuthStateChanged(async u => {
+  $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
+  if (!u) { stop(); isAdmin = false; KEY = ""; alerts = []; return; }
+  resetIdle();
+  try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
+  $("admin").style.display = isAdmin ? "block" : "none";
+  if (isAdmin) { try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else $("admin").open = true; } catch {} }
+  status(); render(); start();
+});
 </script>
 </body>
 </html>
