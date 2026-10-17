@@ -79,7 +79,7 @@ body.debug #diag{display:block}
   <button id="fg" type="button" style="margin-top:10px;width:100%">Clear saved email</button>
   <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
   <div id="err" role="alert"></div>
-  <p class="mut" id="ver" style="font-size:12px">Page v10: script has not started</p>
+  <p class="mut" id="ver" style="font-size:12px">Page v12: script has not started</p>
 </section>
 <div id="app">
 <header>
@@ -107,6 +107,17 @@ body.debug #diag{display:block}
     <button id="bthr">Save</button><span id="toast" role="status"></span>
     <label class="mut">Approve user ID <input id="apuid" style="width:220px" placeholder="paste their UID"></label><button id="bap">Approve</button>
   </div>
+  <details id="connect" style="margin-top:14px">
+    <summary><b>Connect MT5 (no Python)</b> <span id="feedst" class="mut">○ MT5 feed not connected</span></summary>
+    <ol class="mut" style="line-height:1.7;padding-left:20px">
+      <li>Firebase > Authentication > Users > <b>Add user</b>: a separate email and password just for the feed. Copy its UID.</li>
+      <li>Realtime Database > Data: add <span class="num">feeders</span> > <span class="num">&lt;feed UID&gt;</span> = <span class="num">true</span>.</li>
+      <li>Rules: add the <span class="num">feed</span> block (given in chat), then Publish.</li>
+      <li>On the Windows PC or VPS with MT5: File > Open Data Folder > MQL5 > Experts, paste <b>RadarFeed.mq5</b>, open MetaEditor (F4), press F7 to compile.</li>
+      <li>MT5 > Tools > Options > Expert Advisors > tick Allow WebRequest and add <span class="num">https://identitytoolkit.googleapis.com</span> and <span class="num">https://loyalty-fx-default-rtdb.firebaseio.com</span>.</li>
+      <li>Drag RadarFeed onto a chart, enter the feed email and password in Inputs, turn on Algo Trading. This light turns green within seconds.</li>
+    </ol>
+  </details>
 </section>
 <p class="note">Alerts only. This tool places no orders. Probabilities are model estimates, not guarantees. Check the hit rate shown for each pair.</p>
 </div>
@@ -117,6 +128,7 @@ if (/debug/.test(location.search)) document.body.classList.add("debug");
 const diag = m => { const d = document.getElementById("diag"); if (d) d.textContent = "diag: " + m; };
 function showBanner(m) { const b = document.getElementById("banner"); if (b) { b.textContent = m; b.classList.add("show"); } }
 window.addEventListener("error", e => {
+  if (e.message === "Script error." && !e.lineno) { diag("vague cross-site script error (ignored)"); console.warn("Vague cross-site script error", e); return; }
   const m = "Page error: " + e.message + " (line " + e.lineno + ")";
   const el = document.getElementById("err"); if (el) el.textContent = m;
   showBanner(m); diag(m);
@@ -126,7 +138,7 @@ window.addEventListener("unhandledrejection", e => {
   const el = document.getElementById("err"); if (el) { el.style.color = ""; el.textContent = m; }
   showBanner(m); diag(m);
 });
-document.getElementById("ver").textContent = "Page v10: script running";
+document.getElementById("ver").textContent = "Page v12: script running";
 diag("script running");
 
 const firebaseConfig = {
@@ -192,7 +204,7 @@ function showErr(e) {
   $("err").textContent = (msg || "Sign-in failed.") + " (" + code + ")";
   console.error("Sign-in error:", e);
 }
-$("ver").textContent = ready ? "Page v10: script running, connected to " + firebaseConfig.projectId : "Page v10: script running, Firebase not ready";
+$("ver").textContent = ready ? "Page v12: script running, connected to " + firebaseConfig.projectId : "Page v12: script running, Firebase not ready";
 if (fbError) { $("err").textContent = fbError; diag(fbError); }
 else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
 async function setKeep() {
@@ -283,7 +295,7 @@ if (ready) auth.onAuthStateChanged(async u => {
   subs.forEach(([r, ev]) => r.off(ev)); subs = [];
   // Show the right screen FIRST so nothing below can leave the login form on screen.
   $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
-  if (!u) { if (demo) setDemo(false); realData = {}; data = {}; lastSig = {}; isAdmin = false; diag("signed out"); return; }
+  if (!u) { if (demo) setDemo(false); realData = {}; feedTicks = null; feedBars = null; feedData = {}; feedTs = 0; data = {}; lastSig = {}; isAdmin = false; diag("signed out"); return; }
   diag("signed in as " + u.email + " | uid " + u.uid + " | checking access...");
   try {
     resetIdle();
@@ -299,11 +311,13 @@ if (ready) auth.onAuthStateChanged(async u => {
       $("detail").innerHTML = ""; return;
     }
     const denied = e => showBanner("Database read denied: " + (e.code || e.message));
-    const on = (path, fn) => { const r = dbr.ref(path); r.on("value", fn, denied); subs.push([r, "value"]); };
+    const on = (path, fn, quiet) => { const r = dbr.ref(path); r.on("value", fn, quiet ? (() => {}) : denied); subs.push([r, "value"]); };
     on("heartbeat", s => { hb = s.val() || 0; });
     on("status", s => { st = s.val() || {}; renderAdmin(); });
     on("config", s => { cfg = s.val() || {}; renderAdmin(); });
-    on("signals", s => { realData = s.val() || {}; if (!demo) applySignals(realData); });
+    on("feed/ticks", s => { feedTicks = s.val() || null; rebuildFeed(); }, true);
+    on("feed/bars", s => { feedBars = s.val() || null; rebuildFeed(); }, true);
+    on("signals", s => { realData = s.val() || {}; refreshView(); });
     const ar = dbr.ref("alerts").limitToLast(12);
     ar.on("value", s => {
       const rows = Object.values(s.val() || {}).reverse();
@@ -326,16 +340,17 @@ function showDemoAlerts() {
 }
 function applySignals(obj) {
   data = obj || {};
+  const local = demo || Object.values(data).some(d => d.source === "feed");
   for (const [p, d] of Object.entries(data)) {
     const prev = lastSig[p];
     if (prev && prev !== d.signal) {
       if (d.signal === "DANGER") { banner(`${p}: DANGER. ${d.reason}. Do not enter.`); beep(300, .25, 3); }
       else if (d.signal === "BUY" || d.signal === "SELL") { banner(`${p}: ${d.signal} conditions`); beep(880, .15); }
-      if (demo) demoAlerts.unshift({ ts: Date.now(), pair: p, from: prev, to: d.signal, reason: d.reason || "" });
+      if (local) demoAlerts.unshift({ ts: Date.now(), pair: p, from: prev, to: d.signal, reason: d.reason || "" });
     }
     lastSig[p] = d.signal;
   }
-  if (demo) showDemoAlerts();
+  if (local) showDemoAlerts();
   if (!sel || !data[sel]) sel = Object.keys(data)[0];
   render();
 }
@@ -380,16 +395,75 @@ function setDemo(on) {
   $("demo").textContent = on ? "Stop demo" : "Demo data";
   $("demobar").style.display = on ? "block" : "none";
   if (on) { demoInit(); demoAlerts = []; demoTick(); demoTimer = setInterval(demoTick, 2000); }
-  else { $("alerts").innerHTML = realAlertsHtml; applySignals(realData); }
+  else { $("alerts").innerHTML = realAlertsHtml; refreshView(); }
 }
 $("demo").onclick = () => setDemo(!demo);
 
+
+// ---- Live MT5 feed (RadarFeed.mq5 writes feed/ticks and feed/bars; signals are worked out here) ----
+let feedTicks = null, feedBars = null, feedData = {}, feedTs = 0, feedConn = null, spreadAvg = {};
+const ema = (a, n) => { const k = 2 / (n + 1); let e = a[0]; for (let i = 1; i < a.length; i++) e = a[i] * k + e * (1 - k); return e; };
+const sdev = a => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length); };
+// Trend direction for one timeframe: fast vs slow average, ignoring differences that are just noise.
+function tfSign(a) {
+  if (!Array.isArray(a) || a.length < 30) return 0;
+  const r = []; for (let i = 1; i < a.length; i++) r.push(a[i] - a[i - 1]);
+  const d = ema(a, 10) - ema(a, 30), s = sdev(r) || 1e-12;
+  return Math.abs(d) > TREND_K * s ? Math.sign(d) : 0;
+}
+const TREND_K = 2.5;
+function rsi14(a) {
+  if (!a || a.length < 15) return 50;
+  let g = 0, l = 0;
+  for (let i = a.length - 14; i < a.length; i++) { const d = a[i] - a[i - 1]; if (d > 0) g += d; else l -= d; }
+  return l === 0 ? 100 : 100 - 100 / (1 + g / l);
+}
+function analyse(p, t, b) {
+  const tf = { M5: tfSign(b.M5), M15: tfSign(b.M15), H1: tfSign(b.H1), H4: tfSign(b.H4) };
+  const a = (tf.M5 * 1 + tf.M15 * 2 + tf.H1 * 3 + tf.H4 * 2) / 8;      // -1 (all down) .. +1 (all up)
+  const m5 = Array.isArray(b.M5) ? b.M5 : [];
+  const r = rsi14(m5);
+  const rets = []; for (let i = 1; i < m5.length; i++) rets.push(m5[i] - m5[i - 1]);
+  const ratio = rets.length >= 30 ? sdev(rets.slice(-12)) / (sdev(rets.slice(0, -12)) || 1e-12) : 1;
+  const sp = Number(t.spread) || 0;
+  spreadAvg[p] = spreadAvg[p] == null ? sp : spreadAvg[p] * 0.98 + sp * 0.02;
+  const thr = cfg.threshold ?? 0.55;
+  let signal = "WAIT", reason = "";
+  if (ratio > 3.5) { signal = "DANGER"; reason = "Volatility spike"; }
+  else if (sp > 5 && sp > spreadAvg[p] * 3) { signal = "DANGER"; reason = "Spread widened"; }
+  else if (a >= thr && tf.M5 > 0 && tf.M15 > 0 && r < 75) signal = "BUY";
+  else if (-a >= thr && tf.M5 < 0 && tf.M15 < 0 && r > 25) signal = "SELL";
+  const bid = t.digits != null ? Number(t.bid).toFixed(t.digits) : t.bid;
+  return {
+    signal, reason, source: "feed",
+    trend: a > .25 ? "up" : a < -.25 ? "down" : "sideways",
+    volatility: ratio > 2.5 ? "HIGH" : ratio > 1.3 ? "MEDIUM" : "LOW",
+    bid, spread: t.spread, ts: feedTs, tickAgeSec: Math.max(0, Math.round((now() - feedTs) / 1000)),
+    tf, pBuy: Math.max(a, 0), pSell: Math.max(-a, 0), pWait: 1 - Math.abs(a),
+    spark: m5.concat([Number(t.bid)]).slice(-60), model: {}
+  };
+}
+function rebuildFeed() {
+  feedTs = (feedTicks && feedTicks.ts) || 0;
+  feedConn = feedTicks ? feedTicks.connected !== false : null;
+  const tp = (feedTicks && feedTicks.pairs) || {}, bp = (feedBars && feedBars.pairs) || {}, out = {};
+  for (const [p, t] of Object.entries(tp)) out[p] = analyse(p, t, bp[p] || {});
+  feedData = out;
+  refreshView();
+}
+// Use the Python backend's signals when it is alive, otherwise the MT5 feed, otherwise whatever the backend last wrote.
+function refreshView() {
+  if (demo) return;
+  const backendLive = hb && now() - hb < 15000 && Object.keys(realData).length > 0;
+  applySignals(backendLive ? realData : (Object.keys(feedData).length ? feedData : realData));
+}
 // A pair is stale if the broker feed stopped OR its last write is older than 10 s.
 const pairStale = d => d.stale || (d.ts && now() - d.ts > 10000);
 function status() {
   if (demo) { const e = $("status"); e.textContent = "DEMO"; e.className = "status DEMO"; return "DEMO"; }
-  const age = now() - hb;
-  const stt = !online || !hb || age > 15000 ? "OFFLINE" : (st.mt5Connected === false || Object.values(data).some(pairStale)) ? "STALE" : "LIVE";
+  const beat = Math.max(hb || 0, feedTs || 0), age = now() - beat;
+  const mt5ok = (feedTs && feedTs >= (hb || 0)) ? feedConn : st.mt5Connected;
+  const stt = !online || !beat || age > 15000 ? "OFFLINE" : (mt5ok === false || Object.values(data).some(pairStale)) ? "STALE" : "LIVE";
   const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
   return stt;
 }
@@ -420,9 +494,11 @@ function renderAdmin() {
   if (!isAdmin) return;
   if (document.activeElement !== $("thr")) $("thr").value = cfg.threshold ?? 0.55;
   $("bpause").textContent = cfg.paused ? "Resume signals" : "Pause signals";
+  $("feedst").textContent = feedTs && now() - feedTs < 15000 ? "● MT5 feed live" : "○ MT5 feed not connected";
   const ages = Object.values(data).map(d => d.tickAgeSec ?? 0);
   $("health").innerHTML = [
-    ["Backend heartbeat", ago(hb)], ["MT5 terminal", st.mt5Connected === false ? "Disconnected" : "Connected"],
+    ["Backend heartbeat", ago(hb)], ["MT5 feed", feedTs ? ago(feedTs) : "not connected"],
+    ["MT5 terminal", ((feedTs && feedTs >= (hb || 0)) ? feedConn : st.mt5Connected) === false ? "Disconnected" : "Connected"],
     ["Last refresh", ago(st.lastRefresh)], ["Last retrain", ago(st.lastRetrain)],
     ["Backend started", ago(st.startedAt)], ["Oldest tick", ages.length ? Math.max(...ages) + "s" : "-"],
     ["Signals", cfg.paused ? "Paused" : "Running"]
@@ -454,7 +530,7 @@ function render() {
     }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
     <p><span class="tag ${esc(d.signal)}">${esc(d.signal)}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
-    <p class="mut">Tested on unseen data: ${m.holdout_hit_rate != null ? pct(m.holdout_hit_rate) + " of strong signals were right (" + esc(m.holdout_signals) + " signals)" : "not enough strong signals to measure"}.
+    <p class="mut">${d.source === "feed" ? "Rule-based signal from live MT5 prices: trend agreement across M5, M15, H1 and H4, plus RSI and spike checks. Bars show indicator strength, not probabilities. No hit rate has been measured." : "Tested on unseen data: " + (m.holdout_hit_rate != null ? pct(m.holdout_hit_rate) + " of strong signals were right (" + esc(m.holdout_signals) + " signals)" : "not enough strong signals to measure") + "."}
     Last tick ${esc(d.tickAgeSec)}s ago.</p>${demo ? '<p class="mut">Simulated data for demonstration only.</p>' : ""}`;
   draw(d.spark || []);
 }
@@ -481,6 +557,7 @@ function draw(a) {
   function load(url) {
     return new Promise(function (res, rej) {
       var el = document.createElement("script"), t;
+      el.crossOrigin = "anonymous";
       el.src = url;
       el.onload = function () { clearTimeout(t); res(); };
       el.onerror = function () { clearTimeout(t); el.remove(); rej(new Error("blocked " + url)); };
