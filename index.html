@@ -74,6 +74,7 @@ canvas{width:100%;height:120px;display:block}
     <button class="go" type="submit">Sign in</button>
   </form>
   <button id="rp" type="button" style="margin-top:10px;width:100%">Reset password</button>
+  <button id="fg" type="button" style="margin-top:10px;width:100%">Clear saved email</button>
   <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
   <div id="err" role="alert"></div>
   <p class="mut" id="ver" style="font-size:12px">Page v3: script has not started</p>
@@ -116,9 +117,9 @@ canvas{width:100%;height:120px;display:block}
 window.addEventListener("error", e => { const el = document.getElementById("err"); if (el) el.textContent = "Page error: " + e.message; });
 document.getElementById("ver").textContent = "Page v3: script running";
 const firebaseConfig = {
-  apiKey: "PASTE", authDomain: "loyalty-fx.firebaseapp.com",
+  apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com",
   databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com",
-  projectId: "loyalty-fx", messagingSenderId: "754089568350", appId: "PASTE"
+  projectId: "loyalty-fx", messagingSenderId: "754089568350", appId: "1:754089568350:web:6258778a93f4c941c16ccf"
 };
 // Project settings > Cloud Messaging > Web Push certificates > Generate key pair
 const VAPID_KEY = "PASTE";
@@ -173,6 +174,10 @@ else if (location.protocol === "file:") $("err").textContent = "Open this page f
 async function setKeep() {
   try { await auth.setPersistence($("keep").checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
 }
+$("fg").onclick = () => {
+  try { localStorage.removeItem("fx_email"); } catch (e) {}
+  $("em").value = ""; $("pw").value = ""; $("err").textContent = "Cleared. Type the correct email and password."; $("em").focus();
+};
 $("showpw").onchange = () => { $("pw").type = $("showpw").checked ? "text" : "password"; };
 try { $("em").value = localStorage.getItem("fx_email") || ""; ($("em").value ? $("pw") : $("em")).focus(); } catch (e) {}
 $("lf").onsubmit = async e => {
