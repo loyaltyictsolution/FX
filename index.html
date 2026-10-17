@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forex Radar</title>
+<title>Steve FX Radar</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#12202e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,11 +71,31 @@ details#admin summary{cursor:pointer;font-weight:600;padding:2px 0}
 details#admin[open] summary{margin-bottom:8px}
 code{background:var(--bg);padding:1px 6px;border-radius:4px}
 @media(max-width:600px){body{padding:10px}.row{grid-template-columns:1fr auto}.row .num{display:none}.big{font-size:28px}.bar{flex-wrap:wrap}}
+
+/* ---- Steve FX Radar backdrop ---- */
+html{background:#0b1622}
+body{background:transparent;position:relative;min-height:100vh}
+body::before{content:"";position:fixed;inset:-6%;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(55vmax 55vmax at 10% 6%, rgba(46,196,182,.30), transparent 60%),
+    radial-gradient(50vmax 50vmax at 94% 16%, rgba(239,106,91,.22), transparent 60%),
+    radial-gradient(60vmax 60vmax at 68% 104%, rgba(90,120,255,.26), transparent 62%),
+    linear-gradient(160deg,#0b1622,#12202e 55%,#0d1a29);
+  animation:drift 22s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:48px 48px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 25%,#000 10%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 25%,#000 10%,transparent 75%)}
+@keyframes drift{to{transform:translate3d(-2.5%,2%,0) scale(1.07)}}
+.panel{background:rgba(20,36,54,.74);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.28)}
+header{background:rgba(11,22,34,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:10px 12px;border-radius:12px}
+header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media(prefers-reduced-motion:reduce){body::before{animation:none}}
 </style>
 </head>
 <body>
 <section id="login" class="panel">
-  <h1>Forex Radar</h1>
+  <h1>Steve FX Radar</h1>
   <p class="mut">Sign in to view live signals.</p>
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
@@ -87,7 +107,7 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
   <div id="err" role="alert"></div>
 </section>
 <div id="app">
-<header><h1>Forex Radar</h1>
+<header><h1>Steve FX Radar</h1>
   <div class="bar"><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
@@ -224,7 +244,7 @@ function raise(pair, from, to, reason, strength) {
   $("alerts").innerHTML = alerts.map(a => `<div><span class="num mut">${new Date(a.t).toLocaleTimeString()}</span> ${esc(a.msg)}</div>`).join("");
   if (!soundOn) return;
   banner(msg); to === "DANGER" ? beep(300, .25, 3) : beep(880, .15);
-  if ("Notification" in window && Notification.permission === "granted") try { new Notification("Forex Radar", { body: msg }); } catch {}
+  if ("Notification" in window && Notification.permission === "granted") try { new Notification("Steve FX Radar", { body: msg }); } catch {}
 }
 
 // ---------- data ----------
