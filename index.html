@@ -36,3 +36,376 @@ main{display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
 @media(prefers-reduced-motion:reduce){.tag.DANGER{animation:none}}
 .mut{color:var(--mut);font-size:13px}
 .big{font-size:34px;margin:2px 0 8px}
+.bars div{display:grid;grid-template-columns:50px 1fr 46px;gap:8px;align-items:center;margin:4px 0;font-size:13px}
+.bars i{display:block;height:8px;border-radius:4px}
+.tfs{display:flex;gap:8px;margin:10px 0}
+.tfs span{flex:1;text-align:center;padding:6px 0;border-radius:8px;border:1px solid var(--line);font-size:13px}
+.up{color:var(--buy)}.dn{color:var(--sell)}
+canvas{width:100%;height:120px;display:block}
+#alerts div{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.note{margin-top:14px;font-size:12px;color:var(--mut)}
+
+#login{max-width:360px;margin:12vh auto}
+#login input,.f input{width:100%;padding:10px 12px;margin:6px 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+#login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
+#err{color:var(--danger);min-height:22px;font-size:13px;margin-top:10px}
+#app{display:none}
+#admin{display:none;margin-top:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.grid div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.grid b{display:block;font-size:15px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctl button.pri{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.ctl input{width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+#toast{margin-left:8px;font-size:13px;color:var(--mut)}
+.PAUSED{background:var(--off);color:#fff}
+.row.PAUSED{border-left-color:var(--off)}
+#diag{position:fixed;left:0;right:0;bottom:0;z-index:99;background:#000;color:#0f0;font:12px monospace;padding:6px 8px;word-break:break-all}
+</style>
+</head>
+<body>
+<section id="login" class="panel">
+  <h1>Forex Radar</h1>
+  <p class="mut">Sign in to view live signals.</p>
+  <form id="lf">
+    <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
+    <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+    <label class="mut" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="showpw" style="width:auto;margin:0;padding:0"> Show password</label>
+    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:6px 0 12px"><input type="checkbox" id="keep" style="width:auto;margin:0;padding:0"> Keep me signed in on this device</label>
+    <button class="go" type="submit">Sign in</button>
+  </form>
+  <button id="rp" type="button" style="margin-top:10px;width:100%">Reset password</button>
+  <button id="fg" type="button" style="margin-top:10px;width:100%">Clear saved email</button>
+  <button id="su" type="button" style="margin-top:10px;width:100%">Create account</button>
+  <div id="err" role="alert"></div>
+  <p class="mut" id="ver" style="font-size:12px">Page v5: script has not started</p>
+</section>
+<div id="app">
+<header>
+  <h1>Forex Radar</h1>
+  <div class="bar">
+    <button id="snd">Turn on sound</button><button id="push" hidden>Enable phone alerts</button><button id="out">Sign out</button>
+    <span id="status" class="status OFFLINE">OFFLINE</span>
+  </div>
+</header>
+<div id="banner" role="alert"></div>
+<main>
+  <section class="panel" id="list" aria-label="Currency pairs"><p class="mut">Waiting for the backend to send data.</p></section>
+  <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
+</main>
+<section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"></div></section>
+<section class="panel" id="admin" aria-label="Admin controls">
+  <b>Admin controls</b>
+  <div class="grid" id="health"></div>
+  <div class="ctl">
+    <button class="pri" id="bref">Refresh signals now</button>
+    <button id="bret">Retrain models</button>
+    <button id="bpause">Pause signals</button>
+    <label class="mut">Min confidence <input id="thr" type="number" min="0.5" max="0.9" step="0.01"></label>
+    <button id="bthr">Save</button><span id="toast" role="status"></span>
+    <label class="mut">Approve user ID <input id="apuid" style="width:220px" placeholder="paste their UID"></label><button id="bap">Approve</button>
+  </div>
+</section>
+<p class="note">Alerts only. This tool places no orders. Probabilities are model estimates, not guarantees. Check the hit rate shown for each pair.</p>
+</div>
+<div id="diag">diag: waiting for script</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+<script>
+const diag = m => { const d = document.getElementById("diag"); if (d) d.textContent = "diag: " + m; };
+function showBanner(m) { const b = document.getElementById("banner"); if (b) { b.textContent = m; b.classList.add("show"); } }
+window.addEventListener("error", e => {
+  const m = "Page error: " + e.message + " (line " + e.lineno + ")";
+  const el = document.getElementById("err"); if (el) el.textContent = m;
+  showBanner(m); diag(m);
+});
+window.addEventListener("unhandledrejection", e => {
+  const m = "Error: " + ((e.reason && (e.reason.code || e.reason.message)) || "unknown");
+  const el = document.getElementById("err"); if (el) { el.style.color = ""; el.textContent = m; }
+  showBanner(m); diag(m);
+});
+document.getElementById("ver").textContent = "Page v5: script running";
+diag("script running");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com",
+  databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com",
+  projectId: "loyalty-fx", messagingSenderId: "754089568350", appId: "1:754089568350:web:6258778a93f4c941c16ccf"
+};
+// Project settings > Cloud Messaging > Web Push certificates > Generate key pair
+const VAPID_KEY = "PASTE";
+const configMissing = Object.values(firebaseConfig).some(v => !v || String(v).includes("PASTE"));
+if (location.protocol === "file:") console.warn("Opened as a local file. Serve it over http(s) or use your github.io URL.");
+let auth = null, dbr = null, fbError = "";
+if (typeof firebase === "undefined") fbError = "Could not load Firebase from gstatic.com. Check your internet connection or ad blocker, then reload.";
+else if (configMissing) fbError = "Setup needed: fill in firebaseConfig at the top of the script in index.html (values still say PASTE).";
+else {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth(); dbr = firebase.database();
+  } catch (e) { fbError = "Firebase setup failed: " + e.message; console.error(e); }
+}
+const ready = !!(auth && dbr);
+if (ready) {
+  // Closing the tab signs you out. If the browser blocks storage, fall back to in-memory so login still works.
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .catch(() => auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {}));
+}
+let data = {}, sel = null, hb = 0, soundOn = false, audio, lastSig = {}, st = {}, cfg = {},
+    isAdmin = false, offset = 0, online = true, subs = [], idle;
+
+const $ = id => document.getElementById(id);
+const pct = x => Math.round((x || 0) * 100) + "%";
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const now = () => Date.now() + offset;
+const ago = ms => !ms ? "never" : Math.max(0, Math.round((now() - ms) / 1000)) + "s ago";
+
+const AUTH_MSG = {
+  "auth/user-not-found": "No account with this email. Add the user in Firebase > Authentication > Users.",
+  "auth/wrong-password": "Wrong password.",
+  "auth/invalid-credential": "Wrong email or password, or this user does not exist in Firebase yet.",
+  "auth/invalid-email": "That email address is not valid.",
+  "auth/invalid-api-key": "The apiKey in firebaseConfig is wrong. Copy it from Project settings > Your apps > Web.",
+  "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The apiKey in firebaseConfig is wrong.",
+  "auth/operation-not-allowed": "Email/Password sign-in is not enabled in Firebase > Authentication > Sign-in method.",
+  "auth/email-already-in-use": "This email already has an account. Use Sign in instead.",
+  "auth/weak-password": "Password too weak. Use at least 8 characters.",
+  "auth/admin-restricted-operation": "Sign-ups are switched off in Firebase. Add your user in Authentication > Users > Add user, then sign in.",
+  "auth/user-disabled": "This account is disabled in Firebase.",
+  "auth/too-many-requests": "Too many attempts. Wait a few minutes or reset the password.",
+  "auth/network-request-failed": "Network error. Check your connection.",
+  "auth/unauthorized-domain": "This domain is not authorised. Add it in Authentication > Settings > Authorized domains."
+};
+let busyT;
+function busy(msg) {
+  clearTimeout(busyT); $("err").style.color = "var(--mut)"; $("err").textContent = msg;
+  busyT = setTimeout(() => { $("err").style.color = ""; $("err").textContent = "No reply from Firebase after 15 seconds. Check your internet, turn off ad blockers for this site, and check the API key is not restricted to a different website."; }, 15000);
+}
+function done() { clearTimeout(busyT); $("err").style.color = ""; }
+function showErr(e) {
+  done();
+  const code = (e && e.code) || "unknown";
+  let msg = AUTH_MSG[code];
+  if (!msg && code.startsWith("auth/requests-from-referer")) msg = "Your API key is restricted to another website. Open the page from the allowed github.io URL, or edit the key restriction in Google Cloud.";
+  $("err").textContent = (msg || "Sign-in failed.") + " (" + code + ")";
+  console.error("Sign-in error:", e);
+}
+$("ver").textContent = ready ? "Page v5: script running, connected to " + firebaseConfig.projectId : "Page v5: script running, Firebase not ready";
+if (fbError) { $("err").textContent = fbError; diag(fbError); }
+else if (location.protocol === "file:") $("err").textContent = "Open this page from your https:// github.io address, not as a local file.";
+async function setKeep() {
+  try { await auth.setPersistence($("keep").checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) {}
+}
+$("fg").onclick = () => {
+  try { localStorage.removeItem("fx_email"); } catch (e) {}
+  $("em").value = ""; $("pw").value = ""; $("err").textContent = "Cleared. Type the correct email and password."; $("em").focus();
+};
+$("showpw").onchange = () => { $("pw").type = $("showpw").checked ? "text" : "password"; };
+try { $("em").value = localStorage.getItem("fx_email") || ""; ($("em").value ? $("pw") : $("em")).focus(); } catch (e) {}
+$("lf").onsubmit = async e => {
+  e.preventDefault();
+  if (!ready) { $("err").textContent = fbError; return; }
+  busy("Signing in...");
+  try {
+    await setKeep();
+    await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value);
+    try { localStorage.setItem("fx_email", $("em").value.trim()); } catch (e) {}
+    done(); $("err").textContent = "Signed in, loading...";
+  } catch (e) { showErr(e); }
+  $("pw").value = "";
+};
+$("su").onclick = async () => {
+  if (!ready) { $("err").textContent = fbError; return; }
+  const em = $("em").value.trim(), pw = $("pw").value;
+  if (!em || pw.length < 8) { $("err").textContent = "Enter your email and a password of at least 8 characters, then click Create account."; return; }
+  busy("Creating account...");
+  try { await setKeep(); await auth.createUserWithEmailAndPassword(em, pw); try { localStorage.setItem("fx_email", em); } catch (e) {} done(); $("err").textContent = ""; }
+  catch (e) { showErr(e); }
+  $("pw").value = "";
+};
+$("rp").onclick = async () => {
+  if (!ready) { $("err").textContent = fbError; return; }
+  const em = $("em").value.trim();
+  if (!em) { $("err").textContent = "Type your email above, then click Reset password."; return; }
+  try { await auth.sendPasswordResetEmail(em); $("err").textContent = "Reset email sent. Check your inbox and spam folder."; }
+  catch (e) { showErr(e); }
+};
+$("out").onclick = () => auth && auth.signOut();
+function resetIdle() { clearTimeout(idle); idle = setTimeout(() => auth.signOut(), 30 * 60 * 1000); }   // 30 min idle logout
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth && auth.currentUser && resetIdle()));
+
+$("snd").onclick = () => {
+  soundOn = !soundOn;
+  if (soundOn && !audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+  $("snd").textContent = soundOn ? "Sound on" : "Turn on sound";
+  if (soundOn) beep(660, .12);
+};
+function beep(freq, dur, n = 1) {
+  if (!soundOn || !audio) return;
+  for (let i = 0; i < n; i++) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = freq; o.connect(g); g.connect(audio.destination);
+    g.gain.value = .15; const t = audio.currentTime + i * (dur + .08);
+    o.start(t); o.stop(t + dur);
+  }
+}
+function banner(msg) {
+  const b = $("banner"); b.textContent = msg; b.classList.add("show");
+  setTimeout(() => b.classList.remove("show"), 12000);
+}
+if (ready && "Notification" in window && "serviceWorker" in navigator && firebase.messaging && firebase.messaging.isSupported)
+  firebase.messaging.isSupported().then(ok => { if (ok) $("push").hidden = false; }).catch(() => {});
+$("push").onclick = async () => {
+  if (!ready) return;
+  if (VAPID_KEY.includes("PASTE")) return banner("Set VAPID_KEY in index.html first (Cloud Messaging > Web Push certificates).");
+  try {
+    if (await Notification.requestPermission() !== "granted")
+      return banner("Alerts blocked. Allow notifications for this site in your browser settings.");
+    const reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    const token = await firebase.messaging().getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (!token) throw new Error("no token");
+    let h = 0; for (const c of token) h = (h * 31 + c.charCodeAt(0)) | 0;
+    await dbr.ref(`fcmTokens/${auth.currentUser.uid}/t${(h >>> 0).toString(36)}`).set(token);
+    $("push").textContent = "Alerts enabled"; banner("Alerts enabled on this device.");
+  } catch (e) { console.error(e); banner("Could not enable alerts: " + (e.code || e.message) + ". Check the VAPID key, config and that your account is approved."); }
+};
+function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 4000); }
+
+if (ready) dbr.ref(".info/serverTimeOffset").on("value", s => offset = s.val() || 0);
+if (ready) dbr.ref(".info/connected").on("value", s => { online = !!s.val(); status(); });
+
+if (ready) auth.onAuthStateChanged(async u => {
+  subs.forEach(([r, ev]) => r.off(ev)); subs = [];
+  // Show the right screen FIRST so nothing below can leave the login form on screen.
+  $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
+  if (!u) { data = {}; lastSig = {}; isAdmin = false; diag("signed out"); return; }
+  diag("signed in as " + u.email + " | uid " + u.uid + " | checking access...");
+  try {
+    resetIdle();
+    try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; }
+    catch (e) { isAdmin = false; showBanner("Database read denied (" + (e.code || e.message) + "). Publish database.rules.json in Realtime Database > Rules."); }
+    $("admin").style.display = isAdmin ? "block" : "none";
+    let ok = isAdmin;
+    if (!ok) { try { ok = (await dbr.ref("approved/" + u.uid).get()).val() === true; } catch { ok = false; } }
+    diag("signed in as " + u.email + " | uid " + u.uid + " | admin=" + isAdmin + " approved=" + ok);
+    if (!ok) {
+      $("list").innerHTML = '<p><b>Account created. Waiting for approval.</b></p><p class="mut">Send this ID to the admin so they can approve you:</p><p class="num" style="word-break:break-all">' + esc(u.uid) + '</p><p class="mut">Are you the owner and this is the first account? Claim admin once. It only works while no admin exists.</p><button id="claim" class="pri" style="background:var(--buy);color:#06231f;border:0;font-weight:600">Claim admin</button> <span id="claimmsg" class="mut"></span>';
+      $("claim").onclick = () => dbr.ref("admins/" + u.uid).set(true).then(() => location.reload()).catch(e => { $("claimmsg").textContent = "Could not claim admin (" + (e.code || e.message) + "). An admin may already exist, or the database rules are not published."; });
+      $("detail").innerHTML = ""; return;
+    }
+    const denied = e => showBanner("Database read denied: " + (e.code || e.message));
+    const on = (path, fn) => { const r = dbr.ref(path); r.on("value", fn, denied); subs.push([r, "value"]); };
+    on("heartbeat", s => { hb = s.val() || 0; });
+    on("status", s => { st = s.val() || {}; renderAdmin(); });
+    on("config", s => { cfg = s.val() || {}; renderAdmin(); });
+    on("signals", s => {
+      data = s.val() || {};
+      for (const [p, d] of Object.entries(data)) {
+        const prev = lastSig[p];
+        if (prev && prev !== d.signal) {
+          if (d.signal === "DANGER") { banner(`${p}: DANGER. ${d.reason}. Do not enter.`); beep(300, .25, 3); }
+          else if (d.signal === "BUY" || d.signal === "SELL") { banner(`${p}: ${d.signal} conditions`); beep(880, .15); }
+        }
+        lastSig[p] = d.signal;
+      }
+      if (!sel || !data[sel]) sel = Object.keys(data)[0];
+      render();
+    });
+    const ar = dbr.ref("alerts").limitToLast(12);
+    ar.on("value", s => {
+      const rows = Object.values(s.val() || {}).reverse();
+      $("alerts").innerHTML = rows.map(a =>
+        `<div><span class="num mut">${new Date(a.ts).toLocaleTimeString()}</span> <b>${esc(a.pair)}</b> ${esc(a.from)} to ${esc(a.to)}${a.reason ? " (" + esc(a.reason) + ")" : ""}</div>`
+      ).join("") || '<p class="mut">No alerts yet.</p>';
+    }, denied);
+    subs.push([ar, "value"]);
+  } catch (e) { showBanner("Dashboard error: " + (e.message || e)); diag("dashboard error: " + (e.message || e)); console.error(e); }
+}, e => diag("auth error: " + e.message));
+
+// A pair is stale if the broker feed stopped OR its last write is older than 10 s.
+const pairStale = d => d.stale || (d.ts && now() - d.ts > 10000);
+function status() {
+  const age = now() - hb;
+  const stt = !online || !hb || age > 15000 ? "OFFLINE" : (st.mt5Connected === false || Object.values(data).some(pairStale)) ? "STALE" : "LIVE";
+  const el = $("status"); el.textContent = stt === "STALE" ? "STALE DATA" : stt; el.className = "status " + stt;
+  return stt;
+}
+setInterval(() => { if (auth && auth.currentUser) { status(); if (isAdmin) renderAdmin(); } }, 2000);
+
+async function send(type) {
+  try {
+    await dbr.ref("commands").push({ type, by: auth.currentUser.email, ts: firebase.database.ServerValue.TIMESTAMP });
+    toast(type === "retrain" ? "Retraining. This can take a minute." : "Refresh sent.");
+  } catch { toast("Not allowed. This account is not an admin."); }
+}
+$("bref").onclick = () => send("refresh");
+$("bret").onclick = () => confirm("Retrain all models now? Signals pause updating for about a minute.") && send("retrain");
+$("bpause").onclick = () => dbr.ref("config/paused").set(!cfg.paused).catch(() => toast("Not allowed."));
+$("bap").onclick = () => {
+  if (!ready) return;
+  const v = $("apuid").value.trim();
+  if (!v) return toast("Paste the user ID first.");
+  try { dbr.ref("approved/" + v).set(true).then(() => { toast("Approved."); $("apuid").value = ""; }).catch(() => toast("Not allowed.")); }
+  catch (e) { toast("That is not a valid user ID."); }
+};
+$("bthr").onclick = () => {
+  const v = parseFloat($("thr").value);
+  if (!(v >= 0.5 && v <= 0.9)) return toast("Enter a value from 0.50 to 0.90.");
+  dbr.ref("config/threshold").set(v).then(() => toast("Saved.")).catch(() => toast("Not allowed."));
+};
+function renderAdmin() {
+  if (!isAdmin) return;
+  if (document.activeElement !== $("thr")) $("thr").value = cfg.threshold ?? 0.55;
+  $("bpause").textContent = cfg.paused ? "Resume signals" : "Pause signals";
+  const ages = Object.values(data).map(d => d.tickAgeSec ?? 0);
+  $("health").innerHTML = [
+    ["Backend heartbeat", ago(hb)], ["MT5 terminal", st.mt5Connected === false ? "Disconnected" : "Connected"],
+    ["Last refresh", ago(st.lastRefresh)], ["Last retrain", ago(st.lastRetrain)],
+    ["Backend started", ago(st.startedAt)], ["Oldest tick", ages.length ? Math.max(...ages) + "s" : "-"],
+    ["Signals", cfg.paused ? "Paused" : "Running"]
+  ].map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
+}
+
+function render() {
+  const stt = status();
+  $("list").innerHTML = Object.entries(data).map(([p, d]) => {
+    const sig = stt === "OFFLINE" ? "WAIT" : d.signal;
+    return `<div class="row ${esc(sig)} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
+      <div><b>${esc(p)}</b><div class="mut">${esc(d.trend)} / vol ${esc((d.volatility || "").toLowerCase())}</div></div>
+      <div class="num">${esc(d.bid)}</div>
+      <span class="tag ${esc(sig)}">${stt === "OFFLINE" ? "NO DATA" : esc(sig)}</span></div>`;
+  }).join("") || '<p class="mut">Waiting for the backend to send data.</p>';
+  document.querySelectorAll(".row").forEach(r => {
+    r.onclick = () => { sel = r.dataset.p; render(); };
+    r.onkeydown = e => { if (e.key === "Enter") r.onclick(); };
+  });
+  const d = data[sel]; if (!d) return;
+  const m = d.model || {};
+  const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${(v || 0) * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
+  $("detail").innerHTML = `
+    <div class="mut">${esc(sel)}${stt === "OFFLINE" ? " (backend offline, last known data)" : ""}</div>
+    <div class="big num">${esc(d.bid)} <span class="mut" style="font-size:14px">spread ${esc(d.spread ?? "-")} pts</span></div>
+    <canvas id="cv" width="600" height="120"></canvas>
+    <div class="tfs">${["M5", "M15", "H1", "H4"].map(t => {
+      const v = (d.tf || {})[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`;
+    }).join("")}</div>
+    <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
+    <p><span class="tag ${esc(d.signal)}">${esc(d.signal)}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
+    <p class="mut">Tested on unseen data: ${m.holdout_hit_rate != null ? pct(m.holdout_hit_rate) + " of strong signals were right (" + esc(m.holdout_signals) + " signals)" : "not enough strong signals to measure"}.
+    Last tick ${esc(d.tickAgeSec)}s ago.</p>`;
+  draw(d.spark || []);
+}
+function draw(a) {
+  const c = $("cv"); if (!c || a.length < 2) return;
+  const x = c.getContext("2d"), w = c.width, h = c.height;
+  const lo = Math.min(...a), hi = Math.max(...a), r = hi - lo || 1;
+  x.clearRect(0, 0, w, h); x.strokeStyle = "#2ec4b6"; x.lineWidth = 2; x.beginPath();
+  a.forEach((v, i) => { const px = i / (a.length - 1) * w, py = h - 6 - (v - lo) / r * (h - 12); i ? x.lineTo(px, py) : x.moveTo(px, py); });
+  x.stroke();
+}
+</script>
+</body>
+</html>
