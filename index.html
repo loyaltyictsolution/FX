@@ -113,6 +113,9 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+window.addEventListener("error", e => { const x = document.getElementById("err"); if (x && !x.textContent) x.textContent = "Page error: " + e.message; });
+</script>
+<script>
 // ENGINE START
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 function ema(a, n) { const k = 2 / (n + 1), o = [a[0]]; for (let i = 1; i < a.length; i++) o.push(a[i] * k + o[i - 1] * (1 - k)); return o; }
@@ -151,7 +154,12 @@ function tfTrend(c, step) {
 // ENGINE END
 
 const PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD"];
-const firebaseConfig = { apiKey: "PASTE", authDomain: "PASTE", databaseURL: "PASTE", projectId: "PASTE", appId: "PASTE" };
+// Paste apiKey and appId from Firebase > Project settings > Your apps > Web app. The rest is filled in.
+const firebaseConfig = { apiKey: "PASTE", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "PASTE" };
+if (Object.values(firebaseConfig).includes("PASTE")) {
+  document.getElementById("err").textContent = "Setup needed: open index.html and paste your Firebase apiKey and appId into firebaseConfig.";
+  throw new Error("firebaseConfig incomplete");
+}
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), dbr = firebase.database();
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
