@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steve FX Radar</title>
+<title>Loyalty FX Radar</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#12202e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,6 +98,33 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 #m_info div{margin:2px 0}
 #member,#pay,#logs{margin-bottom:0}
 
+/* ---- Chat, news, receipts ---- */
+.note a{color:var(--buy)}
+.btn{display:inline-block;padding:6px 12px;border-radius:8px;border:1px solid var(--line);color:var(--tx);text-decoration:none;font-size:13px}
+.btn.wa{background:#25d366;color:#06231f;border:0;font-weight:600}
+.adduser textarea{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;flex:1 1 320px}
+#bb{border-color:var(--wait)}
+.bbtxt{margin:4px 0 0;white-space:pre-wrap}
+.news-i{padding:10px 0;border-bottom:1px solid var(--line)}.news-i:last-child{border-bottom:0}
+.news-i p{margin:4px 0 0;white-space:pre-wrap}
+.news-i .bad{color:var(--danger);padding:2px 8px;font-size:12px;margin-left:6px}
+#chat summary{cursor:pointer;font-weight:600}
+#ch_list{height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0;background:rgba(0,0,0,.18)}
+.msg{margin:6px 0;max-width:85%;padding:6px 10px;border-radius:10px;background:var(--panel);border:1px solid var(--line);word-break:break-word;font-size:14px;white-space:pre-wrap}
+.msg.me{margin-left:auto;background:#1f4a47;border-color:var(--buy)}
+.msg small{display:block;color:var(--mut);font-size:11px}
+.msg button{float:right;padding:0 6px;font-size:11px;margin-left:6px;color:var(--danger)}
+#rcpt{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.7);overflow:auto;padding:20px}
+#rcpt .sheet{background:#fff;color:#111;max-width:420px;margin:0 auto;border-radius:10px;padding:22px;font-size:14px}
+#rcpt .sheet h2{margin:0 0 2px;font-size:20px}
+#rcpt .sheet table{width:100%;border-collapse:collapse;margin:12px 0}
+#rcpt .sheet td{padding:5px 0;border-bottom:1px solid #ddd;vertical-align:top;word-break:break-word}
+#rcpt .sheet td:first-child{color:#555;width:42%}
+#rcpt .stamp{display:inline-block;padding:3px 12px;border:2px solid;border-radius:6px;font-weight:700;letter-spacing:1px;transform:rotate(-4deg)}
+.stamp.PAID{color:#0a8a4a}.stamp.PENDING{color:#b7791f}.stamp.REJECTED,.stamp.REVERSED{color:#c0392b}
+#rcpt .acts{display:flex;gap:8px;max-width:420px;margin:12px auto 0}
+@media print{body *{visibility:hidden}#rcpt,#rcpt *{visibility:visible}#rcpt{position:absolute;inset:0;background:#fff;padding:0}#rcpt .acts{display:none}}
+
 /* ---- Steve FX Radar backdrop ---- */
 html{background:#0b1622}
 body{background:transparent;position:relative;min-height:100vh}
@@ -121,7 +148,7 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 </head>
 <body>
 <section id="login" class="panel">
-  <h1>Steve FX Radar</h1>
+  <h1 id="lname">Steve FX Radar</h1>
   <p class="mut">Sign in to view live signals.</p>
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
@@ -133,11 +160,12 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <div id="err" role="alert"></div>
 </section>
 <div id="app">
-<header><h1>Steve FX Radar</h1>
+<header><h1 id="hname">Steve FX Radar</h1>
   <div class="bar"><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
 <div id="why" class="panel OFFLINE" role="status"></div>
+<section class="panel" id="bb" style="display:none;margin-bottom:14px"></section>
 <section class="panel" id="member" style="display:none;margin-bottom:16px">
   <b>Membership</b>
   <p id="m_status" class="mut"></p>
@@ -148,6 +176,8 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     <input id="m_amt" type="number" min="0" placeholder="Amount paid">
     <input id="m_payer" placeholder="Name or phone used" maxlength="60">
     <button class="pri" id="m_go">Send payment code</button>
+    <a class="btn wa" id="m_wa" target="_blank" rel="noopener">WhatsApp the code</a>
+    <a class="btn" id="m_mail">Email us</a>
     <span id="m_msg" class="mut" role="status"></span>
   </div>
   <div id="m_hist"></div>
@@ -158,6 +188,12 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 </main>
 <section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
 </div>
+<section class="panel" id="news" style="display:none;margin-top:16px"></section>
+<details class="panel" id="chat" style="margin-top:16px"><summary>Chat <span id="ch_n" class="pill apr" style="display:none"></span></summary>
+  <select id="ch_sel" aria-label="Chat channel" style="margin-top:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"></select>
+  <div id="ch_list"></div>
+  <div class="adduser" style="margin:0"><input id="ch_in" placeholder="Type a message" maxlength="400" style="flex:1 1 220px" autocomplete="off"><button class="pri" id="ch_go">Send</button><span id="ch_msg" class="mut" role="status"></span></div>
+</details>
 <details class="panel" id="admin"><summary>Admin settings</summary>
   <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
@@ -190,9 +226,14 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   </details>
 </section>
 <section class="panel" id="pay" style="display:none;margin-top:16px"><b>Membership &amp; payments</b> <span id="pay_n" class="pill apr" style="display:none"></span>
+  <div class="stats" id="pay_stats"></div>
   <div id="pend"></div>
+  <div style="margin-top:8px"><button id="pay_csv">Export payments CSV</button></div>
   <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Membership settings</summary>
     <div id="pay_form" class="adduser">
+      <input id="s_company" placeholder="Company name" maxlength="58">
+      <input id="s_wa" placeholder="WhatsApp e.g. 254713474115" maxlength="20">
+      <input id="s_mail" type="email" placeholder="Contact email" maxlength="120">
       <input id="s_price" placeholder="Price e.g. KES 1,500" maxlength="90">
       <input id="s_days" type="number" min="1" max="3650" placeholder="Days per payment">
       <input id="s_idle" type="number" min="5" max="1440" placeholder="Idle logout (minutes)">
@@ -203,11 +244,24 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     </div>
   </details>
 </section>
+<section class="panel" id="ann" style="display:none;margin-top:16px"><b>Billboard &amp; newsletter</b>
+  <div class="adduser">
+    <textarea id="bb_txt" rows="2" maxlength="590" placeholder="Billboard: a notice shown at the top for everyone (leave empty to hide)"></textarea>
+    <button class="pri" id="bb_save">Update billboard</button><span id="bb_msg" class="mut" role="status"></span>
+  </div>
+  <div class="adduser">
+    <input id="nw_t" placeholder="Newsletter title" maxlength="110" style="flex:1 1 100%">
+    <textarea id="nw_b" rows="4" maxlength="2900" placeholder="Write the newsletter. It shows under News &amp; updates for every user."></textarea>
+    <button class="pri" id="nw_go">Publish newsletter</button><button id="nw_copy">Copy member emails</button><span id="nw_msg" class="mut" role="status"></span>
+  </div>
+</section>
 <section class="panel" id="logs" style="display:none;margin-top:16px"><b>Live activity log</b> <span class="mut">(last 100)</span>
   <div style="margin:8px 0"><button id="lg_clr">Clear log</button></div>
   <div id="loglist" style="max-height:320px;overflow:auto"></div>
 </section>
 </div>
+<div id="rcpt" style="display:none"></div>
+<p class="note" id="contact">Need help? <a id="c_wa" href="https://wa.me/254713474115" target="_blank" rel="noopener">WhatsApp +254713474115</a> &middot; <a id="c_em" href="mailto:wanjohisteve85@gmail.com">wanjohisteve85@gmail.com</a></p>
 <p class="note">Alerts only. No orders. Signals are rule-based scores from public price data, not guarantees, and prices can differ slightly from your Exness quotes. Check the tested hit rate on each pair. Alerts work only while this page stays open.</p>
 
 <script>
@@ -330,7 +384,7 @@ function raise(pair, from, to, reason, strength) {
   $("alerts").innerHTML = alerts.map(a => `<div><span class="num mut">${new Date(a.t).toLocaleTimeString()}</span> ${esc(a.msg)}</div>`).join("");
   if (!soundOn) return;
   banner(msg); to === "DANGER" ? beep(300, .25, 3) : beep(880, .15);
-  if ("Notification" in window && Notification.permission === "granted") try { new Notification("Steve FX Radar", { body: msg }); } catch {}
+  if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: msg }); } catch {}
 }
 
 // ---------- data ----------
@@ -467,7 +521,7 @@ $("demo").onclick = () => {
 // ---------- user management + presence ----------
 let U = {}, PR = {}, AD = {}, AP = {}, uRefs = [], hb, apErr = false, MS = {}, PAY = {}, MYPAY = {}, SITE = {}, LG = [], MEM = { apr: false, until: 0 }, knownPay = null, feedRef = null, feedOn = false, feedTs = 0, lastPub = 0, sweepT, IDLE_MIN = 30, lastIdleReset = 0;
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
+function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); resetChat(); NEWS = []; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
@@ -496,7 +550,7 @@ function renderUsers() {
   rows.sort((a, b) => b.live - a.live || (a.v.email || "").localeCompare(b.v.email || ""));
   $("ulist").innerHTML = (apErr ? '<p class="mut">Approvals cannot be read. Add the <code>approved</code> read rule for admins, then reload.</p>' : "") +
     (rows.map(({ id, v, adm, blk, apr, live }) => `<div class="urow"><div class="udata"><span class="dot ${live ? "on" : ""}"></span><b>${esc(v.email || id)}</b>
-    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + new Date(MS[id].until).toLocaleDateString() + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
+    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${!adm && !apr ? '<span class="pill">Unpaid</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + new Date(MS[id].until).toLocaleDateString() + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
     <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + new Date(PR[id].last).toLocaleString() : "Never signed in"}</div></div>
     <div class="uact">${id === me ? '<span class="mut">Your account</span>' :
       `${adm ? "" : `<button data-a="apr" data-id="${esc(id)}">${apr ? "Unapprove" : "Approve"}</button>`}
@@ -553,7 +607,8 @@ async function grant(id, days) {                     // approve a user; days = 0
 }
 function startCommon(u) {
   try { if (sessionStorage.getItem("fr_log") !== u.uid) { sessionStorage.setItem("fr_log", u.uid); logEvt("Signed in"); } } catch { logEvt("Signed in"); }
-  listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); renderMember(); fillSite(); });
+  listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); applySite(); renderMember(); fillSite(); });
+  listen(dbr.ref("news").limitToLast(8), s => { NEWS = []; s.forEach(c => { NEWS.push({ id: c.key, ...c.val() }); }); renderNews(); });
   if (isAdmin) startAdminExtras();
   else {
     listen(dbr.ref("approved/" + u.uid), s => { MEM.apr = s.val() === true; access(); });
@@ -567,10 +622,10 @@ function access() {
   const mem = isMember();
   $("sigwrap").style.display = mem ? "block" : "none";
   $("member").style.display = isAdmin ? "none" : "block";
-  $("pay").style.display = $("logs").style.display = isAdmin ? "block" : "none";
+  $("pay").style.display = $("logs").style.display = $("ann").style.display = isAdmin ? "block" : "none";
   $("demo").style.display = isAdmin ? "" : "none";
   if (!isAdmin) { mem ? startFeed() : stopFeed(); }
-  renderMember(); status();
+  renderMember(); chOptions(); status();
 }
 setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
 
@@ -604,12 +659,12 @@ function publish() {
 function renderMember() {
   if (isAdmin || !auth.currentUser) return;
   const now = Date.now(), act = isMember();
-  $("m_status").innerHTML = act ? (MEM.until ? `Active until <b>${new Date(MEM.until).toLocaleDateString()}</b> (${Math.max(0, Math.ceil((MEM.until - now) / 86400000))} days left).` : "Active. No expiry date.")
-    : MEM.until && MEM.until <= now ? `Your membership expired on <b>${new Date(MEM.until).toLocaleDateString()}</b>. Pay below to renew.` : "You do not have an active membership yet.";
+  $("m_status").innerHTML = `<span class="pill ${act ? "adm" : "blk"}" style="margin:0 8px 0 0">${act ? "PAID" : "NOT PAID"}</span>` + (act ? (MEM.until ? `Active until <b>${new Date(MEM.until).toLocaleDateString()}</b> (${Math.max(0, Math.ceil((MEM.until - now) / 86400000))} days left).` : "Active. No expiry date.")
+    : MEM.until && MEM.until <= now ? `Your membership expired on <b>${new Date(MEM.until).toLocaleDateString()}</b>. Pay below to renew.` : "You do not have an active membership yet.");
   const rows = [["Price", SITE.price], ["Access period", SITE.days ? SITE.days + " days" : ""], ["M-Pesa", SITE.mpesa], ["Bank", SITE.bank], ["Other", SITE.other]].filter(r => r[1]);
   $("m_info").innerHTML = rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>';
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
-  $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${p.status === "confirmed" ? "adm" : p.status === "rejected" ? "blk" : "apr"}">${esc(p.status)}</span></div><div class="mut">${new Date(p.ts || 0).toLocaleString()}</div></div>`).join("") : "";
+  $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments and receipts</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span></div><div class="mut">${new Date(p.ts || 0).toLocaleString()} <button data-rc="${esc(p.id)}">Receipt</button></div></div>`).join("") : "";
 }
 $("m_go").onclick = async () => {
   const u = auth.currentUser, m = $("m_msg"); m.textContent = ""; if (!u) return;
@@ -628,14 +683,14 @@ $("m_go").onclick = async () => {
 function pendingList() { const o = []; for (const [uid, m] of Object.entries(PAY)) for (const [pid, p] of Object.entries(m || {})) o.push({ uid, pid, ...p }); return o; }
 function startAdminExtras() {
   listen(dbr.ref("memberships"), s => { MS = s.val() || {}; renderUsers(); });
-  listen(dbr.ref("users"), () => renderPay());
+  listen(dbr.ref("users"), () => { renderPay(); chOptions(); });
   listen(dbr.ref("payments"), s => {
     PAY = s.val() || {};
     const pend = pendingList().filter(p => p.status === "pending");
     if (knownPay) pend.forEach(p => { if (!knownPay.has(p.pid)) {
       const msg = "New payment code " + p.code + " from " + (nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid)) + ". Check your phone.";
       banner(msg); if (soundOn) beep(740, .15, 3);
-      if ("Notification" in window && Notification.permission === "granted") try { new Notification("Steve FX Radar", { body: msg }); } catch {}
+      if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: msg }); } catch {}
     } });
     knownPay = new Set(pend.map(p => p.pid)); renderPay();
   });
@@ -644,41 +699,69 @@ function startAdminExtras() {
 }
 function renderPay() {
   if (!isAdmin) return;
-  const all = pendingList().sort((a, b) => (b.ts || 0) - (a.ts || 0)), pend = all.filter(p => p.status === "pending"), done = all.filter(p => p.status !== "pending").slice(0, 10);
+  const all = pendingList().sort((a, b) => (b.ts || 0) - (a.ts || 0)), pend = all.filter(p => p.status === "pending"), done = all.filter(p => p.status !== "pending").slice(0, 15);
   const nb = $("pay_n"); nb.style.display = pend.length ? "inline-block" : "none"; nb.textContent = pend.length + " pending";
   const who = p => esc(nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid));
   const line = p => `<div class="mut">${new Date(p.ts || 0).toLocaleString()} &middot; ${esc(p.method)}${p.amount ? " &middot; " + esc(p.amount) : ""}${p.payer ? " &middot; " + esc(p.payer) : ""}</div>`;
+  const now = Date.now(), d0 = new Date(), mStart = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime();
+  const conf = all.filter(p => p.status === "confirmed"), sum = a => a.reduce((t, p) => t + (+p.amount || 0), 0);
+  const act = Object.entries(MS).filter(([id, m]) => AP[id] === true && m && m.until > now), soon = act.filter(([, m]) => m.until - now < 7 * 864e5).length;
+  $("pay_stats").innerHTML = `<div>REVENUE THIS MONTH<b>${sum(conf.filter(p => (p.ts || 0) >= mStart)).toLocaleString()}</b></div><div>REVENUE ALL TIME<b>${sum(conf).toLocaleString()}</b></div><div>ACTIVE MEMBERS<b>${act.length}</b></div><div>EXPIRING IN 7 DAYS<b style="color:var(--wait)">${soon}</b></div>`;
   $("pend").innerHTML = (pend.map(p => `<div class="urow"><div class="udata"><b>${who(p)}</b> <span class="pill apr">Code <span class="num">${esc(p.code)}</span></span>${line(p)}</div>
     <div class="uact"><button class="pri" data-pa="ok" data-u="${esc(p.uid)}" data-p="${esc(p.pid)}">Confirm</button><button class="bad" data-pa="no" data-u="${esc(p.uid)}" data-p="${esc(p.pid)}">Reject</button></div></div>`).join("") || '<p class="mut">No payment codes waiting.</p>')
-    + (done.length ? '<div class="mut" style="margin-top:10px">Recent decisions</div>' + done.map(p => `<div class="urow"><div class="udata">${who(p)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${p.status === "confirmed" ? "adm" : "blk"}">${esc(p.status)}</span>${line(p)}</div></div>`).join("") : "");
+    + (done.length ? '<div class="mut" style="margin-top:10px">Recent decisions</div>' + done.map(p => `<div class="urow"><div class="udata">${who(p)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span>${p.receipt ? ` <span class="pill num">${esc(p.receipt)}</span>` : ""}${line(p)}${p.reason ? `<div class="mut">Reason: ${esc(p.reason)}</div>` : ""}</div>
+    <div class="uact"><button data-pa="rcp" data-u="${esc(p.uid)}" data-p="${esc(p.pid)}">Receipt</button>${p.status === "confirmed" ? `<button class="bad" data-pa="rev" data-u="${esc(p.uid)}" data-p="${esc(p.pid)}">Reverse</button>` : ""}</div></div>`).join("") : "");
 }
 $("pend").onclick = async e => {
   const b = e.target.closest("button[data-pa]"); if (!b) return;
-  const uid = b.dataset.u, pid = b.dataset.p, p = PAY[uid] && PAY[uid][pid]; if (!p) return;
+  const uid = b.dataset.u, pid = b.dataset.p, act = b.dataset.pa, p = PAY[uid] && PAY[uid][pid]; if (!p) return;
+  if (act === "rcp") return showReceipt(p, uid);
+  const base = "payments/" + uid + "/" + pid;
   try {
-    if (b.dataset.pa === "ok") {
+    if (act === "ok") {
       const d = prompt("Confirm code " + p.code + " from " + nm(uid) + ".\nDays of membership?", SITE.days || 30); if (d === null) return;
       const days = Math.floor(+d); if (!(days >= 1)) return alert("Enter a number of days.");
+      const receipt = "RC" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
       await grant(uid, days);
-      await dbr.ref("payments/" + uid + "/" + pid).update({ status: "confirmed", by: auth.currentUser.email || "", decidedAt: TS });
-      logEvt("Confirmed payment " + p.code + " for " + nm(uid) + " (" + days + " days)");
-    } else if (confirm("Reject code " + p.code + " from " + nm(uid) + "?")) {
-      await dbr.ref().update({ ["payments/" + uid + "/" + pid + "/status"]: "rejected", ["paycodes/" + p.code]: null });
+      await dbr.ref(base).update({ status: "confirmed", by: auth.currentUser.email || "", decidedAt: TS, days, receipt });
+      logEvt("Confirmed payment " + p.code + " for " + nm(uid) + " (" + days + " days, " + receipt + ")");
+    } else if (act === "rev") {
+      const why = prompt("Reverse payment " + p.code + " from " + nm(uid) + "?\nThis takes back the " + (p.days || 0) + " days it granted.\nReason (optional):", ""); if (why === null) return;
+      const cur = (MS[uid] && MS[uid].until) || 0, nu = cur - (p.days || 0) * 864e5, u = {};
+      u[base + "/status"] = "reversed"; u[base + "/decidedAt"] = TS; if (why.trim()) u[base + "/reason"] = why.trim().slice(0, 150);
+      if (p.days && cur && nu > Date.now()) u["memberships/" + uid] = { until: nu, plan: "adjusted" };
+      else { u["approved/" + uid] = null; u["memberships/" + uid] = null; }
+      await dbr.ref().update(u);
+      logEvt("Reversed payment " + p.code + " for " + nm(uid) + (why.trim() ? ": " + why.trim() : ""));
+    } else if (act === "no" && confirm("Reject code " + p.code + " from " + nm(uid) + "?")) {
+      await dbr.ref().update({ [base + "/status"]: "rejected", ["paycodes/" + p.code]: null });
       logEvt("Rejected payment " + p.code + " from " + nm(uid));
     }
   } catch (err) { alert("Action failed: " + err.message); }
 };
+$("pay_csv").onclick = () => {
+  const cell = v => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const rows = [["Date", "Member", "Method", "Code", "Amount", "Days", "Status", "Receipt"]].concat(pendingList().sort((a, b) => (a.ts || 0) - (b.ts || 0))
+    .map(p => [new Date(p.ts || 0).toISOString(), nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid), p.method, p.code, p.amount, p.days, p.status, p.receipt]));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(cell).join(",")).join("\n")], { type: "text/csv" }));
+  a.download = "payments.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
 function fillSite() {
-  if (!isAdmin || $("pay_form").contains(document.activeElement)) return;
-  $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; $("s_idle").value = SITE.idleMinutes || "";
-  $("s_mpesa").value = SITE.mpesa || ""; $("s_bank").value = SITE.bank || ""; $("s_other").value = SITE.other || "";
+  if (!isAdmin) return;
+  if (!$("pay_form").contains(document.activeElement)) {
+    $("s_company").value = SITE.company || ""; $("s_wa").value = SITE.wa || ""; $("s_mail").value = SITE.mail || "";
+    $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; $("s_idle").value = SITE.idleMinutes || "";
+    $("s_mpesa").value = SITE.mpesa || ""; $("s_bank").value = SITE.bank || ""; $("s_other").value = SITE.other || "";
+  }
+  if (!$("ann").contains(document.activeElement)) $("bb_txt").value = SITE.billboard || "";
 }
 $("s_save").onclick = async () => {
   const m = $("s_msg"), days = +$("s_days").value, idle = +$("s_idle").value;
   if (days && (days < 1 || days > 3650)) return m.textContent = "Days must be 1 to 3650.";
   if (idle && (idle < 5 || idle > 1440)) return m.textContent = "Idle logout must be 5 to 1440 minutes.";
-  const o = { price: $("s_price").value.trim(), mpesa: $("s_mpesa").value.trim(), bank: $("s_bank").value.trim(), other: $("s_other").value.trim(), days: days || null, idleMinutes: idle || null };
-  try { await dbr.ref("site").update(o); m.textContent = "Saved."; logEvt("Updated membership settings (idle logout " + (idle || 30) + " min)"); }
+  const o = { company: $("s_company").value.trim(), wa: $("s_wa").value.replace(/\D/g, ""), mail: $("s_mail").value.trim(), price: $("s_price").value.trim(),
+    mpesa: $("s_mpesa").value.trim(), bank: $("s_bank").value.trim(), other: $("s_other").value.trim(), days: days || null, idleMinutes: idle || null };
+  try { await dbr.ref("site").update(o); m.textContent = "Saved."; logEvt("Updated settings (company, contact, membership)"); }
   catch (err) { m.textContent = "Save failed: " + err.message; }
   setTimeout(() => m.textContent = "", 5000);
 };
@@ -693,6 +776,111 @@ async function sweep() {                             // drop access when a membe
     try { await dbr.ref("approved/" + id).remove(); logEvt("Membership expired for " + nm(id)); } catch {}
   }
 }
+
+// ---------- company, contact, receipts, news, chat ----------
+let CO = "Steve FX Radar", NEWS = [], chRef = null, chUnread = 0, chInit = false, chLast = 0, chSend = 0;
+try { const c0 = localStorage.getItem("fr_company"); if (c0) { CO = c0; $("lname").textContent = c0; $("hname").textContent = c0; document.title = c0; } } catch {}
+const stLabel = x => ({ confirmed: "Paid", pending: "Pending", rejected: "Rejected", reversed: "Reversed" })[x] || String(x);
+const stCls = x => x === "confirmed" ? "adm" : x === "pending" ? "apr" : "blk";
+function applySite() {
+  CO = SITE.company || "Steve FX Radar";
+  $("hname").textContent = CO; $("lname").textContent = CO; document.title = CO;
+  try { localStorage.setItem("fr_company", CO); } catch {}
+  const wa = (SITE.wa || "254713474115").replace(/\D/g, ""), em = SITE.mail || "wanjohisteve85@gmail.com";
+  $("c_wa").href = "https://wa.me/" + wa; $("c_wa").textContent = "WhatsApp +" + wa; $("c_em").href = "mailto:" + em; $("c_em").textContent = em;
+  const b = $("bb"), t = SITE.billboard || ""; b.style.display = t ? "block" : "none";
+  b.innerHTML = t ? '<b>Notice</b><p class="bbtxt">' + esc(t) + "</p>" : "";
+  waLink();
+}
+function waLink() {
+  const wa = (SITE.wa || "254713474115").replace(/\D/g, ""), em = SITE.mail || "wanjohisteve85@gmail.com", u = auth.currentUser;
+  const code = ($("m_code").value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""), amt = $("m_amt").value, meth = $("m_method").selectedOptions[0].text;
+  const txt = `Hello, I have paid for membership.\nMethod: ${meth}\nCode: ${code || "-"}\nAmount: ${amt || "-"}\nAccount: ${u ? u.email : "-"}`;
+  $("m_wa").href = "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt);
+  $("m_mail").href = "mailto:" + em + "?subject=" + encodeURIComponent("Membership payment") + "&body=" + encodeURIComponent(txt);
+}
+["m_code", "m_amt"].forEach(id => $(id).addEventListener("input", waLink)); $("m_method").addEventListener("change", waLink); waLink();
+
+function showReceipt(p, uid) {
+  const st = (stLabel(p.status) || "").toUpperCase(), me = auth.currentUser;
+  const until = me && uid === me.uid ? MEM.until : (MS[uid] && MS[uid].until) || 0;
+  const rows = [["Receipt no.", p.receipt || "Not issued yet"], ["Date", new Date(p.ts || 0).toLocaleString()], ["Member", nm(uid) !== uid ? nm(uid) : (p.email || uid)],
+    ["Method", p.method], ["Payment code", p.code], ["Amount", p.amount != null ? p.amount : "-"], ["Access granted", p.days ? p.days + " days" : "-"]];
+  if (p.status === "confirmed" && until) rows.push(["Valid until", new Date(until).toLocaleDateString()]);
+  if (p.status === "reversed" && p.reason) rows.push(["Reason", p.reason]);
+  $("rcpt").innerHTML = `<div class="sheet"><h2>${esc(CO)}</h2><div style="color:#555">Payment receipt</div><div style="margin:12px 0"><span class="stamp ${st}">${esc(st)}</span></div>
+    <table>${rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
+    <div style="color:#777;font-size:12px">Status as at ${new Date().toLocaleString()}.</div></div>
+    <div class="acts"><button id="rc_p" class="btn" style="flex:1">Print / save PDF</button><button id="rc_x" class="btn" style="flex:1">Close</button></div>`;
+  $("rcpt").style.display = "block"; $("rc_p").onclick = () => window.print(); $("rc_x").onclick = () => { $("rcpt").style.display = "none"; };
+}
+$("m_hist").onclick = e => { const b = e.target.closest("button[data-rc]"); if (b && MYPAY[b.dataset.rc]) showReceipt(MYPAY[b.dataset.rc], auth.currentUser.uid); };
+
+// ----- news + billboard -----
+function renderNews() {
+  const el = $("news"), n = NEWS.slice().reverse();
+  el.style.display = n.length ? "block" : "none";
+  el.innerHTML = "<b>News &amp; updates</b>" + n.map(x => `<div class="news-i"><b>${esc(x.title)}</b> <span class="mut">${new Date(x.t || 0).toLocaleDateString()}</span>${isAdmin ? `<button class="bad" data-nd="${esc(x.id)}">Delete</button>` : ""}<p>${esc(x.body)}</p></div>`).join("");
+}
+$("news").onclick = async e => { const b = e.target.closest("button[data-nd]"); if (b && isAdmin && confirm("Delete this post?")) { try { await dbr.ref("news/" + b.dataset.nd).remove(); logEvt("Deleted a newsletter post"); } catch (err) { alert(err.message); } } };
+$("bb_save").onclick = async () => {
+  const t = $("bb_txt").value.trim().slice(0, 590), m = $("bb_msg");
+  try { await dbr.ref("site/billboard").set(t || null); m.textContent = t ? "Billboard updated." : "Billboard hidden."; logEvt(t ? "Updated the billboard" : "Cleared the billboard"); } catch (err) { m.textContent = "Failed: " + err.message; }
+  setTimeout(() => m.textContent = "", 5000);
+};
+$("nw_go").onclick = async () => {
+  const t = $("nw_t").value.trim().slice(0, 110), b = $("nw_b").value.trim().slice(0, 2900), m = $("nw_msg");
+  if (!t || !b) return m.textContent = "Add a title and a message.";
+  try { await dbr.ref("news").push({ title: t, body: b, t: TS }); $("nw_t").value = $("nw_b").value = ""; m.textContent = "Published."; logEvt("Published newsletter: " + t.slice(0, 60)); } catch (err) { m.textContent = "Failed: " + err.message; }
+  setTimeout(() => m.textContent = "", 5000);
+};
+$("nw_copy").onclick = async () => {
+  const list = Object.values(U).filter(v => v && !v.removed && !v.blocked && v.email).map(v => v.email).join(", "), m = $("nw_msg");
+  try { await navigator.clipboard.writeText(list); m.textContent = "Member emails copied. Paste them into the BCC field of an email."; } catch { prompt("Copy these emails:", list); }
+  setTimeout(() => m.textContent = "", 6000);
+};
+
+// ----- chat -----
+function chPath(v) { return v === "room" ? "chat/room" : "chat/dm/" + v.slice(3); }
+function chOptions() {
+  const sel = $("ch_sel"), me = auth.currentUser; if (!me) return; const cur = sel.value, o = [];
+  if (isMember()) o.push(["room", "Everyone (members)"]);
+  if (isAdmin) Object.entries(U).filter(([id, v]) => v && !v.removed && id !== me.uid).sort((a, b) => (a[1].email || "").localeCompare(b[1].email || "")).forEach(([id, v]) => o.push(["dm:" + id, "Direct: " + (v.email || id)]));
+  else o.push(["dm:" + me.uid, "Admin (private)"]);
+  const key = o.map(x => x.join("|")).join("~"); if (sel.dataset.k === key) return; sel.dataset.k = key;
+  sel.innerHTML = o.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join("");
+  if (o.some(x => x[0] === cur)) sel.value = cur;
+  openChat(sel.value);
+}
+function openChat(v) {
+  stopChat(); if (!v) return; chInit = false; const path = chPath(v);
+  chRef = dbr.ref(path).limitToLast(60);
+  chRef.on("value", s => { const a = []; s.forEach(c => { a.push({ id: c.key, ...c.val() }); }); renderChat(a, path); }, () => { $("ch_list").innerHTML = '<p class="mut">Chat is not available for this account.</p>'; });
+}
+function stopChat() { if (chRef) chRef.off(); chRef = null; }
+function resetChat() { stopChat(); const s = $("ch_sel"); s.dataset.k = ""; s.innerHTML = ""; $("ch_list").innerHTML = ""; chUnread = 0; $("ch_n").style.display = "none"; }
+function renderChat(a, path) {
+  const me = auth.currentUser.uid, box = $("ch_list"), atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+  box.innerHTML = a.map(m => `<div class="msg ${m.uid === me ? "me" : ""}">${isAdmin ? `<button data-cd="${esc(m.id)}" data-cp="${esc(path)}" title="Delete">x</button>` : ""}<small>${esc(m.name || "")} &middot; ${new Date(m.t || 0).toLocaleString()}</small>${esc(m.msg)}</div>`).join("") || '<p class="mut">No messages yet.</p>';
+  if (atEnd || !chInit) box.scrollTop = box.scrollHeight;
+  const last = a.length ? a[a.length - 1] : null;
+  if (chInit && last && last.uid !== me && (last.t || 0) > chLast) {
+    if (!$("chat").open) { chUnread++; $("ch_n").textContent = chUnread; $("ch_n").style.display = "inline-block"; }
+    if (soundOn) beep(520, .1);
+  }
+  if (last) chLast = Math.max(chLast, last.t || 0); chInit = true;
+}
+$("chat").addEventListener("toggle", () => { if ($("chat").open) { chUnread = 0; $("ch_n").style.display = "none"; const b = $("ch_list"); b.scrollTop = b.scrollHeight; } });
+$("ch_list").onclick = async e => { const b = e.target.closest("button[data-cd]"); if (b && isAdmin) { try { await dbr.ref(b.dataset.cp + "/" + b.dataset.cd).remove(); } catch (err) { alert(err.message); } } };
+async function sendChat() {
+  const u = auth.currentUser, inp = $("ch_in"), t = inp.value.trim().slice(0, 400), v = $("ch_sel").value, m = $("ch_msg"); m.textContent = "";
+  if (!u || !t || !v || Date.now() - chSend < 800) return; chSend = Date.now(); inp.value = "";
+  try {
+    await dbr.ref(chPath(v)).push({ t: TS, uid: u.uid, name: isAdmin ? "Admin" : (u.email || "member").split("@")[0].slice(0, 40), msg: t });
+    if (!isAdmin && v !== "room") { try { if (!sessionStorage.getItem("fr_dm")) { sessionStorage.setItem("fr_dm", "1"); logEvt("Sent a message to the admin"); } } catch {} }
+  } catch (err) { m.textContent = "Message not sent."; inp.value = t; }
+}
+$("ch_go").onclick = sendChat; $("ch_in").onkeydown = e => { if (e.key === "Enter") sendChat(); }; $("ch_sel").onchange = () => openChat($("ch_sel").value);
 
 // ---------- password tools ----------
 $("nu_sh").onchange = () => { $("nu_pw").type = $("nu_sh").checked ? "text" : "password"; };
