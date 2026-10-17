@@ -91,6 +91,13 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 .adduser input[type=email],.adduser input[type=password]{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
 .adduser .pri{background:var(--buy);color:#06231f;border:0;font-weight:600}
 
+/* ---- Membership, payments, logs ---- */
+.adduser input:not([type=checkbox]),.adduser select{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+.urow button.pri{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.logrow{padding:5px 0;border-bottom:1px solid var(--line);font-size:13px;word-break:break-word}
+#m_info div{margin:2px 0}
+#member,#pay,#logs{margin-bottom:0}
+
 /* ---- Steve FX Radar backdrop ---- */
 html{background:#0b1622}
 body{background:transparent;position:relative;min-height:100vh}
@@ -131,11 +138,26 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 </header>
 <div id="banner" role="alert"></div>
 <div id="why" class="panel OFFLINE" role="status"></div>
-<main>
+<section class="panel" id="member" style="display:none;margin-bottom:16px">
+  <b>Membership</b>
+  <p id="m_status" class="mut"></p>
+  <div id="m_info"></div>
+  <div class="adduser">
+    <select id="m_method" aria-label="Payment method"><option value="mpesa">M-Pesa</option><option value="bank">Bank</option><option value="other">Other</option></select>
+    <input id="m_code" placeholder="Payment code" autocomplete="off" maxlength="24" style="text-transform:uppercase">
+    <input id="m_amt" type="number" min="0" placeholder="Amount paid">
+    <input id="m_payer" placeholder="Name or phone used" maxlength="60">
+    <button class="pri" id="m_go">Send payment code</button>
+    <span id="m_msg" class="mut" role="status"></span>
+  </div>
+  <div id="m_hist"></div>
+</section>
+<div id="sigwrap"><main>
   <section class="panel" id="list" aria-label="Currency pairs"></section>
   <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
 </main>
 <section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
+</div>
 <details class="panel" id="admin"><summary>Admin settings</summary>
   <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
@@ -166,6 +188,24 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
       <span id="cp_msg" class="mut" role="status"></span>
     </div>
   </details>
+</section>
+<section class="panel" id="pay" style="display:none;margin-top:16px"><b>Membership &amp; payments</b> <span id="pay_n" class="pill apr" style="display:none"></span>
+  <div id="pend"></div>
+  <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Membership settings</summary>
+    <div id="pay_form" class="adduser">
+      <input id="s_price" placeholder="Price e.g. KES 1,500" maxlength="90">
+      <input id="s_days" type="number" min="1" max="3650" placeholder="Days per payment">
+      <input id="s_idle" type="number" min="5" max="1440" placeholder="Idle logout (minutes)">
+      <input id="s_mpesa" placeholder="M-Pesa: Paybill / Till / number" maxlength="390" style="flex:1 1 260px">
+      <input id="s_bank" placeholder="Bank: name, account number, account name" maxlength="390" style="flex:1 1 260px">
+      <input id="s_other" placeholder="Other (PayPal, crypto, etc.)" maxlength="390" style="flex:1 1 260px">
+      <button class="pri" id="s_save">Save settings</button><span id="s_msg" class="mut" role="status"></span>
+    </div>
+  </details>
+</section>
+<section class="panel" id="logs" style="display:none;margin-top:16px"><b>Live activity log</b> <span class="mut">(last 100)</span>
+  <div style="margin:8px 0"><button id="lg_clr">Clear log</button></div>
+  <div id="loglist" style="max-height:320px;overflow:auto"></div>
 </section>
 </div>
 <p class="note">Alerts only. No orders. Signals are rule-based scores from public price data, not guarantees, and prices can differ slightly from your Exness quotes. Check the tested hit rate on each pair. Alerts work only while this page stays open.</p>
@@ -259,13 +299,13 @@ $("lf").onsubmit = async e => {
   catch { $("err").textContent = "Wrong email or password."; }
   $("pw").value = ""; $("sp").checked = false; $("pw").type = "password";
 };
-async function doSignOut() {                       // mark offline first, then sign out
+async function doSignOut(why) { try { await logEvt(why || "Signed out"); sessionStorage.removeItem("fr_log"); } catch {}                       // mark offline first, then sign out
   try { if (auth.currentUser) await dbr.ref("presence/" + auth.currentUser.uid).set({ online: false, last: TS }); } catch {}
   auth.signOut();
 }
-$("out").onclick = doSignOut;
-function resetIdle() { clearTimeout(idle); idle = setTimeout(doSignOut, 30 * 60 * 1000); }
-["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => auth.currentUser && resetIdle()));
+$("out").onclick = () => doSignOut("Signed out");
+function resetIdle() { clearTimeout(idle); idle = setTimeout(() => doSignOut("Auto sign-out after " + IDLE_MIN + " min of inactivity"), IDLE_MIN * 60 * 1000); }
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => { if (auth.currentUser && Date.now() - lastIdleReset > 5000) { lastIdleReset = Date.now(); resetIdle(); } }));
 
 // ---------- alerts ----------
 $("snd").onclick = async () => {
@@ -364,7 +404,7 @@ function compute() {
       tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt };
   }
   if (!sel || !data[sel]) sel = Object.keys(data)[0] || null;
-  if (changed) render();
+  if (changed) { render(); publish(); }
 }
 
 // ---------- status + render ----------
@@ -372,7 +412,8 @@ function status() {
   const vals = Object.values(data), c = k => vals.filter(d => d.signal === k).length;
   let st, why;
   if (demo) { st = "DEMO"; why = "Demo data. These are not real signals."; }
-  else if (!isAdmin) { st = "OFFLINE"; why = "This account is not an admin, so it cannot load the price key."; }
+  else if (!isMember()) { st = "OFFLINE"; why = "Membership needed. Pay using the details below, then send your payment code. Access starts when the admin confirms it."; }
+  else if (!isAdmin) { const old = !feedTs || Date.now() - feedTs > 180000; st = weekend() || old ? "STALE" : "LIVE"; why = weekend() ? "Forex market is closed for the weekend. Prices resume Sunday about 22:00 UTC." : !feedTs ? "Waiting for the signal feed..." : old ? "The signal feed has paused. It updates only while the admin's page is open." : "Live feed connected."; }
   else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
   else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
   else if (weekend()) { st = "STALE"; why = "Forex market is closed for the weekend. Prices resume Sunday about 22:00 UTC."; }
@@ -380,7 +421,7 @@ function status() {
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
   const el = $("status"); el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
   $("why").className = "panel " + st;
-  $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>Pairs loaded ${loaded}/${PAIRS.length}</span></div>`;
+  $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>Pairs loaded ${isAdmin ? loaded : vals.length}/${PAIRS.length}</span></div>`;
   if (isAdmin) $("health").innerHTML = [["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", weekend() ? "Closed" : "Open"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
     .map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
   return st;
@@ -389,7 +430,7 @@ setInterval(() => auth.currentUser && status(), 2000);
 
 function render() {
   const st = status();
-  $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
+  $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin ? "Waiting for the signal feed." : loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
     Object.entries(data).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
       <div><b>${esc(p)}</b><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}</div></div>
       <div class="num">${fmt(p, d.bid)}</div><span class="tag ${d.signal}">${d.signal}</span></div>`).join("");
@@ -424,15 +465,15 @@ $("demo").onclick = () => {
 };
 
 // ---------- user management + presence ----------
-let U = {}, PR = {}, AD = {}, AP = {}, uRefs = [], hb, apErr = false;
+let U = {}, PR = {}, AD = {}, AP = {}, uRefs = [], hb, apErr = false, MS = {}, PAY = {}, MYPAY = {}, SITE = {}, LG = [], MEM = { apr: false, until: 0 }, knownPay = null, feedRef = null, feedOn = false, feedTs = 0, lastPub = 0, sweepT, IDLE_MIN = 30, lastIdleReset = 0;
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); U = {}; PR = {}; AD = {}; AP = {}; apErr = false; }
+function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
   let s; try { s = await ur.get(); } catch { s = null; }
   if (s && !s.exists()) { try { await ur.update({ email: u.email, createdAt: TS }); } catch (e) { console.warn(e.message); } }
-  else if (s && s.val().blocked === true) { $("err").textContent = "Your access has been blocked by the admin."; await auth.signOut(); return false; }
+  else if (s && s.val().blocked === true) { $("err").textContent = "Your access has been blocked by the admin."; await logEvt("Blocked account tried to sign in"); await auth.signOut(); return false; }
   listen(dbr.ref("users/" + u.uid + "/blocked"), x => { if (x.val() === true) { $("err").textContent = "Your access has been blocked by the admin."; auth.signOut(); } });
   const pr = dbr.ref("presence/" + u.uid);
   listen(dbr.ref(".info/connected"), x => { if (x.val()) { pr.onDisconnect().set({ online: false, last: TS }); pr.set({ online: true, last: TS }); } });
@@ -455,7 +496,7 @@ function renderUsers() {
   rows.sort((a, b) => b.live - a.live || (a.v.email || "").localeCompare(b.v.email || ""));
   $("ulist").innerHTML = (apErr ? '<p class="mut">Approvals cannot be read. Add the <code>approved</code> read rule for admins, then reload.</p>' : "") +
     (rows.map(({ id, v, adm, blk, apr, live }) => `<div class="urow"><div class="udata"><span class="dot ${live ? "on" : ""}"></span><b>${esc(v.email || id)}</b>
-    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
+    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + new Date(MS[id].until).toLocaleDateString() + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
     <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + new Date(PR[id].last).toLocaleString() : "Never signed in"}</div></div>
     <div class="uact">${id === me ? '<span class="mut">Your account</span>' :
       `${adm ? "" : `<button data-a="apr" data-id="${esc(id)}">${apr ? "Unapprove" : "Approve"}</button>`}
@@ -469,13 +510,16 @@ $("ulist").onclick = async e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
   const id = b.dataset.id, a = b.dataset.a, blk = U[id] && U[id].blocked === true;
   try {
-    if (a === "blk") await dbr.ref("users/" + id + "/blocked").set(!blk);
-    if (a === "adm") await dbr.ref("admins/" + id).set(AD[id] === true ? null : true);
-    if (a === "apr") await dbr.ref("approved/" + id).set(AP[id] === true ? null : true);
-    if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); } }
+    if (a === "blk") { await dbr.ref("users/" + id + "/blocked").set(!blk); logEvt((blk ? "Unblocked " : "Blocked ") + nm(id)); }
+    if (a === "adm") { await dbr.ref("admins/" + id).set(AD[id] === true ? null : true); logEvt((AD[id] === true ? "Removed admin rights from " : "Made admin: ") + nm(id)); }
+    if (a === "apr") {
+      if (AP[id] === true) { await dbr.ref().update({ ["approved/" + id]: null, ["memberships/" + id]: null }); logEvt("Revoked membership for " + nm(id)); }
+      else { const d = prompt("Days of access for " + nm(id) + " (leave blank for no expiry)", ""); if (d === null) return; const days = Math.floor(+d) > 0 ? Math.floor(+d) : 0; await grant(id, days); logEvt("Approved " + nm(id) + (days ? " for " + days + " days" : " with no expiry")); }
+    }
+    if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); logEvt("Sent password reset link to " + em); } }
     if (a === "del" && confirm("Remove " + ((U[id] && U[id].email) || id) + "? They will be blocked and hidden.")) {
       await dbr.ref("users/" + id).update({ blocked: true, removed: true });
-      await dbr.ref("approved/" + id).remove();
+      await dbr.ref("approved/" + id).remove(); await dbr.ref("memberships/" + id).remove(); logEvt("Removed user " + nm(id));
       await dbr.ref("admins/" + id).remove();
     }
   } catch (err) { alert("Action failed: " + err.message); }
@@ -489,9 +533,166 @@ $("nu_go").onclick = async () => {
     await dbr.ref("users/" + c.user.uid).update({ email: em, createdAt: TS, blocked: false, removed: null });
     if ($("nu_ad").checked) await dbr.ref("admins/" + c.user.uid).set(true);
     else await dbr.ref("approved/" + c.user.uid).set(true);
+    logEvt("Added user " + em + ($("nu_ad").checked ? " (admin)" : ""));
     msg.textContent = "User added. Send them the email and password."; $("nu_em").value = $("nu_pw").value = ""; $("nu_ad").checked = false;
   } catch (err) { msg.textContent = err.code === "auth/email-already-in-use" ? "That email already has an account." : err.message; }
 };
+
+// ---------- membership, payments, logs, feed ----------
+const nm = id => (U[id] && U[id].email) || id;
+const isMember = () => isAdmin || (MEM.apr && (!MEM.until || MEM.until > Date.now()));
+function logEvt(msg) {
+  const u = auth.currentUser; if (!u) return Promise.resolve();
+  return Promise.resolve(dbr.ref("logs").push({ t: TS, uid: u.uid, email: u.email || "", msg: String(msg).slice(0, 280) })).catch(() => {});
+}
+async function grant(id, days) {                     // approve a user; days = 0 means no expiry
+  const now = Date.now(), cur = (MS[id] && MS[id].until) || 0, u = {};
+  u["approved/" + id] = true;
+  u["memberships/" + id] = days ? { until: Math.max(now, cur) + days * 86400000, plan: days + " days" } : null;
+  await dbr.ref().update(u);
+}
+function startCommon(u) {
+  try { if (sessionStorage.getItem("fr_log") !== u.uid) { sessionStorage.setItem("fr_log", u.uid); logEvt("Signed in"); } } catch { logEvt("Signed in"); }
+  listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); renderMember(); fillSite(); });
+  if (isAdmin) startAdminExtras();
+  else {
+    listen(dbr.ref("approved/" + u.uid), s => { MEM.apr = s.val() === true; access(); });
+    listen(dbr.ref("memberships/" + u.uid), s => { MEM.until = (s.val() && s.val().until) || 0; access(); });
+    listen(dbr.ref("payments/" + u.uid), s => { MYPAY = s.val() || {}; renderMember(); });
+  }
+  access();
+}
+function access() {
+  if (!auth.currentUser) return;
+  const mem = isMember();
+  $("sigwrap").style.display = mem ? "block" : "none";
+  $("member").style.display = isAdmin ? "none" : "block";
+  $("pay").style.display = $("logs").style.display = isAdmin ? "block" : "none";
+  $("demo").style.display = isAdmin ? "" : "none";
+  if (!isAdmin) { mem ? startFeed() : stopFeed(); }
+  renderMember(); status();
+}
+setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
+
+// ----- member side: signal feed (published by the admin's open page) -----
+function startFeed() {
+  if (feedOn) return; feedOn = true; feedRef = dbr.ref("feed");
+  feedRef.on("value", s => applyFeed(s.val()), e => { feedOn = false; loadErr = e.message; });
+}
+function stopFeed() { if (feedRef) { feedRef.off(); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
+function applyFeed(f) {
+  if (!f || !f.pairs) { feedTs = 0; return; }
+  feedTs = f.ts || 0; const prev = data, old = Date.now() - feedTs > 180000; data = {};
+  for (const k of Object.keys(f.pairs)) {
+    const d = f.pairs[k], p = d.pair || k.replace("_", "/");
+    d.spark = d.spark || []; d.tf = d.tf || { M5: 0, M15: 0, M30: 0 }; d.reason = d.reason || "";
+    d.stale = old; d.age = Math.max(0, Math.round((Date.now() - feedTs) / 1000)); data[p] = d;
+    const was = prev[p] && prev[p].signal;
+    if (was && was !== d.signal && d.signal !== "WAIT") raise(p, was, d.signal, d.reason, Math.max(d.pBuy || 0, d.pSell || 0));
+  }
+  if (!sel || !data[sel]) sel = Object.keys(data)[0] || null;
+  render();
+}
+// ----- admin side: publish signals for members -----
+function publish() {
+  if (!isAdmin || demo || Date.now() - lastPub < 4000 || !Object.keys(data).length) return; lastPub = Date.now();
+  const pairs = {}; for (const [k, v] of Object.entries(data)) pairs[k.replace("/", "_")] = v;
+  dbr.ref("feed").set(JSON.parse(JSON.stringify({ ts: TS, pairs }))).catch(() => {});
+}
+
+// ----- member panel -----
+function renderMember() {
+  if (isAdmin || !auth.currentUser) return;
+  const now = Date.now(), act = isMember();
+  $("m_status").innerHTML = act ? (MEM.until ? `Active until <b>${new Date(MEM.until).toLocaleDateString()}</b> (${Math.max(0, Math.ceil((MEM.until - now) / 86400000))} days left).` : "Active. No expiry date.")
+    : MEM.until && MEM.until <= now ? `Your membership expired on <b>${new Date(MEM.until).toLocaleDateString()}</b>. Pay below to renew.` : "You do not have an active membership yet.";
+  const rows = [["Price", SITE.price], ["Access period", SITE.days ? SITE.days + " days" : ""], ["M-Pesa", SITE.mpesa], ["Bank", SITE.bank], ["Other", SITE.other]].filter(r => r[1]);
+  $("m_info").innerHTML = rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>';
+  const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
+  $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${p.status === "confirmed" ? "adm" : p.status === "rejected" ? "blk" : "apr"}">${esc(p.status)}</span></div><div class="mut">${new Date(p.ts || 0).toLocaleString()}</div></div>`).join("") : "";
+}
+$("m_go").onclick = async () => {
+  const u = auth.currentUser, m = $("m_msg"); m.textContent = ""; if (!u) return;
+  const code = $("m_code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""), amt = parseFloat($("m_amt").value), payer = $("m_payer").value.trim().slice(0, 60);
+  if (code.length < 6 || code.length > 20) return m.textContent = "Enter the payment code exactly as in your payment message (6 to 20 letters and numbers).";
+  const pid = dbr.ref("payments/" + u.uid).push().key, rec = { method: $("m_method").value, code, status: "pending", ts: TS, email: u.email || "", payer };
+  if (amt > 0) rec.amount = amt;
+  try {
+    await dbr.ref().update({ ["paycodes/" + code]: u.uid, ["payments/" + u.uid + "/" + pid]: rec });
+    logEvt("Sent payment code " + code + " (" + rec.method + ")");
+    m.textContent = "Sent. The admin will confirm it and your access will start."; $("m_code").value = $("m_amt").value = $("m_payer").value = "";
+  } catch (err) { m.textContent = /permission|denied/i.test(err.code + err.message) ? "That code was already used, or the request was refused. Check the code or contact the admin." : err.message; }
+};
+
+// ----- admin: payments, settings, logs, expiry -----
+function pendingList() { const o = []; for (const [uid, m] of Object.entries(PAY)) for (const [pid, p] of Object.entries(m || {})) o.push({ uid, pid, ...p }); return o; }
+function startAdminExtras() {
+  listen(dbr.ref("memberships"), s => { MS = s.val() || {}; renderUsers(); });
+  listen(dbr.ref("users"), () => renderPay());
+  listen(dbr.ref("payments"), s => {
+    PAY = s.val() || {};
+    const pend = pendingList().filter(p => p.status === "pending");
+    if (knownPay) pend.forEach(p => { if (!knownPay.has(p.pid)) {
+      const msg = "New payment code " + p.code + " from " + (nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid)) + ". Check your phone.";
+      banner(msg); if (soundOn) beep(740, .15, 3);
+      if ("Notification" in window && Notification.permission === "granted") try { new Notification("Steve FX Radar", { body: msg }); } catch {}
+    } });
+    knownPay = new Set(pend.map(p => p.pid)); renderPay();
+  });
+  listen(dbr.ref("logs").limitToLast(100), s => { LG = []; s.forEach(c => { LG.push(c.val()); }); renderLogs(); });
+  clearInterval(sweepT); sweepT = setInterval(sweep, 60000);
+}
+function renderPay() {
+  if (!isAdmin) return;
+  const all = pendingList().sort((a, b) => (b.ts || 0) - (a.ts || 0)), pend = all.filter(p => p.status === "pending"), done = all.filter(p => p.status !== "pending").slice(0, 10);
+  const nb = $("pay_n"); nb.style.display = pend.length ? "inline-block" : "none"; nb.textContent = pend.length + " pending";
+  const who = p => esc(nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid));
+  const line = p => `<div class="mut">${new Date(p.ts || 0).toLocaleString()} &middot; ${esc(p.method)}${p.amount ? " &middot; " + esc(p.amount) : ""}${p.payer ? " &middot; " + esc(p.payer) : ""}</div>`;
+  $("pend").innerHTML = (pend.map(p => `<div class="urow"><div class="udata"><b>${who(p)}</b> <span class="pill apr">Code <span class="num">${esc(p.code)}</span></span>${line(p)}</div>
+    <div class="uact"><button class="pri" data-pa="ok" data-u="${esc(p.uid)}" data-p="${esc(p.pid)}">Confirm</button><button class="bad" data-pa="no" data-u="${esc(p.uid)}" data-p="${esc(p.pid)}">Reject</button></div></div>`).join("") || '<p class="mut">No payment codes waiting.</p>')
+    + (done.length ? '<div class="mut" style="margin-top:10px">Recent decisions</div>' + done.map(p => `<div class="urow"><div class="udata">${who(p)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${p.status === "confirmed" ? "adm" : "blk"}">${esc(p.status)}</span>${line(p)}</div></div>`).join("") : "");
+}
+$("pend").onclick = async e => {
+  const b = e.target.closest("button[data-pa]"); if (!b) return;
+  const uid = b.dataset.u, pid = b.dataset.p, p = PAY[uid] && PAY[uid][pid]; if (!p) return;
+  try {
+    if (b.dataset.pa === "ok") {
+      const d = prompt("Confirm code " + p.code + " from " + nm(uid) + ".\nDays of membership?", SITE.days || 30); if (d === null) return;
+      const days = Math.floor(+d); if (!(days >= 1)) return alert("Enter a number of days.");
+      await grant(uid, days);
+      await dbr.ref("payments/" + uid + "/" + pid).update({ status: "confirmed", by: auth.currentUser.email || "", decidedAt: TS });
+      logEvt("Confirmed payment " + p.code + " for " + nm(uid) + " (" + days + " days)");
+    } else if (confirm("Reject code " + p.code + " from " + nm(uid) + "?")) {
+      await dbr.ref().update({ ["payments/" + uid + "/" + pid + "/status"]: "rejected", ["paycodes/" + p.code]: null });
+      logEvt("Rejected payment " + p.code + " from " + nm(uid));
+    }
+  } catch (err) { alert("Action failed: " + err.message); }
+};
+function fillSite() {
+  if (!isAdmin || $("pay_form").contains(document.activeElement)) return;
+  $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; $("s_idle").value = SITE.idleMinutes || "";
+  $("s_mpesa").value = SITE.mpesa || ""; $("s_bank").value = SITE.bank || ""; $("s_other").value = SITE.other || "";
+}
+$("s_save").onclick = async () => {
+  const m = $("s_msg"), days = +$("s_days").value, idle = +$("s_idle").value;
+  if (days && (days < 1 || days > 3650)) return m.textContent = "Days must be 1 to 3650.";
+  if (idle && (idle < 5 || idle > 1440)) return m.textContent = "Idle logout must be 5 to 1440 minutes.";
+  const o = { price: $("s_price").value.trim(), mpesa: $("s_mpesa").value.trim(), bank: $("s_bank").value.trim(), other: $("s_other").value.trim(), days: days || null, idleMinutes: idle || null };
+  try { await dbr.ref("site").update(o); m.textContent = "Saved."; logEvt("Updated membership settings (idle logout " + (idle || 30) + " min)"); }
+  catch (err) { m.textContent = "Save failed: " + err.message; }
+  setTimeout(() => m.textContent = "", 5000);
+};
+function renderLogs() {
+  if (!isAdmin) return;
+  $("loglist").innerHTML = LG.slice().reverse().map(l => `<div class="logrow"><span class="num mut">${new Date(l.t).toLocaleString()}</span> <b>${esc(l.email || l.uid)}</b> ${esc(l.msg)}</div>`).join("") || '<p class="mut">No activity yet.</p>';
+}
+$("lg_clr").onclick = async () => { if (confirm("Clear the whole activity log?")) { try { await dbr.ref("logs").remove(); logEvt("Cleared the activity log"); } catch (err) { alert("Failed: " + err.message); } } };
+async function sweep() {                             // drop access when a membership has run out
+  if (!isAdmin) return; const now = Date.now();
+  for (const [id, m] of Object.entries(MS)) if (m && m.until < now && AP[id] === true) {
+    try { await dbr.ref("approved/" + id).remove(); logEvt("Membership expired for " + nm(id)); } catch {}
+  }
+}
 
 // ---------- password tools ----------
 $("nu_sh").onchange = () => { $("nu_pw").type = $("nu_sh").checked ? "text" : "password"; };
@@ -528,7 +729,7 @@ auth.onAuthStateChanged(async u => {
   if (!(await initSelf(u))) return;
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
   $("admin").style.display = isAdmin ? "block" : "none";
-  $("users").style.display = isAdmin ? "block" : "none";
+  $("users").style.display = isAdmin ? "block" : "none"; startCommon(u);
   if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else $("admin").open = true; } catch {} }
   status(); render(); start();
 });
