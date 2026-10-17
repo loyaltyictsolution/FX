@@ -328,7 +328,7 @@ function render() {
       <div><b>${esc(p)}</b><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}</div></div>
       <div class="num">${fmt(p, d.bid)}</div><span class="tag ${d.signal}">${d.signal}</span></div>`).join("");
   document.querySelectorAll(".row").forEach(r => { r.onclick = () => { sel = r.dataset.p; render(); }; r.onkeydown = e => e.key === "Enter" && r.onclick(); });
-  const d = data[sel]; if (!d) return;
+  const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
   const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
   const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~16 hours, spread ignored)` : "not enough past signals to measure";
   $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div><canvas id="cv" width="600" height="120"></canvas>
@@ -363,7 +363,7 @@ $("save").onclick = async () => {
   if (v >= .4 && v <= .9) u.threshold = v; else return toast("Min strength must be 0.40 to 0.90.");
   if (k) u.dataKey = k;
   try { await dbr.ref("settings").update(u); THR = v; if (k) { KEY = k; $("key").value = ""; $("key").placeholder = "saved (hidden)"; } toast("Saved."); start(); }
-  catch { toast("Not allowed. This account is not an admin."); }
+  catch (e) { toast(/permission|denied/i.test(e.code + e.message) ? "Firebase refused the save. Publish the new database rules, then try again." : "Save failed: " + e.message); }
 };
 function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 5000); }
 auth.onAuthStateChanged(async u => {
