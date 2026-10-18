@@ -599,6 +599,7 @@ function renderUsers() {
         if (mt >= 2 && t <= 1) acts += btn("adm", id, t === 1 ? "Remove admin" : "Make admin");
         if (mt === 3 && t === 1) acts += btn("sup", id, "Make super admin");
         if (mt === 3 && t === 2) acts += btn("unsup", id, "Remove super admin");
+        if (amSuper()) acts += btn("em", id, "Fix email");
         acts += btn("rst", id, "Reset password") + btn("blk", id, blk ? "Unblock" : "Block") + btn("del", id, "Remove", "bad");
       }
       return `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "\u25cf Online" : "\u25cb Offline"}</span><b>${esc(v.email || id)}</b>
@@ -611,13 +612,36 @@ setInterval(renderUsers, 30000);                    // keeps "online" status fre
 $("ulist").onclick = async e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
   const id = b.dataset.id, a = b.dataset.a, blk = U[id] && U[id].blocked === true;
-  if (!U[id] || !canAct(id, U[id]) || (a === "adm" && myTier() < 2) || ((a === "sup" || a === "unsup") && myTier() < 3)) return alert("You do not have permission to do that.");
+  if (!U[id] || !canAct(id, U[id]) || (a === "adm" && myTier() < 2) || ((a === "sup" || a === "unsup") && myTier() < 3) || (a === "em" && !amSuper())) return alert("You do not have permission to do that.");
   try {
     if (a === "blk") { await dbr.ref("users/" + id + "/blocked").set(!blk); logEvt((blk ? "Unblocked " : "Blocked ") + nm(id)); }
     if (a === "adm") { await dbr.ref("admins/" + id).set(AD[id] === true ? null : true); logEvt((AD[id] === true ? "Removed admin rights from " : "Made admin: ") + nm(id)); }
     if (a === "apr") {
       if (AP[id] === true) { await dbr.ref().update({ ["approved/" + id]: null, ["memberships/" + id]: null }); logEvt("Revoked membership for " + nm(id)); }
       else { const d = prompt("Days of access for " + nm(id) + " (leave blank for no expiry)", ""); if (d === null) return; const days = Math.floor(+d) > 0 ? Math.floor(+d) : 0; await grant(id, days); logEvt("Approved " + nm(id) + (days ? " for " + days + " days" : " with no expiry")); }
+    }
+    if (a === "em") {
+      const old = (U[id].email || "").trim();
+      const ne = (prompt("Correct email for " + old + ":", old) || "").trim().toLowerCase();
+      if (!ne || ne === old.toLowerCase()) return;
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ne)) return alert("That is not a valid email.");
+      if (isOwnerEmail(ne)) return alert("That email is reserved for the owner.");
+      if (!confirm("Create a new login for " + ne + " and block " + old + "?\nTheir approval, admin role and membership days move over. Old payment history stays on the old record.")) return;
+      const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let pw; do { pw = Array.from(crypto.getRandomValues(new Uint32Array(12)), x => ch[x % ch.length]).join(""); } while (!pwOk(pw));
+      const sec = firebase.apps.find(x => x.name === "sec") || firebase.initializeApp(firebaseConfig, "sec");
+      const c = await sec.auth().createUserWithEmailAndPassword(ne, pw); await sec.auth().signOut();
+      const nid = c.user.uid, u = {};
+      u["users/" + nid] = { email: ne, createdAt: TS, blocked: false };
+      if (AD[id] === true) u["admins/" + nid] = true;
+      if (AP[id] === true) u["approved/" + nid] = true;
+      if (MS[id]) u["memberships/" + nid] = MS[id];
+      u["users/" + id + "/blocked"] = true; u["users/" + id + "/removed"] = true;
+      u["approved/" + id] = null; u["memberships/" + id] = null; u["admins/" + id] = null;
+      u["sessions/" + id] = { id: "kicked-" + rt(), t: TS };
+      await dbr.ref().update(u);
+      logEvt("Fixed email " + old + " -> " + ne);
+      prompt("New login created. Copy and send this to the user.\nEmail: " + ne + "\nTemporary password:", pw);
     }
     if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); logEvt("Sent password reset link to " + em); } }
     if (a === "sup") { await dbr.ref().update({ ["admins/" + id]: true, ["superadmins/" + id]: true }); logEvt("Made super admin: " + nm(id)); }
