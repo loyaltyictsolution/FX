@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Loyalty FX Radar</title>
+<title>Steve FX Radar</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#12202e">
+<meta name="referrer" content="no-referrer">
+<script>try{var t0=localStorage.getItem("fr_theme");if(t0)document.documentElement.setAttribute("data-theme",t0)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -125,6 +127,22 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 #rcpt .acts{display:flex;gap:8px;max-width:420px;margin:12px auto 0}
 @media print{body *{visibility:hidden}#rcpt,#rcpt *{visibility:visible}#rcpt{position:absolute;inset:0;background:#fff;padding:0}#rcpt .acts{display:none}}
 
+/* ---- Tabs, status, light theme ---- */
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button.on{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.stt{display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin-right:6px}
+.stt.on{background:var(--buy);color:#06231f;border-color:var(--buy)}
+#banner.ok{background:var(--buy);color:#06231f}
+:root[data-theme=light]{--bg:#eef3f8;--panel:#ffffff;--line:#cdd8e3;--tx:#14202c;--mut:#566a7d;--off:#8a97a5;background:#eef3f8}
+[data-theme=light] body::before{background:radial-gradient(55vmax 55vmax at 10% 6%,rgba(46,196,182,.20),transparent 60%),radial-gradient(50vmax 50vmax at 94% 16%,rgba(239,106,91,.13),transparent 60%),radial-gradient(60vmax 60vmax at 68% 104%,rgba(90,120,255,.16),transparent 62%),linear-gradient(160deg,#f6f9fc,#e9f0f7 55%,#f2f6fa)}
+[data-theme=light] body::after{background-image:linear-gradient(rgba(0,0,0,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.05) 1px,transparent 1px)}
+[data-theme=light] .panel{background:rgba(255,255,255,.9);box-shadow:0 8px 24px rgba(20,40,60,.10)}
+[data-theme=light] header{background:rgba(255,255,255,.85)}
+[data-theme=light] .row.sel{background:#e2eef8}
+[data-theme=light] .msg.me{background:#d6f3ee}
+[data-theme=light] #ch_list{background:rgba(0,0,0,.04)}
+[data-theme=light] .tag.BUY,[data-theme=light] .stt.on{color:#032a25}
+
 /* ---- Steve FX Radar backdrop ---- */
 html{background:#0b1622}
 body{background:transparent;position:relative;min-height:100vh}
@@ -156,12 +174,13 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 6px"><input id="sp" type="checkbox" style="width:auto;margin:0"> Show password</label>
     <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 12px"><input id="rm" type="checkbox" style="width:auto;margin:0"> Remember my email on this device</label>
     <button class="go" type="submit">Sign in</button>
+    <button type="button" id="theme2" style="width:100%;margin-top:8px">Switch to light</button>
   </form>
   <div id="err" role="alert"></div>
 </section>
 <div id="app">
 <header><h1 id="hname">Steve FX Radar</h1>
-  <div class="bar"><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
+  <div class="bar"><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
 <div id="why" class="panel OFFLINE" role="status"></div>
@@ -194,6 +213,13 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <div id="ch_list"></div>
   <div class="adduser" style="margin:0"><input id="ch_in" placeholder="Type a message" maxlength="400" style="flex:1 1 220px" autocomplete="off"><button class="pri" id="ch_go">Send</button><span id="ch_msg" class="mut" role="status"></span></div>
 </details>
+<div id="atabs" class="tabs" style="display:none;margin-top:16px">
+  <button data-t="users">Users <span id="t_u" class="pill">0 online</span></button>
+  <button data-t="pay">Payments <span id="t_p" class="pill apr" style="display:none"></span></button>
+  <button data-t="ann">Messages</button>
+  <button data-t="logs">Activity</button>
+  <button data-t="admin">Settings</button>
+</div>
 <details class="panel" id="admin"><summary>Admin settings</summary>
   <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
@@ -202,12 +228,21 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     <button class="pri" id="save">Save</button><span id="toast" role="status"></span>
   </div>
   <div class="grid" id="health"></div>
+  <div style="margin-top:14px"><b>Markets to track</b>
+    <p class="mut">Forex, crypto and stocks from Twelve Data. The free plan works best with 8 symbols or fewer (maximum 12).</p>
+    <div id="wl" class="chips"></div>
+    <div class="ctl" style="margin-top:8px"><input id="wl_add" placeholder="Add e.g. XAU/USD or NVDA" style="width:210px"><button id="wl_addbtn">Add</button><button class="pri" id="wl_save">Save markets</button><span id="wl_msg" class="mut" role="status"></span></div>
+  </div>
+  <div style="margin-top:14px"><b>Security</b>
+    <p class="mut">Members can use one device at a time. After 5 wrong passwords the login box locks for 5 minutes. Passwords need 8+ characters with letters and numbers.</p>
+    <div class="ctl"><button id="sec_kick">Sign out all members now</button><span id="sec_msg" class="mut" role="status"></span></div>
+  </div>
 </details>
 <section class="panel" id="users"><b>Team, roles &amp; access</b>
   <div class="stats" id="ustats"></div>
   <div class="adduser">
     <input id="nu_em" type="email" placeholder="New user email" autocomplete="off">
-    <input id="nu_pw" type="password" placeholder="Temporary password (6+)" autocomplete="new-password">
+    <input id="nu_pw" type="password" placeholder="Temporary password (8+)" autocomplete="new-password">
     <label class="mut"><input id="nu_sh" type="checkbox"> Show</label>
     <button id="nu_gen" type="button">Generate</button>
     <label class="mut"><input id="nu_ad" type="checkbox"> Admin</label>
@@ -218,7 +253,7 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:600">Change my password</summary>
     <div class="adduser">
       <input id="cp_old" type="password" placeholder="Current password" autocomplete="current-password">
-      <input id="cp_new" type="password" placeholder="New password (6+)" autocomplete="new-password">
+      <input id="cp_new" type="password" placeholder="New password (8+)" autocomplete="new-password">
       <label class="mut"><input id="cp_sh" type="checkbox"> Show</label>
       <button class="pri" id="cp_go">Update password</button>
       <span id="cp_msg" class="mut" role="status"></span>
@@ -318,7 +353,7 @@ function tfTrend(c, step) {
 }
 // ENGINE END
 
-const PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD"];
+let PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD"];
 // Paste apiKey and appId from Firebase > Project settings > Your apps > Web app. The rest is filled in.
 const firebaseConfig = { apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf" };
 if (Object.values(firebaseConfig).includes("PASTE")) {
@@ -333,24 +368,24 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const pct = x => Math.round(x * 100) + "%";
-const fmt = (s, v) => v == null ? "-" : v.toFixed(s.includes("JPY") ? 3 : 5);
-const ago = ms => !ms ? "never" : Math.round((Date.now() - ms) / 1000) + "s ago";
+const fmt = (s, v) => v == null ? "-" : typeOf(s) === "forex" ? v.toFixed(s.includes("JPY") ? 3 : 5) : v.toFixed(v >= 100 ? 2 : v >= 1 ? 4 : 6);
+const ago = ms => !ms ? "never" : Math.round((rt() - ms) / 1000) + "s ago";
 
 let KEY = "", THR = 0.6, isAdmin = false, data = {}, sel = null, P = {}, ws, hbT, wsUp = false, lastAny = 0,
     lastPoll = 0, loaded = 0, loadErr = "", soundOn = false, audio, demo = false, demoTimer, alerts = [], lock, idle, timers = [];
-const POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000;   // keeps a 800-credit/day plan under budget
+let POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000;   // keeps a 800-credit/day plan under budget
 
-function weekend() { const d = new Date(), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); }
-const wsLive = () => wsUp && Date.now() - lastAny < 30000;
+function weekend() { const d = new Date(rt()), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); }
+const wsLive = () => wsUp && rt() - lastAny < 30000;
 
 // ---------- login ----------
 try { const e0 = localStorage.getItem("fr_email"); if (e0) { $("em").value = e0; $("rm").checked = true; } } catch {}
 $("sp").onchange = () => { $("pw").type = $("sp").checked ? "text" : "password"; };
 $("lf").onsubmit = async e => {
-  e.preventDefault(); $("err").textContent = "";
+  e.preventDefault(); $("err").textContent = ""; if (lockMsg()) return;
   try { $("rm").checked ? localStorage.setItem("fr_email", $("em").value.trim()) : localStorage.removeItem("fr_email"); } catch {}
   try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
-  catch { $("err").textContent = "Wrong email or password."; }
+  catch (er) { loginFail(er); }
   $("pw").value = ""; $("sp").checked = false; $("pw").type = "password";
 };
 async function doSignOut(why) { try { await logEvt(why || "Signed out"); sessionStorage.removeItem("fr_log"); } catch {}                       // mark offline first, then sign out
@@ -358,8 +393,8 @@ async function doSignOut(why) { try { await logEvt(why || "Signed out"); session
   auth.signOut();
 }
 $("out").onclick = () => doSignOut("Signed out");
-function resetIdle() { clearTimeout(idle); idle = setTimeout(() => doSignOut("Auto sign-out after " + IDLE_MIN + " min of inactivity"), IDLE_MIN * 60 * 1000); }
-["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => { if (auth.currentUser && Date.now() - lastIdleReset > 5000) { lastIdleReset = Date.now(); resetIdle(); } }));
+function resetIdle() { lastActive = rt(); }
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => { if (auth.currentUser && rt() - lastIdleReset > 5000) { lastIdleReset = rt(); resetIdle(); } }));
 
 // ---------- alerts ----------
 $("snd").onclick = async () => {
@@ -377,11 +412,11 @@ $("awake").onclick = async () => {
 };
 document.addEventListener("visibilitychange", async () => { if (lock && document.visibilityState === "visible") try { lock = await navigator.wakeLock.request("screen"); } catch {} });
 function beep(f, d, n = 1) { if (!audio) return; for (let i = 0; i < n; i++) { const o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = f; o.connect(g); g.connect(audio.destination); g.gain.value = .15; const t = audio.currentTime + i * (d + .08); o.start(t); o.stop(t + d); } }
-function banner(m) { const b = $("banner"); b.textContent = m; b.classList.add("show"); setTimeout(() => b.classList.remove("show"), 12000); }
+function banner(m, ok) { const b = $("banner"); b.textContent = m; b.classList.toggle("ok", !!ok); b.classList.add("show"); setTimeout(() => b.classList.remove("show"), 12000); }
 function raise(pair, from, to, reason, strength) {
   const msg = to === "DANGER" ? `${pair}: DANGER. ${reason}. Do not enter.` : `${pair}: ${to} conditions (${pct(strength)})`;
-  alerts.unshift({ t: Date.now(), msg }); alerts = alerts.slice(0, 15);
-  $("alerts").innerHTML = alerts.map(a => `<div><span class="num mut">${new Date(a.t).toLocaleTimeString()}</span> ${esc(a.msg)}</div>`).join("");
+  alerts.unshift({ t: rt(), msg }); alerts = alerts.slice(0, 15);
+  $("alerts").innerHTML = alerts.map(a => `<div><span class="num mut">${fmtT(a.t)}</span> ${esc(a.msg)}</div>`).join("");
   if (!soundOn) return;
   banner(msg); to === "DANGER" ? beep(300, .25, 3) : beep(880, .15);
   if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: msg }); } catch {}
@@ -398,12 +433,12 @@ function onTick(sym, price, ts) {
   const m = Math.floor(ts / 60) * 60, c = p.candles, last = c[c.length - 1];
   if (last.t === m) { last.c = price; last.h = Math.max(last.h, price); last.l = Math.min(last.l, price); }
   else if (m > last.t) { c.push({ t: m, o: price, h: price, l: price, c: price }); if (c.length > 1500) c.shift(); }
-  p.price = price; p.tickAt = lastAny = Date.now(); p.dirty = true;
+  p.price = price; p.tickAt = lastAny = rt(); p.dirty = true;
 }
 function merge(p, fresh) {
   for (const f of fresh) { const last = p.candles[p.candles.length - 1];
     if (last && f.t === last.t) Object.assign(last, f); else if (!last || f.t > last.t) p.candles.push(f); }
-  p.price = p.candles[p.candles.length - 1].c; p.tickAt = Date.now(); p.dirty = true;
+  p.price = p.candles[p.candles.length - 1].c; p.tickAt = rt(); p.dirty = true;
 }
 async function bootstrap() {
   loaded = 0; loadErr = "";
@@ -413,7 +448,7 @@ async function bootstrap() {
       P[s] = { candles: cd, price: cd[cd.length - 1].c, tickAt: 0, dirty: true, sig: "WAIT", dir: 0, dangerUntil: 0, reason: "", bt: null };
       P[s].bt = backtest(series(cd), THR); loaded++;
     } catch (e) { loadErr = e.message; if (/key|api|credit|limit/i.test(e.message)) break; }
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1500));
   }
 }
 function connectWS() {
@@ -421,19 +456,19 @@ function connectWS() {
   ws = new WebSocket("wss://ws.twelvedata.com/v1/quotes/price?apikey=" + encodeURIComponent(KEY));
   ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.join(",") } }));
     hbT = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ action: "heartbeat" })), 10000); };
-  ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "price") onTick(m.symbol, +m.price, m.timestamp || Date.now() / 1000); } catch {} };
+  ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "price") onTick(m.symbol, +m.price, m.timestamp || rt() / 1000); } catch {} };
   ws.onclose = () => { wsUp = false; clearInterval(hbT); if (auth.currentUser && KEY) setTimeout(connectWS, 8000); };
   ws.onerror = () => ws.close();
 }
 async function pollOnce() {
-  lastPoll = Date.now();
-  for (const s of PAIRS) { try { if (P[s]) merge(P[s], await fetchCandles(s, 5)); } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, 1200)); }
+  lastPoll = rt();
+  for (const s of PAIRS.filter(isOpen)) { try { if (P[s]) merge(P[s], await fetchCandles(s, 5)); } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1200)); }
 }
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
   stop(); if (!KEY) return;
   await bootstrap(); connectWS();
-  every(() => { if (!demo && KEY && !weekend() && !wsLive() && loaded && Date.now() - lastPoll > POLL_MS) pollOnce(); }, 15000);
+  every(() => { if (!demo && KEY && PAIRS.some(isOpen) && !wsLive() && loaded && rt() - lastPoll > POLL_MS) pollOnce(); }, 15000);
   every(compute, 1000);
 }
 function stop() { timers.forEach(clearInterval); timers = []; clearInterval(hbT); if (ws) { ws.onclose = null; ws.close(); } wsUp = false; P = {}; data = {}; loaded = 0; }
@@ -443,7 +478,7 @@ function compute() {
   if (demo) return; let changed = false;
   for (const s of PAIRS) {
     const p = P[s]; if (!p || !p.dirty || p.candles.length < 130) continue; p.dirty = false; changed = true;
-    const S = series(p.candles), i = S.c.length - 1, dir = dirAt(S, i), str = Math.abs(dir), vr = volRatio(S, i), t = Date.now();
+    const S = series(p.candles), i = S.c.length - 1, dir = dirAt(S, i), str = Math.abs(dir), vr = volRatio(S, i), t = rt();
     let sig = str >= THR ? (dir > 0 ? "BUY" : "SELL") : "WAIT", reason = "";
     if (vr > 2) reason = "Volatility spike";
     else if ((p.sig === "BUY" || p.sig === "SELL") && (sig === "BUY" || sig === "SELL") && sig !== p.sig) reason = "Momentum reversed";
@@ -452,8 +487,8 @@ function compute() {
     if (t < p.dangerUntil) sig = "DANGER"; else p.reason = "";
     if (sig !== p.sig && (sig !== "WAIT" || ["BUY", "SELL", "DANGER"].includes(p.sig)) && sig !== "WAIT") raise(s, p.sig, sig, p.reason, str);
     p.sig = sig; if (sig === "BUY" || sig === "SELL") p.str = str; else p.str = p.str || 0;
-    const stale = weekend() ? true : wsLive() ? t - p.tickAt > 120000 : t - lastPoll > POLL_MS * 2.2;
-    data[s] = { pair: s, bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
+    const stale = !isOpen(s) ? true : wsLive() ? t - p.tickAt > 120000 : t - lastPoll > POLL_MS * 2.2;
+    data[s] = { pair: s, type: typeOf(s), open: isOpen(s), bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
       trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
       tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt };
   }
@@ -467,16 +502,16 @@ function status() {
   let st, why;
   if (demo) { st = "DEMO"; why = "Demo data. These are not real signals."; }
   else if (!isMember()) { st = "OFFLINE"; why = "Membership needed. Pay using the details below, then send your payment code. Access starts when the admin confirms it."; }
-  else if (!isAdmin) { const old = !feedTs || Date.now() - feedTs > 180000; st = weekend() || old ? "STALE" : "LIVE"; why = weekend() ? "Forex market is closed for the weekend. Prices resume Sunday about 22:00 UTC." : !feedTs ? "Waiting for the signal feed..." : old ? "The signal feed has paused. It updates only while the admin's page is open." : "Live feed connected."; }
+  else if (!isAdmin) { const old = !feedTs || rt() - feedTs > 180000; const anyO = Object.values(data).some(d => d.open !== false); st = !anyO || old ? "STALE" : "LIVE"; why = !anyO ? "All tracked markets are closed right now." : !feedTs ? "Waiting for the signal feed..." : old ? "The signal feed has paused. It updates only while the admin's page is open." : "Live feed connected."; }
   else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
   else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
-  else if (weekend()) { st = "STALE"; why = "Forex market is closed for the weekend. Prices resume Sunday about 22:00 UTC."; }
+  else if (!PAIRS.some(isOpen)) { st = "STALE"; why = "All tracked markets are closed right now. Forex reopens Sunday about 22:00 UTC, US stocks trade Mon to Fri 9:30 to 16:00 New York time, and crypto never closes."; }
   else if (wsLive()) { st = vals.some(d => d.stale) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
   const el = $("status"); el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
   $("why").className = "panel " + st;
   $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>Pairs loaded ${isAdmin ? loaded : vals.length}/${PAIRS.length}</span></div>`;
-  if (isAdmin) $("health").innerHTML = [["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", weekend() ? "Closed" : "Open"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
+  if (isAdmin) $("health").innerHTML = [["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", PAIRS.some(isOpen) ? "Open" : "Closed"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
     .map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
   return st;
 }
@@ -485,10 +520,11 @@ setInterval(() => auth.currentUser && status(), 2000);
 function render() {
   const st = status();
   $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin ? "Waiting for the signal feed." : loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
-    Object.entries(data).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
-      <div><b>${esc(p)}</b><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}</div></div>
+    marketTabs() + Object.entries(data).filter(([p, d]) => MK === "all" || (d.type || typeOf(p)) === MK).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
+      <div><b>${esc(p)}</b> <span class="mut">${esc(TL[d.type || typeOf(p)] || "")}</span><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}${d.open === false ? " / market closed" : ""}</div></div>
       <div class="num">${fmt(p, d.bid)}</div><span class="tag ${d.signal}">${d.signal}</span></div>`).join("");
   document.querySelectorAll(".row").forEach(r => { r.onclick = () => { sel = r.dataset.p; render(); }; r.onkeydown = e => e.key === "Enter" && r.onclick(); });
+  document.querySelectorAll("#list .tabs button").forEach(b => { b.onclick = () => { MK = b.dataset.mk; render(); }; });
   const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
   const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
   const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~16 hours, spread ignored)` : "not enough past signals to measure";
@@ -505,10 +541,10 @@ function render() {
 
 // ---------- demo ----------
 function demoTick() {
-  const sigs = ["BUY", "SELL", "WAIT", "WAIT", "DANGER"], t = Math.floor(Date.now() / 2000); data = {};
+  const sigs = ["BUY", "SELL", "WAIT", "WAIT", "DANGER"], t = Math.floor(rt() / 2000); data = {};
   PAIRS.forEach((p, i) => {
     const base = p.includes("JPY") ? 150 : 1.3 - i * .15, sp = Array.from({ length: 60 }, (_, k) => base + Math.sin((k + t) / 6 + i) * base * .0008);
-    const sig = sigs[(i + Math.floor(Date.now() / 8000)) % 5], b = sig === "BUY" ? .7 : sig === "SELL" ? .12 : .25, s = sig === "SELL" ? .7 : sig === "BUY" ? .12 : .25;
+    const sig = sigs[(i + Math.floor(rt() / 8000)) % 5], b = sig === "BUY" ? .7 : sig === "SELL" ? .12 : .25, s = sig === "SELL" ? .7 : sig === "BUY" ? .12 : .25;
     data[p] = { pair: p, bid: sp[59], signal: sig, reason: sig === "DANGER" ? "Volatility spike" : "", pBuy: b, pSell: s, pWait: 1 - b - s, trend: b > s ? "BULLISH" : "BEARISH", volatility: "NORMAL", tf: { M5: 1, M15: 1, M30: -1 }, spark: sp, age: 0, stale: false, bt: null };
   });
   if (!sel || !data[sel]) sel = PAIRS[0]; render();
@@ -521,7 +557,7 @@ $("demo").onclick = () => {
 // ---------- user management + presence ----------
 let U = {}, PR = {}, AD = {}, AP = {}, uRefs = [], hb, apErr = false, MS = {}, PAY = {}, MYPAY = {}, SITE = {}, LG = [], MEM = { apr: false, until: 0 }, knownPay = null, feedRef = null, feedOn = false, feedTs = 0, lastPub = 0, sweepT, IDLE_MIN = 30, lastIdleReset = 0;
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); resetChat(); NEWS = []; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
+function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); resetChat(); NEWS = []; wasLive = null; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
@@ -536,25 +572,26 @@ async function initSelf(u) {                       // profile, block check, pres
 }
 function startAdminUsers() {
   listen(dbr.ref("users"), s => { U = s.val() || {}; renderUsers(); });
-  listen(dbr.ref("presence"), s => { PR = s.val() || {}; renderUsers(); });
+  listen(dbr.ref("presence"), s => { PR = s.val() || {}; presenceAlerts(); renderUsers(); });
   listen(dbr.ref("admins"), s => { AD = s.val() || {}; renderUsers(); });
   listen(dbr.ref("approved"), s => { AP = s.val() || {}; apErr = false; renderUsers(); }, () => { apErr = true; renderUsers(); });
 }
 function renderUsers() {
   if (!isAdmin || !auth.currentUser) return;
-  const now = Date.now(), me = auth.currentUser.uid;
+  const now = rt(), me = auth.currentUser.uid;
   const rows = Object.entries(U).filter(([, v]) => v && !v.removed).map(([id, v]) => ({ id, v, adm: AD[id] === true, blk: v.blocked === true, apr: AP[id] === true,
     live: !!(PR[id] && PR[id].online && now - (PR[id].last || 0) < 180000) }));
   const n = f => rows.filter(f).length;
-  $("ustats").innerHTML = `<div>TOTAL USERS<b>${rows.length}</b></div><div>ONLINE NOW<b style="color:var(--buy)">${n(r => r.live)}</b></div><div>ADMINS<b>${n(r => r.adm)}</b></div><div>BLOCKED<b style="color:var(--danger)">${n(r => r.blk)}</b></div>`;
+  $("t_u").textContent = n(r => r.live) + " online"; $("ustats").innerHTML = `<div>TOTAL USERS<b>${rows.length}</b></div><div>ONLINE NOW<b style="color:var(--buy)">${n(r => r.live)}</b></div><div>ADMINS<b>${n(r => r.adm)}</b></div><div>BLOCKED<b style="color:var(--danger)">${n(r => r.blk)}</b></div>`;
   rows.sort((a, b) => b.live - a.live || (a.v.email || "").localeCompare(b.v.email || ""));
   $("ulist").innerHTML = (apErr ? '<p class="mut">Approvals cannot be read. Add the <code>approved</code> read rule for admins, then reload.</p>' : "") +
-    (rows.map(({ id, v, adm, blk, apr, live }) => `<div class="urow"><div class="udata"><span class="dot ${live ? "on" : ""}"></span><b>${esc(v.email || id)}</b>
-    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${!adm && !apr ? '<span class="pill">Unpaid</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + new Date(MS[id].until).toLocaleDateString() + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
-    <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + new Date(PR[id].last).toLocaleString() : "Never signed in"}</div></div>
+    (rows.map(({ id, v, adm, blk, apr, live }) => `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "● Online" : "○ Offline"}</span><b>${esc(v.email || id)}</b>
+    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${!adm && !apr ? '<span class="pill">Unpaid</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + fmtD(MS[id].until) + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
+    <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + fmtDT(PR[id].last) : "Never signed in"}</div></div>
     <div class="uact">${id === me ? '<span class="mut">Your account</span>' :
       `${adm ? "" : `<button data-a="apr" data-id="${esc(id)}">${apr ? "Unapprove" : "Approve"}</button>`}
        <button data-a="adm" data-id="${esc(id)}">${adm ? "Remove admin" : "Make admin"}</button>
+       ${adm ? "" : `<button data-a="kick" data-id="${esc(id)}">Sign out</button>`}
        <button data-a="rst" data-id="${esc(id)}">Reset password</button>
        <button data-a="blk" data-id="${esc(id)}">${blk ? "Unblock" : "Block"}</button>
        <button class="bad" data-a="del" data-id="${esc(id)}">Remove</button>`}</div></div>`).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
@@ -571,6 +608,7 @@ $("ulist").onclick = async e => {
       else { const d = prompt("Days of access for " + nm(id) + " (leave blank for no expiry)", ""); if (d === null) return; const days = Math.floor(+d) > 0 ? Math.floor(+d) : 0; await grant(id, days); logEvt("Approved " + nm(id) + (days ? " for " + days + " days" : " with no expiry")); }
     }
     if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); logEvt("Sent password reset link to " + em); } }
+    if (a === "kick") { await dbr.ref("sessions/" + id).update({ id: "kicked-" + rt(), t: TS }); logEvt("Ended the session of " + nm(id)); }
     if (a === "del" && confirm("Remove " + ((U[id] && U[id].email) || id) + "? They will be blocked and hidden.")) {
       await dbr.ref("users/" + id).update({ blocked: true, removed: true });
       await dbr.ref("approved/" + id).remove(); await dbr.ref("memberships/" + id).remove(); logEvt("Removed user " + nm(id));
@@ -580,7 +618,7 @@ $("ulist").onclick = async e => {
 };
 $("nu_go").onclick = async () => {
   const em = $("nu_em").value.trim(), pw = $("nu_pw").value, msg = $("nu_msg"); msg.textContent = "";
-  if (!em || pw.length < 6) return msg.textContent = "Enter an email and a password of 6+ characters.";
+  if (!em || !pwOk(pw)) return msg.textContent = "Enter an email and a password of 8+ characters with letters and numbers.";
   try {
     const sec = firebase.apps.find(x => x.name === "sec") || firebase.initializeApp(firebaseConfig, "sec");   // second app so you stay signed in
     const c = await sec.auth().createUserWithEmailAndPassword(em, pw); await sec.auth().signOut();
@@ -594,18 +632,19 @@ $("nu_go").onclick = async () => {
 
 // ---------- membership, payments, logs, feed ----------
 const nm = id => (U[id] && U[id].email) || id;
-const isMember = () => isAdmin || (MEM.apr && (!MEM.until || MEM.until > Date.now()));
+const isMember = () => isAdmin || (MEM.apr && (!MEM.until || MEM.until > rt()));
 function logEvt(msg) {
   const u = auth.currentUser; if (!u) return Promise.resolve();
   return Promise.resolve(dbr.ref("logs").push({ t: TS, uid: u.uid, email: u.email || "", msg: String(msg).slice(0, 280) })).catch(() => {});
 }
 async function grant(id, days) {                     // approve a user; days = 0 means no expiry
-  const now = Date.now(), cur = (MS[id] && MS[id].until) || 0, u = {};
+  const now = rt(), cur = (MS[id] && MS[id].until) || 0, u = {};
   u["approved/" + id] = true;
   u["memberships/" + id] = days ? { until: Math.max(now, cur) + days * 86400000, plan: days + " days" } : null;
   await dbr.ref().update(u);
 }
 function startCommon(u) {
+  lockReset(); sessStart = rt(); startSession(u);
   try { if (sessionStorage.getItem("fr_log") !== u.uid) { sessionStorage.setItem("fr_log", u.uid); logEvt("Signed in"); } } catch { logEvt("Signed in"); }
   listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); applySite(); renderMember(); fillSite(); });
   listen(dbr.ref("news").limitToLast(8), s => { NEWS = []; s.forEach(c => { NEWS.push({ id: c.key, ...c.val() }); }); renderNews(); });
@@ -622,7 +661,8 @@ function access() {
   const mem = isMember();
   $("sigwrap").style.display = mem ? "block" : "none";
   $("member").style.display = isAdmin ? "none" : "block";
-  $("pay").style.display = $("logs").style.display = $("ann").style.display = isAdmin ? "block" : "none";
+  $("atabs").style.display = isAdmin ? "flex" : "none";
+  if (isAdmin) showTab(ATAB); else ["users", "admin", "pay", "ann", "logs"].forEach(i => { $(i).style.display = "none"; });
   $("demo").style.display = isAdmin ? "" : "none";
   if (!isAdmin) { mem ? startFeed() : stopFeed(); }
   renderMember(); chOptions(); status();
@@ -637,11 +677,11 @@ function startFeed() {
 function stopFeed() { if (feedRef) { feedRef.off(); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
 function applyFeed(f) {
   if (!f || !f.pairs) { feedTs = 0; return; }
-  feedTs = f.ts || 0; const prev = data, old = Date.now() - feedTs > 180000; data = {};
+  feedTs = f.ts || 0; const prev = data, old = rt() - feedTs > 180000; data = {};
   for (const k of Object.keys(f.pairs)) {
     const d = f.pairs[k], p = d.pair || k.replace("_", "/");
     d.spark = d.spark || []; d.tf = d.tf || { M5: 0, M15: 0, M30: 0 }; d.reason = d.reason || "";
-    d.stale = old; d.age = Math.max(0, Math.round((Date.now() - feedTs) / 1000)); data[p] = d;
+    d.stale = old; d.age = Math.max(0, Math.round((rt() - feedTs) / 1000)); data[p] = d;
     const was = prev[p] && prev[p].signal;
     if (was && was !== d.signal && d.signal !== "WAIT") raise(p, was, d.signal, d.reason, Math.max(d.pBuy || 0, d.pSell || 0));
   }
@@ -650,21 +690,21 @@ function applyFeed(f) {
 }
 // ----- admin side: publish signals for members -----
 function publish() {
-  if (!isAdmin || demo || Date.now() - lastPub < 4000 || !Object.keys(data).length) return; lastPub = Date.now();
-  const pairs = {}; for (const [k, v] of Object.entries(data)) pairs[k.replace("/", "_")] = v;
+  if (!isAdmin || demo || rt() - lastPub < 4000 || !Object.keys(data).length) return; lastPub = rt();
+  const pairs = {}; for (const [k, v] of Object.entries(data)) pairs[k.replace(/[.#$\[\]\/]/g, "_")] = v;
   dbr.ref("feed").set(JSON.parse(JSON.stringify({ ts: TS, pairs }))).catch(() => {});
 }
 
 // ----- member panel -----
 function renderMember() {
   if (isAdmin || !auth.currentUser) return;
-  const now = Date.now(), act = isMember();
-  $("m_status").innerHTML = `<span class="pill ${act ? "adm" : "blk"}" style="margin:0 8px 0 0">${act ? "PAID" : "NOT PAID"}</span>` + (act ? (MEM.until ? `Active until <b>${new Date(MEM.until).toLocaleDateString()}</b> (${Math.max(0, Math.ceil((MEM.until - now) / 86400000))} days left).` : "Active. No expiry date.")
-    : MEM.until && MEM.until <= now ? `Your membership expired on <b>${new Date(MEM.until).toLocaleDateString()}</b>. Pay below to renew.` : "You do not have an active membership yet.");
+  const now = rt(), act = isMember();
+  $("m_status").innerHTML = `<span class="pill ${act ? "adm" : "blk"}" style="margin:0 8px 0 0">${act ? "PAID" : "NOT PAID"}</span>` + (act ? (MEM.until ? `Active until <b>${fmtD(MEM.until)}</b> (${Math.max(0, Math.ceil((MEM.until - now) / 86400000))} days left).` : "Active. No expiry date.")
+    : MEM.until && MEM.until <= now ? `Your membership expired on <b>${fmtD(MEM.until)}</b>. Pay below to renew.` : "You do not have an active membership yet.");
   const rows = [["Price", SITE.price], ["Access period", SITE.days ? SITE.days + " days" : ""], ["M-Pesa", SITE.mpesa], ["Bank", SITE.bank], ["Other", SITE.other]].filter(r => r[1]);
   $("m_info").innerHTML = rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>';
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
-  $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments and receipts</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span></div><div class="mut">${new Date(p.ts || 0).toLocaleString()} <button data-rc="${esc(p.id)}">Receipt</button></div></div>`).join("") : "";
+  $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments and receipts</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span></div><div class="mut">${fmtDT(p.ts || 0)} <button data-rc="${esc(p.id)}">Receipt</button></div></div>`).join("") : "";
 }
 $("m_go").onclick = async () => {
   const u = auth.currentUser, m = $("m_msg"); m.textContent = ""; if (!u) return;
@@ -700,10 +740,10 @@ function startAdminExtras() {
 function renderPay() {
   if (!isAdmin) return;
   const all = pendingList().sort((a, b) => (b.ts || 0) - (a.ts || 0)), pend = all.filter(p => p.status === "pending"), done = all.filter(p => p.status !== "pending").slice(0, 15);
-  const nb = $("pay_n"); nb.style.display = pend.length ? "inline-block" : "none"; nb.textContent = pend.length + " pending";
+  const nb = $("pay_n"); nb.style.display = pend.length ? "inline-block" : "none"; nb.textContent = pend.length + " pending"; const tp = $("t_p"); tp.style.display = pend.length ? "inline-block" : "none"; tp.textContent = pend.length;
   const who = p => esc(nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid));
-  const line = p => `<div class="mut">${new Date(p.ts || 0).toLocaleString()} &middot; ${esc(p.method)}${p.amount ? " &middot; " + esc(p.amount) : ""}${p.payer ? " &middot; " + esc(p.payer) : ""}</div>`;
-  const now = Date.now(), d0 = new Date(), mStart = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime();
+  const line = p => `<div class="mut">${fmtDT(p.ts || 0)} &middot; ${esc(p.method)}${p.amount ? " &middot; " + esc(p.amount) : ""}${p.payer ? " &middot; " + esc(p.payer) : ""}</div>`;
+  const now = rt(), d0 = new Date(rt()), mStart = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime();
   const conf = all.filter(p => p.status === "confirmed"), sum = a => a.reduce((t, p) => t + (+p.amount || 0), 0);
   const act = Object.entries(MS).filter(([id, m]) => AP[id] === true && m && m.until > now), soon = act.filter(([, m]) => m.until - now < 7 * 864e5).length;
   $("pay_stats").innerHTML = `<div>REVENUE THIS MONTH<b>${sum(conf.filter(p => (p.ts || 0) >= mStart)).toLocaleString()}</b></div><div>REVENUE ALL TIME<b>${sum(conf).toLocaleString()}</b></div><div>ACTIVE MEMBERS<b>${act.length}</b></div><div>EXPIRING IN 7 DAYS<b style="color:var(--wait)">${soon}</b></div>`;
@@ -721,7 +761,7 @@ $("pend").onclick = async e => {
     if (act === "ok") {
       const d = prompt("Confirm code " + p.code + " from " + nm(uid) + ".\nDays of membership?", SITE.days || 30); if (d === null) return;
       const days = Math.floor(+d); if (!(days >= 1)) return alert("Enter a number of days.");
-      const receipt = "RC" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+      const receipt = "RC" + new Date(rt()).toISOString().slice(2, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
       await grant(uid, days);
       await dbr.ref(base).update({ status: "confirmed", by: auth.currentUser.email || "", decidedAt: TS, days, receipt });
       logEvt("Confirmed payment " + p.code + " for " + nm(uid) + " (" + days + " days, " + receipt + ")");
@@ -729,7 +769,7 @@ $("pend").onclick = async e => {
       const why = prompt("Reverse payment " + p.code + " from " + nm(uid) + "?\nThis takes back the " + (p.days || 0) + " days it granted.\nReason (optional):", ""); if (why === null) return;
       const cur = (MS[uid] && MS[uid].until) || 0, nu = cur - (p.days || 0) * 864e5, u = {};
       u[base + "/status"] = "reversed"; u[base + "/decidedAt"] = TS; if (why.trim()) u[base + "/reason"] = why.trim().slice(0, 150);
-      if (p.days && cur && nu > Date.now()) u["memberships/" + uid] = { until: nu, plan: "adjusted" };
+      if (p.days && cur && nu > rt()) u["memberships/" + uid] = { until: nu, plan: "adjusted" };
       else { u["approved/" + uid] = null; u["memberships/" + uid] = null; }
       await dbr.ref().update(u);
       logEvt("Reversed payment " + p.code + " for " + nm(uid) + (why.trim() ? ": " + why.trim() : ""));
@@ -767,11 +807,11 @@ $("s_save").onclick = async () => {
 };
 function renderLogs() {
   if (!isAdmin) return;
-  $("loglist").innerHTML = LG.slice().reverse().map(l => `<div class="logrow"><span class="num mut">${new Date(l.t).toLocaleString()}</span> <b>${esc(l.email || l.uid)}</b> ${esc(l.msg)}</div>`).join("") || '<p class="mut">No activity yet.</p>';
+  $("loglist").innerHTML = LG.slice().reverse().map(l => `<div class="logrow"><span class="num mut">${fmtDT(l.t)}</span> <b>${esc(l.email || l.uid)}</b> ${esc(l.msg)}</div>`).join("") || '<p class="mut">No activity yet.</p>';
 }
 $("lg_clr").onclick = async () => { if (confirm("Clear the whole activity log?")) { try { await dbr.ref("logs").remove(); logEvt("Cleared the activity log"); } catch (err) { alert("Failed: " + err.message); } } };
 async function sweep() {                             // drop access when a membership has run out
-  if (!isAdmin) return; const now = Date.now();
+  if (!isAdmin) return; const now = rt();
   for (const [id, m] of Object.entries(MS)) if (m && m.until < now && AP[id] === true) {
     try { await dbr.ref("approved/" + id).remove(); logEvt("Membership expired for " + nm(id)); } catch {}
   }
@@ -783,6 +823,7 @@ try { const c0 = localStorage.getItem("fr_company"); if (c0) { CO = c0; $("lname
 const stLabel = x => ({ confirmed: "Paid", pending: "Pending", rejected: "Rejected", reversed: "Reversed" })[x] || String(x);
 const stCls = x => x === "confirmed" ? "adm" : x === "pending" ? "apr" : "blk";
 function applySite() {
+  if (auth.currentUser && !isAdmin && SITE.kick && SITE.kick > sessStart) { kickOut("An admin signed out all members. Please sign in again."); return; }
   CO = SITE.company || "Steve FX Radar";
   $("hname").textContent = CO; $("lname").textContent = CO; document.title = CO;
   try { localStorage.setItem("fr_company", CO); } catch {}
@@ -804,13 +845,13 @@ function waLink() {
 function showReceipt(p, uid) {
   const st = (stLabel(p.status) || "").toUpperCase(), me = auth.currentUser;
   const until = me && uid === me.uid ? MEM.until : (MS[uid] && MS[uid].until) || 0;
-  const rows = [["Receipt no.", p.receipt || "Not issued yet"], ["Date", new Date(p.ts || 0).toLocaleString()], ["Member", nm(uid) !== uid ? nm(uid) : (p.email || uid)],
+  const rows = [["Receipt no.", p.receipt || "Not issued yet"], ["Date", fmtDT(p.ts || 0)], ["Member", nm(uid) !== uid ? nm(uid) : (p.email || uid)],
     ["Method", p.method], ["Payment code", p.code], ["Amount", p.amount != null ? p.amount : "-"], ["Access granted", p.days ? p.days + " days" : "-"]];
-  if (p.status === "confirmed" && until) rows.push(["Valid until", new Date(until).toLocaleDateString()]);
+  if (p.status === "confirmed" && until) rows.push(["Valid until", fmtD(until)]);
   if (p.status === "reversed" && p.reason) rows.push(["Reason", p.reason]);
   $("rcpt").innerHTML = `<div class="sheet"><h2>${esc(CO)}</h2><div style="color:#555">Payment receipt</div><div style="margin:12px 0"><span class="stamp ${st}">${esc(st)}</span></div>
     <table>${rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
-    <div style="color:#777;font-size:12px">Status as at ${new Date().toLocaleString()}.</div></div>
+    <div style="color:#777;font-size:12px">Status as at ${fmtDT(rt())}.</div></div>
     <div class="acts"><button id="rc_p" class="btn" style="flex:1">Print / save PDF</button><button id="rc_x" class="btn" style="flex:1">Close</button></div>`;
   $("rcpt").style.display = "block"; $("rc_p").onclick = () => window.print(); $("rc_x").onclick = () => { $("rcpt").style.display = "none"; };
 }
@@ -820,7 +861,7 @@ $("m_hist").onclick = e => { const b = e.target.closest("button[data-rc]"); if (
 function renderNews() {
   const el = $("news"), n = NEWS.slice().reverse();
   el.style.display = n.length ? "block" : "none";
-  el.innerHTML = "<b>News &amp; updates</b>" + n.map(x => `<div class="news-i"><b>${esc(x.title)}</b> <span class="mut">${new Date(x.t || 0).toLocaleDateString()}</span>${isAdmin ? `<button class="bad" data-nd="${esc(x.id)}">Delete</button>` : ""}<p>${esc(x.body)}</p></div>`).join("");
+  el.innerHTML = "<b>News &amp; updates</b>" + n.map(x => `<div class="news-i"><b>${esc(x.title)}</b> <span class="mut">${fmtD(x.t || 0)}</span>${isAdmin ? `<button class="bad" data-nd="${esc(x.id)}">Delete</button>` : ""}<p>${esc(x.body)}</p></div>`).join("");
 }
 $("news").onclick = async e => { const b = e.target.closest("button[data-nd]"); if (b && isAdmin && confirm("Delete this post?")) { try { await dbr.ref("news/" + b.dataset.nd).remove(); logEvt("Deleted a newsletter post"); } catch (err) { alert(err.message); } } };
 $("bb_save").onclick = async () => {
@@ -861,7 +902,7 @@ function stopChat() { if (chRef) chRef.off(); chRef = null; }
 function resetChat() { stopChat(); const s = $("ch_sel"); s.dataset.k = ""; s.innerHTML = ""; $("ch_list").innerHTML = ""; chUnread = 0; $("ch_n").style.display = "none"; }
 function renderChat(a, path) {
   const me = auth.currentUser.uid, box = $("ch_list"), atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
-  box.innerHTML = a.map(m => `<div class="msg ${m.uid === me ? "me" : ""}">${isAdmin ? `<button data-cd="${esc(m.id)}" data-cp="${esc(path)}" title="Delete">x</button>` : ""}<small>${esc(m.name || "")} &middot; ${new Date(m.t || 0).toLocaleString()}</small>${esc(m.msg)}</div>`).join("") || '<p class="mut">No messages yet.</p>';
+  box.innerHTML = a.map(m => `<div class="msg ${m.uid === me ? "me" : ""}">${isAdmin ? `<button data-cd="${esc(m.id)}" data-cp="${esc(path)}" title="Delete">x</button>` : ""}<small>${esc(m.name || "")} &middot; ${fmtDT(m.t || 0)}</small>${esc(m.msg)}</div>`).join("") || '<p class="mut">No messages yet.</p>';
   if (atEnd || !chInit) box.scrollTop = box.scrollHeight;
   const last = a.length ? a[a.length - 1] : null;
   if (chInit && last && last.uid !== me && (last.t || 0) > chLast) {
@@ -874,7 +915,7 @@ $("chat").addEventListener("toggle", () => { if ($("chat").open) { chUnread = 0;
 $("ch_list").onclick = async e => { const b = e.target.closest("button[data-cd]"); if (b && isAdmin) { try { await dbr.ref(b.dataset.cp + "/" + b.dataset.cd).remove(); } catch (err) { alert(err.message); } } };
 async function sendChat() {
   const u = auth.currentUser, inp = $("ch_in"), t = inp.value.trim().slice(0, 400), v = $("ch_sel").value, m = $("ch_msg"); m.textContent = "";
-  if (!u || !t || !v || Date.now() - chSend < 800) return; chSend = Date.now(); inp.value = "";
+  if (!u || !t || !v || rt() - chSend < 800) return; chSend = rt(); inp.value = "";
   try {
     await dbr.ref(chPath(v)).push({ t: TS, uid: u.uid, name: isAdmin ? "Admin" : (u.email || "member").split("@")[0].slice(0, 40), msg: t });
     if (!isAdmin && v !== "room") { try { if (!sessionStorage.getItem("fr_dm")) { sessionStorage.setItem("fr_dm", "1"); logEvt("Sent a message to the admin"); } } catch {} }
@@ -882,17 +923,133 @@ async function sendChat() {
 }
 $("ch_go").onclick = sendChat; $("ch_in").onkeydown = e => { if (e.key === "Enter") sendChat(); }; $("ch_sel").onchange = () => openChat($("ch_sel").value);
 
+// ---------- real time, themes, markets, tabs, security ----------
+let SOFF = 0, lastActive = 0, sessStart = 0, wasLive = null, MK = "all", ATAB = "users", WL = PAIRS.slice();
+dbr.ref(".info/serverTimeOffset").on("value", x => { SOFF = x.val() || 0; });
+const rt = () => Date.now() + SOFF;                 // server-corrected time, not the device clock
+const TZ = "Africa/Nairobi", TZL = "EAT";           // change these two to show another time zone
+const okMs = v => Number.isFinite(+v) ? +v : 0;
+const FDT = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+const FD = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "2-digit", month: "short", year: "numeric" });
+const FT = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+const fmtDT = ms => FDT.format(okMs(ms)) + " " + TZL, fmtD = ms => FD.format(okMs(ms)), fmtT = ms => FT.format(okMs(ms));
+setInterval(() => {                                 // idle check uses real timestamps, so a sleeping device is handled on wake
+  if (auth.currentUser && lastActive && rt() - lastActive > IDLE_MIN * 60000) {
+    const la = lastActive; lastActive = rt();
+    doSignOut("Auto sign-out after " + IDLE_MIN + " min idle (last active " + fmtT(la) + " " + TZL + ")");
+  }
+}, 15000);
+
+// ----- theme -----
+function applyTheme(t, save) {
+  document.documentElement.setAttribute("data-theme", t);
+  $("theme").textContent = t === "light" ? "Dark" : "Light"; $("theme2").textContent = t === "light" ? "Switch to dark" : "Switch to light";
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "light" ? "#eef3f8" : "#12202e";
+  if (save) try { localStorage.setItem("fr_theme", t); } catch {}
+}
+const toggleTheme = () => applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light", true);
+$("theme").onclick = $("theme2").onclick = toggleTheme;
+applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+
+// ----- markets: forex, crypto, stocks -----
+const CRYPTO = new Set(["BTC", "ETH", "SOL", "XRP", "ADA", "DOGE", "BNB", "LTC", "DOT", "AVAX", "LINK", "MATIC", "TRX", "SHIB", "BCH", "XLM"]);
+const typeOf = x => !x.includes("/") ? "stocks" : CRYPTO.has(x.split("/")[0]) ? "crypto" : "forex";
+const TL = { forex: "FX", crypto: "Crypto", stocks: "Stock" }, TLONG = { forex: "Forex", crypto: "Crypto", stocks: "Stocks" };
+const PRESETS = { forex: ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD", "USD/CHF", "NZD/USD"], crypto: ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "DOGE/USD"], stocks: ["AAPL", "MSFT", "TSLA", "NVDA", "AMZN", "GOOGL"] };
+function nyOpen() {                                  // US stock hours in New York time (holidays not included)
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(rt()));
+  const g = k => (f.find(x => x.type === k) || {}).value, t = (+g("hour") % 24) * 60 + +g("minute");
+  return !["Sat", "Sun"].includes(g("weekday")) && t >= 570 && t < 960;
+}
+const isOpen = sym => { const t = typeOf(sym); return t === "crypto" ? true : t === "stocks" ? nyOpen() : !weekend(); };
+const SYM_OK = /^[A-Z0-9.\-]{1,12}(\/[A-Z0-9]{2,6})?$/;
+function setWatch(v) {
+  const a = (Array.isArray(v) ? v : String(v).split(",")).map(x => x.trim().toUpperCase()).filter(x => SYM_OK.test(x));
+  PAIRS = [...new Set(a)].slice(0, 12); if (!PAIRS.length) PAIRS = ["EUR/USD"];
+  POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000; WL = PAIRS.slice(); renderWL();
+}
+function renderWL() {
+  const all = [...new Set([...Object.values(PRESETS).flat(), ...WL])];
+  $("wl").innerHTML = all.map(x => `<label class="mut" style="display:flex;gap:6px;align-items:center;padding:3px 10px;border:1px solid var(--line);border-radius:999px"><input type="checkbox" data-s="${esc(x)}" ${WL.includes(x) ? "checked" : ""} style="width:auto;margin:0"> ${esc(x)}</label>`).join("");
+}
+$("wl").onchange = e => {
+  const c = e.target.closest("input[data-s]"); if (!c) return;
+  WL = c.checked ? [...new Set([...WL, c.dataset.s])] : WL.filter(x => x !== c.dataset.s);
+  $("wl_msg").textContent = WL.length + " selected" + (WL.length > 8 ? " (more than 8 may hit the free-plan limit)" : "");
+};
+$("wl_addbtn").onclick = () => {
+  const v = $("wl_add").value.trim().toUpperCase(), m = $("wl_msg");
+  if (!SYM_OK.test(v)) return m.textContent = "Use a symbol like AAPL, BTC/USD or XAU/USD.";
+  WL = [...new Set([...WL, v])]; $("wl_add").value = ""; m.textContent = WL.length + " selected"; renderWL();
+};
+$("wl_save").onclick = async () => {
+  const m = $("wl_msg"); if (!WL.length) return m.textContent = "Pick at least one symbol."; if (WL.length > 12) return m.textContent = "Maximum 12 symbols.";
+  try { await dbr.ref("settings/watch").set(WL.join(",")); setWatch(WL); logEvt("Updated tracked markets: " + WL.join(", ").slice(0, 150)); m.textContent = "Saved. Reloading prices..."; start(); }
+  catch (err) { m.textContent = "Save failed: " + err.message; }
+};
+renderWL();
+function marketTabs() {
+  const ty = [...new Set(Object.entries(data).map(([p, d]) => d.type || typeOf(p)))];
+  if (ty.length < 2) return ""; if (MK !== "all" && !ty.includes(MK)) MK = "all";
+  return '<div class="tabs" style="padding:4px 4px 10px">' + [["all", "All"], ...ty.map(t => [t, TLONG[t] || t])].map(([k, t]) => `<button data-mk="${k}" class="${MK === k ? "on" : ""}">${t}</button>`).join("") + "</div>";
+}
+
+// ----- admin tabs -----
+function showTab(t) {
+  ATAB = t; ["users", "pay", "ann", "logs", "admin"].forEach(k => { $(k).style.display = k === t ? "block" : "none"; });
+  if (t === "admin") $("admin").open = true;
+  document.querySelectorAll("#atabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+}
+$("atabs").onclick = e => { const b = e.target.closest("button[data-t]"); if (b) showTab(b.dataset.t); };
+
+// ----- who is online: alert the admin -----
+function presenceAlerts() {
+  const me = auth.currentUser && auth.currentUser.uid, now = rt(), cur = new Set();
+  Object.entries(PR).forEach(([id, v]) => { if (v && v.online && now - (v.last || 0) < 180000) cur.add(id); });
+  if (wasLive) cur.forEach(id => {
+    if (!wasLive.has(id) && id !== me) {
+      const m = nm(id) + " is now online"; banner(m, true); if (soundOn) beep(620, .12, 2);
+      if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: m }); } catch {}
+    }
+  });
+  wasLive = cur;
+}
+
+// ----- security -----
+const pwOk = x => typeof x === "string" && x.length >= 8 && /[A-Za-z]/.test(x) && /\d/.test(x);
+function lockState() { try { return JSON.parse(localStorage.getItem("fr_lock") || "{}"); } catch { return {}; } }
+function lockMsg() { const x = lockState(); if (x.until && x.until > rt()) { $("err").textContent = "Too many failed attempts. Try again in " + Math.ceil((x.until - rt()) / 1000) + " seconds."; return true; } return false; }
+function loginFail(er) {
+  const x = lockState(); let n = (x.until && x.until <= rt() ? 0 : x.n || 0) + 1, until = 0;
+  if (n >= 5) { until = rt() + 5 * 60000; n = 0; }
+  try { localStorage.setItem("fr_lock", JSON.stringify({ n, until })); } catch {}
+  $("err").textContent = er && er.code === "auth/too-many-requests" ? "Too many attempts. Wait a few minutes or reset your password." : until ? "Too many failed attempts. Locked for 5 minutes." : "Wrong email or password. " + (5 - n) + " tries left.";
+}
+function lockReset() { try { localStorage.removeItem("fr_lock"); } catch {} }
+function kickOut(msg) { $("err").textContent = msg; logEvt("Signed out: " + msg.slice(0, 120)).then(() => auth.signOut()); }
+function startSession(u) {                           // one device at a time for members
+  if (isAdmin) return;
+  const sid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, "0")).join(""), sr = dbr.ref("sessions/" + u.uid);
+  sr.set({ id: sid, t: TS, ua: navigator.userAgent.slice(0, 100) }).catch(() => {});
+  listen(sr.child("id"), x => { const v = x.val(); if (v && v !== sid) kickOut("You were signed out because this account was opened on another device, or an admin ended your session."); });
+}
+$("sec_kick").onclick = async () => {
+  const m = $("sec_msg"); if (!confirm("Sign out every member right now? Admins stay signed in.")) return;
+  try { await dbr.ref("site/kick").set(TS); logEvt("Signed out all members"); m.textContent = "Done."; } catch (err) { m.textContent = "Failed: " + err.message; }
+  setTimeout(() => m.textContent = "", 5000);
+};
+
 // ---------- password tools ----------
 $("nu_sh").onchange = () => { $("nu_pw").type = $("nu_sh").checked ? "text" : "password"; };
 $("nu_gen").onclick = () => {
   const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = crypto.getRandomValues(new Uint32Array(12));
-  $("nu_pw").value = Array.from(r, x => ch[x % ch.length]).join("");
+  let g; do { g = Array.from(crypto.getRandomValues(new Uint32Array(12)), x => ch[x % ch.length]).join(""); } while (!pwOk(g)); $("nu_pw").value = g;
   $("nu_sh").checked = true; $("nu_pw").type = "text";
 };
 $("cp_sh").onchange = () => { $("cp_old").type = $("cp_new").type = $("cp_sh").checked ? "text" : "password"; };
 $("cp_go").onclick = async () => {
   const u = auth.currentUser, o = $("cp_old").value, n = $("cp_new").value, m = $("cp_msg"); m.textContent = "";
-  if (!u || !o || n.length < 6) return m.textContent = "Enter your current password and a new one of 6+ characters.";
+  if (!u || !o || !pwOk(n)) return m.textContent = "Enter your current password and a new one of 8+ characters with letters and numbers.";
   try {
     await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email, o));
     await u.updatePassword(n);
@@ -916,9 +1073,8 @@ auth.onAuthStateChanged(async u => {
   resetIdle();
   if (!(await initSelf(u))) return;
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
-  $("admin").style.display = isAdmin ? "block" : "none";
-  $("users").style.display = isAdmin ? "block" : "none"; startCommon(u);
-  if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else $("admin").open = true; } catch {} }
+  startCommon(u);
+  if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
   status(); render(); start();
 });
 </script>
