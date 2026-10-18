@@ -51,6 +51,7 @@ canvas{width:100%;height:120px;display:block}
 #login input,.f input{width:100%;padding:10px 12px;margin:6px 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
 #login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
 #err{color:var(--danger);min-height:22px;font-size:13px}
+#ok{color:var(--buy);font-size:13px}
 #app{display:none}
 #admin{display:none;margin-top:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
@@ -176,9 +177,11 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 6px"><input id="sp" type="checkbox" style="width:auto;margin:0"> Show password</label>
     <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 12px"><input id="rm" type="checkbox" style="width:auto;margin:0"> Remember my email on this device</label>
     <button class="go" type="submit">Sign in</button>
+    <button type="button" id="forgot" style="width:100%;margin-top:8px">Forgot password?</button>
     <button type="button" id="theme2" style="width:100%;margin-top:8px">Switch to light</button>
   </form>
   <div id="err" role="alert"></div>
+  <div id="ok" role="status"></div>
 </section>
 <div id="app">
 <header><h1 id="hname">Steve FX Radar</h1>
@@ -214,6 +217,15 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <select id="ch_sel" aria-label="Chat channel" style="margin-top:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"></select>
   <div id="ch_list"></div>
   <div class="adduser" style="margin:0"><input id="ch_in" placeholder="Type a message" maxlength="400" style="flex:1 1 220px" autocomplete="off"><button class="pri" id="ch_go">Send</button><span id="ch_msg" class="mut" role="status"></span></div>
+</details>
+<details class="panel" id="mypw" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Change my password</summary>
+  <div class="adduser">
+    <input id="cp_old" type="password" placeholder="Current password" autocomplete="current-password">
+    <input id="cp_new" type="password" placeholder="New password (8+)" autocomplete="new-password">
+    <label class="mut"><input id="cp_sh" type="checkbox"> Show</label>
+    <button class="pri" id="cp_go">Update password</button>
+    <span id="cp_msg" class="mut" role="status"></span>
+  </div>
 </details>
 <div id="atabs" class="tabs" style="display:none;margin-top:16px">
   <button data-t="users">Users <span id="t_u" class="pill">0 online</span></button>
@@ -251,16 +263,8 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     <button class="pri" id="nu_go">Add user</button>
     <span id="nu_msg" class="mut" role="status"></span>
   </div>
+  <div id="nu_share" class="adduser" style="margin-top:0"></div>
   <div id="ulist"></div>
-  <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:600">Change my password</summary>
-    <div class="adduser">
-      <input id="cp_old" type="password" placeholder="Current password" autocomplete="current-password">
-      <input id="cp_new" type="password" placeholder="New password (8+)" autocomplete="new-password">
-      <label class="mut"><input id="cp_sh" type="checkbox"> Show</label>
-      <button class="pri" id="cp_go">Update password</button>
-      <span id="cp_msg" class="mut" role="status"></span>
-    </div>
-  </details>
 </section>
 <section class="panel" id="pay" style="display:none;margin-top:16px"><b>Membership &amp; payments</b> <span id="pay_n" class="pill apr" style="display:none"></span>
   <div class="stats" id="pay_stats"></div>
@@ -383,8 +387,18 @@ const wsLive = () => wsUp && rt() - lastAny < 30000;
 // ---------- login ----------
 try { const e0 = localStorage.getItem("fr_email"); if (e0) { $("em").value = e0; $("rm").checked = true; } } catch {}
 $("sp").onchange = () => { $("pw").type = $("sp").checked ? "text" : "password"; };
+$("forgot").onclick = async () => {
+  const em = $("em").value.trim(); $("err").textContent = ""; $("ok").textContent = "";
+  if (!em) return $("err").textContent = "Type your email above first, then tap Forgot password.";
+  try { await auth.sendPasswordResetEmail(em); }
+  catch (er) {
+    if (er.code === "auth/invalid-email") return $("err").textContent = "That email address is not valid.";
+    if (er.code === "auth/too-many-requests") return $("err").textContent = "Too many requests. Wait a few minutes and try again.";
+  }
+  $("ok").textContent = "If that email has an account, a reset link is on its way. Check your spam folder too.";
+};
 $("lf").onsubmit = async e => {
-  e.preventDefault(); $("err").textContent = ""; if (lockMsg()) return;
+  e.preventDefault(); $("err").textContent = ""; $("ok").textContent = ""; if (lockMsg()) return;
   try { $("rm").checked ? localStorage.setItem("fr_email", $("em").value.trim()) : localStorage.removeItem("fr_email"); } catch {}
   try { await auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value); }
   catch (er) { loginFail(er); }
@@ -641,7 +655,8 @@ $("ulist").onclick = async e => {
       u["sessions/" + id] = { id: "kicked-" + rt(), t: TS };
       await dbr.ref().update(u);
       logEvt("Fixed email " + old + " -> " + ne);
-      prompt("New login created. Copy and send this to the user.\nEmail: " + ne + "\nTemporary password:", pw);
+      let sent = ""; try { await auth.sendPasswordResetEmail(ne); sent = "\nA password reset link was also emailed to them."; } catch {}
+      prompt("New login created. Copy and send this to the user." + sent + "\nEmail: " + ne + "\nTemporary password:", pw);
     }
     if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); logEvt("Sent password reset link to " + em); } }
     if (a === "sup") { await dbr.ref().update({ ["admins/" + id]: true, ["superadmins/" + id]: true }); logEvt("Made super admin: " + nm(id)); }
@@ -665,7 +680,14 @@ $("nu_go").onclick = async () => {
     if ($("nu_ad").checked) await dbr.ref("admins/" + c.user.uid).set(true);
     else await dbr.ref("approved/" + c.user.uid).set(true);
     logEvt("Added user " + em + ($("nu_ad").checked ? " (admin)" : ""));
-    msg.textContent = "User added. Send them the email and password."; $("nu_em").value = $("nu_pw").value = ""; $("nu_ad").checked = false; $("nu_sh").checked = false; $("nu_pw").type = "password"; $("nu_em").setAttribute("readonly", ""); $("nu_pw").setAttribute("readonly", ""); setTimeout(() => { msg.textContent = ""; }, 8000);
+    let sent = ""; try { await auth.sendPasswordResetEmail(em); sent = " A password reset link was also emailed to them."; } catch {}
+    const url = location.origin + location.pathname;
+    const txt = "Hello,\n\nYour " + CO + " account is ready.\n\nSign in: " + url + "\nEmail: " + em + "\nTemporary password: " + pw + "\n\nAfter you sign in, open \"Change my password\" and choose your own password. If you forget it, tap \"Forgot password?\" on the sign-in page.";
+    const sh = $("nu_share"); sh.innerHTML = "";
+    const mk = (t, h, c, ext) => { const a = document.createElement("a"); a.className = "btn" + (c ? " " + c : ""); a.textContent = t; a.href = h; if (ext) { a.target = "_blank"; a.rel = "noopener"; } sh.appendChild(a); };
+    mk("Email login details", "mailto:" + encodeURIComponent(em) + "?subject=" + encodeURIComponent("Your " + CO + " account") + "&body=" + encodeURIComponent(txt));
+    mk("WhatsApp login details", "https://wa.me/?text=" + encodeURIComponent(txt), "wa", true);
+    msg.textContent = "User added." + sent + " Use the buttons below to send the login details."; $("nu_em").value = $("nu_pw").value = ""; $("nu_ad").checked = false; $("nu_sh").checked = false; $("nu_pw").type = "password"; $("nu_em").setAttribute("readonly", ""); $("nu_pw").setAttribute("readonly", ""); setTimeout(() => { msg.textContent = ""; }, 25000);
   } catch (err) { msg.textContent = err.code === "auth/email-already-in-use" ? "That email already has an account." : err.message; }
 };
 
@@ -684,7 +706,7 @@ async function grant(id, days) {                     // approve a user; days = 0
 }
 function startCommon(u) {
   lockReset(); sessStart = rt(); startSession(u);
-  $("nu_em").value = ""; $("nu_pw").value = ""; if (isAdmin && amOwner()) dbr.ref("superadmins/" + u.uid).set(true).catch(() => {});
+  $("nu_em").value = ""; $("nu_pw").value = ""; $("nu_share").innerHTML = ""; if (isAdmin && amOwner()) dbr.ref("superadmins/" + u.uid).set(true).catch(() => {});
   try { if (sessionStorage.getItem("fr_log") !== u.uid) { sessionStorage.setItem("fr_log", u.uid); logEvt("Signed in"); } } catch { logEvt("Signed in"); }
   listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); applySite(); renderMember(); fillSite(); });
   listen(dbr.ref("news").limitToLast(8), s => { NEWS = []; s.forEach(c => { NEWS.push({ id: c.key, ...c.val() }); }); renderNews(); });
