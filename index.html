@@ -143,6 +143,8 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 [data-theme=light] #ch_list{background:rgba(0,0,0,.04)}
 [data-theme=light] .tag.BUY,[data-theme=light] .stt.on{color:#032a25}
 
+.pill.own{color:var(--wait);border-color:var(--wait)}
+
 /* ---- Steve FX Radar backdrop ---- */
 html{background:#0b1622}
 body{background:transparent;position:relative;min-height:100vh}
@@ -241,8 +243,8 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 <section class="panel" id="users"><b>Team, roles &amp; access</b>
   <div class="stats" id="ustats"></div>
   <div class="adduser">
-    <input id="nu_em" type="email" placeholder="New user email" autocomplete="off">
-    <input id="nu_pw" type="password" placeholder="Temporary password (8+)" autocomplete="new-password">
+    <input id="nu_em" type="text" inputmode="email" placeholder="New user email" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
+    <input id="nu_pw" type="password" placeholder="Temporary password (8+)" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
     <label class="mut"><input id="nu_sh" type="checkbox"> Show</label>
     <button id="nu_gen" type="button">Generate</button>
     <label class="mut"><input id="nu_ad" type="checkbox"> Admin</label>
@@ -557,7 +559,7 @@ $("demo").onclick = () => {
 // ---------- user management + presence ----------
 let U = {}, PR = {}, AD = {}, AP = {}, uRefs = [], hb, apErr = false, MS = {}, PAY = {}, MYPAY = {}, SITE = {}, LG = [], MEM = { apr: false, until: 0 }, knownPay = null, feedRef = null, feedOn = false, feedTs = 0, lastPub = 0, sweepT, IDLE_MIN = 30, lastIdleReset = 0;
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); resetChat(); NEWS = []; wasLive = null; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
+function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
@@ -578,28 +580,38 @@ function startAdminUsers() {
 }
 function renderUsers() {
   if (!isAdmin || !auth.currentUser) return;
-  const now = rt(), me = auth.currentUser.uid;
-  const rows = Object.entries(U).filter(([, v]) => v && !v.removed).map(([id, v]) => ({ id, v, adm: AD[id] === true, blk: v.blocked === true, apr: AP[id] === true,
+  const now = rt(), me = auth.currentUser.uid, mt = myTier();
+  $("lg_clr").style.display = amSuper() ? "" : "none"; $("nu_ad").parentElement.style.display = amSuper() ? "" : "none";
+  const rows = Object.entries(U).filter(([, v]) => v && !v.removed).map(([id, v]) => ({ id, v, t: tier(id, v), blk: v.blocked === true, apr: AP[id] === true,
     live: !!(PR[id] && PR[id].online && now - (PR[id].last || 0) < 180000) }));
   const n = f => rows.filter(f).length;
-  $("t_u").textContent = n(r => r.live) + " online"; $("ustats").innerHTML = `<div>TOTAL USERS<b>${rows.length}</b></div><div>ONLINE NOW<b style="color:var(--buy)">${n(r => r.live)}</b></div><div>ADMINS<b>${n(r => r.adm)}</b></div><div>BLOCKED<b style="color:var(--danger)">${n(r => r.blk)}</b></div>`;
-  rows.sort((a, b) => b.live - a.live || (a.v.email || "").localeCompare(b.v.email || ""));
+  $("t_u").textContent = n(r => r.live) + " online";
+  $("ustats").innerHTML = `<div>TOTAL USERS<b>${rows.length}</b></div><div>ONLINE NOW<b style="color:var(--buy)">${n(r => r.live)}</b></div><div>ADMINS<b>${n(r => r.t >= 1)}</b></div><div>BLOCKED<b style="color:var(--danger)">${n(r => r.blk)}</b></div>`;
+  rows.sort((a, b) => b.t - a.t || b.live - a.live || (a.v.email || "").localeCompare(b.v.email || ""));
+  const btn = (a, id, label, cls) => `<button${cls ? ` class="${cls}"` : ""} data-a="${a}" data-id="${esc(id)}">${label}</button>`;
   $("ulist").innerHTML = (apErr ? '<p class="mut">Approvals cannot be read. Add the <code>approved</code> read rule for admins, then reload.</p>' : "") +
-    (rows.map(({ id, v, adm, blk, apr, live }) => `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "● Online" : "○ Offline"}</span><b>${esc(v.email || id)}</b>
-    ${id === me ? '<span class="pill">you</span>' : ""}${adm ? '<span class="pill adm">Admin</span>' : ""}${!adm && !apr ? '<span class="pill">Unpaid</span>' : ""}${apr && !adm ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + fmtD(MS[id].until) + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
-    <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + fmtDT(PR[id].last) : "Never signed in"}</div></div>
-    <div class="uact">${id === me ? '<span class="mut">Your account</span>' :
-      `${adm ? "" : `<button data-a="apr" data-id="${esc(id)}">${apr ? "Unapprove" : "Approve"}</button>`}
-       <button data-a="adm" data-id="${esc(id)}">${adm ? "Remove admin" : "Make admin"}</button>
-       ${adm ? "" : `<button data-a="kick" data-id="${esc(id)}">Sign out</button>`}
-       <button data-a="rst" data-id="${esc(id)}">Reset password</button>
-       <button data-a="blk" data-id="${esc(id)}">${blk ? "Unblock" : "Block"}</button>
-       <button class="bad" data-a="del" data-id="${esc(id)}">Remove</button>`}</div></div>`).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
+    (rows.map(({ id, v, t, blk, apr, live }) => {
+      let acts = "";
+      if (id === me) acts = '<span class="mut">Your account</span>';
+      else if (!canAct(id, v)) acts = '<span class="mut">' + (t === 3 ? "Owner (protected)" : "Protected") + "</span>";
+      else {
+        if (t === 0) acts += btn("apr", id, apr ? "Unapprove" : "Approve") + btn("kick", id, "Sign out");
+        if (mt >= 2 && t <= 1) acts += btn("adm", id, t === 1 ? "Remove admin" : "Make admin");
+        if (mt === 3 && t === 1) acts += btn("sup", id, "Make super admin");
+        if (mt === 3 && t === 2) acts += btn("unsup", id, "Remove super admin");
+        acts += btn("rst", id, "Reset password") + btn("blk", id, blk ? "Unblock" : "Block") + btn("del", id, "Remove", "bad");
+      }
+      return `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "\u25cf Online" : "\u25cb Offline"}</span><b>${esc(v.email || id)}</b>
+      ${id === me ? '<span class="pill">you</span>' : ""}${t === 3 ? '<span class="pill own">Owner</span>' : t === 2 ? '<span class="pill adm">Super admin</span>' : t === 1 ? '<span class="pill adm">Admin</span>' : ""}${t === 0 && !apr ? '<span class="pill">Unpaid</span>' : ""}${t === 0 && apr ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + fmtD(MS[id].until) + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
+      <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + fmtDT(PR[id].last) : "Never signed in"}</div></div>
+      <div class="uact">${acts}</div></div>`;
+    }).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
 }
 setInterval(renderUsers, 30000);                    // keeps "online" status fresh as time passes
 $("ulist").onclick = async e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
   const id = b.dataset.id, a = b.dataset.a, blk = U[id] && U[id].blocked === true;
+  if (!U[id] || !canAct(id, U[id]) || (a === "adm" && myTier() < 2) || ((a === "sup" || a === "unsup") && myTier() < 3)) return alert("You do not have permission to do that.");
   try {
     if (a === "blk") { await dbr.ref("users/" + id + "/blocked").set(!blk); logEvt((blk ? "Unblocked " : "Blocked ") + nm(id)); }
     if (a === "adm") { await dbr.ref("admins/" + id).set(AD[id] === true ? null : true); logEvt((AD[id] === true ? "Removed admin rights from " : "Made admin: ") + nm(id)); }
@@ -608,17 +620,20 @@ $("ulist").onclick = async e => {
       else { const d = prompt("Days of access for " + nm(id) + " (leave blank for no expiry)", ""); if (d === null) return; const days = Math.floor(+d) > 0 ? Math.floor(+d) : 0; await grant(id, days); logEvt("Approved " + nm(id) + (days ? " for " + days + " days" : " with no expiry")); }
     }
     if (a === "rst") { const em = U[id] && U[id].email; if (em && confirm("Email a password reset link to " + em + "?")) { await auth.sendPasswordResetEmail(em); alert("Reset link sent to " + em + "."); logEvt("Sent password reset link to " + em); } }
+    if (a === "sup") { await dbr.ref().update({ ["admins/" + id]: true, ["superadmins/" + id]: true }); logEvt("Made super admin: " + nm(id)); }
+    if (a === "unsup") { await dbr.ref("superadmins/" + id).remove(); logEvt("Removed super admin rights from " + nm(id)); }
     if (a === "kick") { await dbr.ref("sessions/" + id).update({ id: "kicked-" + rt(), t: TS }); logEvt("Ended the session of " + nm(id)); }
     if (a === "del" && confirm("Remove " + ((U[id] && U[id].email) || id) + "? They will be blocked and hidden.")) {
       await dbr.ref("users/" + id).update({ blocked: true, removed: true });
       await dbr.ref("approved/" + id).remove(); await dbr.ref("memberships/" + id).remove(); logEvt("Removed user " + nm(id));
-      await dbr.ref("admins/" + id).remove();
+      if (SA[id] === true) await dbr.ref("superadmins/" + id).remove(); if (AD[id] === true) await dbr.ref("admins/" + id).remove();
     }
   } catch (err) { alert("Action failed: " + err.message); }
 };
 $("nu_go").onclick = async () => {
   const em = $("nu_em").value.trim(), pw = $("nu_pw").value, msg = $("nu_msg"); msg.textContent = "";
   if (!em || !pwOk(pw)) return msg.textContent = "Enter an email and a password of 8+ characters with letters and numbers.";
+  if ($("nu_ad").checked && !amSuper()) return msg.textContent = "Only a super admin can add admins.";
   try {
     const sec = firebase.apps.find(x => x.name === "sec") || firebase.initializeApp(firebaseConfig, "sec");   // second app so you stay signed in
     const c = await sec.auth().createUserWithEmailAndPassword(em, pw); await sec.auth().signOut();
@@ -626,7 +641,7 @@ $("nu_go").onclick = async () => {
     if ($("nu_ad").checked) await dbr.ref("admins/" + c.user.uid).set(true);
     else await dbr.ref("approved/" + c.user.uid).set(true);
     logEvt("Added user " + em + ($("nu_ad").checked ? " (admin)" : ""));
-    msg.textContent = "User added. Send them the email and password."; $("nu_em").value = $("nu_pw").value = ""; $("nu_ad").checked = false;
+    msg.textContent = "User added. Send them the email and password."; $("nu_em").value = $("nu_pw").value = ""; $("nu_ad").checked = false; $("nu_sh").checked = false; $("nu_pw").type = "password"; $("nu_em").setAttribute("readonly", ""); $("nu_pw").setAttribute("readonly", ""); setTimeout(() => { msg.textContent = ""; }, 8000);
   } catch (err) { msg.textContent = err.code === "auth/email-already-in-use" ? "That email already has an account." : err.message; }
 };
 
@@ -645,6 +660,7 @@ async function grant(id, days) {                     // approve a user; days = 0
 }
 function startCommon(u) {
   lockReset(); sessStart = rt(); startSession(u);
+  $("nu_em").value = ""; $("nu_pw").value = ""; if (isAdmin && amOwner()) dbr.ref("superadmins/" + u.uid).set(true).catch(() => {});
   try { if (sessionStorage.getItem("fr_log") !== u.uid) { sessionStorage.setItem("fr_log", u.uid); logEvt("Signed in"); } } catch { logEvt("Signed in"); }
   listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); applySite(); renderMember(); fillSite(); });
   listen(dbr.ref("news").limitToLast(8), s => { NEWS = []; s.forEach(c => { NEWS.push({ id: c.key, ...c.val() }); }); renderNews(); });
@@ -722,6 +738,7 @@ $("m_go").onclick = async () => {
 // ----- admin: payments, settings, logs, expiry -----
 function pendingList() { const o = []; for (const [uid, m] of Object.entries(PAY)) for (const [pid, p] of Object.entries(m || {})) o.push({ uid, pid, ...p }); return o; }
 function startAdminExtras() {
+  listen(dbr.ref("superadmins"), s => { SA = s.val() || {}; renderUsers(); });
   listen(dbr.ref("memberships"), s => { MS = s.val() || {}; renderUsers(); });
   listen(dbr.ref("users"), () => { renderPay(); chOptions(); });
   listen(dbr.ref("payments"), s => {
@@ -809,7 +826,7 @@ function renderLogs() {
   if (!isAdmin) return;
   $("loglist").innerHTML = LG.slice().reverse().map(l => `<div class="logrow"><span class="num mut">${fmtDT(l.t)}</span> <b>${esc(l.email || l.uid)}</b> ${esc(l.msg)}</div>`).join("") || '<p class="mut">No activity yet.</p>';
 }
-$("lg_clr").onclick = async () => { if (confirm("Clear the whole activity log?")) { try { await dbr.ref("logs").remove(); logEvt("Cleared the activity log"); } catch (err) { alert("Failed: " + err.message); } } };
+$("lg_clr").onclick = async () => { if (!amSuper()) return alert("Only the owner or a super admin can clear the log."); if (confirm("Clear the whole activity log?")) { try { await dbr.ref("logs").remove(); logEvt("Cleared the activity log"); } catch (err) { alert("Failed: " + err.message); } } };
 async function sweep() {                             // drop access when a membership has run out
   if (!isAdmin) return; const now = rt();
   for (const [id, m] of Object.entries(MS)) if (m && m.until < now && AP[id] === true) {
@@ -1038,6 +1055,16 @@ $("sec_kick").onclick = async () => {
   try { await dbr.ref("site/kick").set(TS); logEvt("Signed out all members"); m.textContent = "Done."; } catch (err) { m.textContent = "Failed: " + err.message; }
   setTimeout(() => m.textContent = "", 5000);
 };
+
+// ---------- owner and super admin tiers ----------
+const OWNER_EMAIL = "wanjohisteve85@gmail.com";     // the owner: nobody else can change or remove this account
+let SA = {};
+const isOwnerEmail = e => String(e || "").toLowerCase() === OWNER_EMAIL;
+const tier = (id, v) => isOwnerEmail(v && v.email) ? 3 : SA[id] === true ? 2 : AD[id] === true ? 1 : 0;   // 3 owner, 2 super admin, 1 admin, 0 member
+const amOwner = () => !!auth.currentUser && isOwnerEmail(auth.currentUser.email);
+const amSuper = () => amOwner() || (!!auth.currentUser && SA[auth.currentUser.uid] === true);
+const myTier = () => amOwner() ? 3 : amSuper() ? 2 : 1;
+const canAct = (id, v) => tier(id, v) < myTier();
 
 // ---------- password tools ----------
 $("nu_sh").onchange = () => { $("nu_pw").type = $("nu_sh").checked ? "text" : "password"; };
