@@ -632,7 +632,7 @@ $("ulist").onclick = async e => {
       const sec = firebase.apps.find(x => x.name === "sec") || firebase.initializeApp(firebaseConfig, "sec");
       const c = await sec.auth().createUserWithEmailAndPassword(ne, pw); await sec.auth().signOut();
       const nid = c.user.uid, u = {};
-      u["users/" + nid] = { email: ne, createdAt: TS, blocked: false };
+      u["users/" + nid + "/email"] = ne; u["users/" + nid + "/createdAt"] = TS; u["users/" + nid + "/blocked"] = false;
       if (AD[id] === true) u["admins/" + nid] = true;
       if (AP[id] === true) u["approved/" + nid] = true;
       if (MS[id]) u["memberships/" + nid] = MS[id];
