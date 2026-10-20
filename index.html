@@ -52,6 +52,8 @@ canvas{width:100%;height:120px;display:block}
 #login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
 #err{color:var(--danger);min-height:22px;font-size:13px}
 #ok{color:var(--buy);font-size:13px}
+.lv{margin:10px 0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.lvr{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
 #app{display:none}
 #admin{display:none;margin-top:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
@@ -345,13 +347,19 @@ function dirAt(S, i) {                       // -1 (strong sell) .. +1 (strong b
 }
 function volRatio(S, i) { let m = 0, k = 0; for (let j = Math.max(0, i - 100); j <= i; j++) { m += S.atr[j]; k++; } return S.atr[i] / (m / k || 1e-9); }
 function backtest(S, thr, H = 10) {          // hit = price moved >0.3 ATR our way within 10 bars; miss = against
-  let hit = 0, miss = 0, n = S.c.length;
+  let hit = 0, miss = 0, n = S.c.length; const fav = [], adv = [], sw = [];
   for (let i = 120; i < n - H; i++) {
+    sw.push(Math.abs(S.c[i + H] - S.c[i]));
     const d = dirAt(S, i); if (Math.abs(d) < thr) continue;
-    const f = (S.c[i + H] - S.c[i]) / S.atr[i] * Math.sign(d);
+    const sg = Math.sign(d); let mf = 0, ma = 0;
+    for (let j = 1; j <= H; j++) { const e = (S.c[i + j] - S.c[i]) / S.atr[i] * sg; if (e > mf) mf = e; if (-e > ma) ma = -e; }
+    fav.push(mf); adv.push(ma);
+    const f = (S.c[i + H] - S.c[i]) / S.atr[i] * sg;
     if (f > .3) hit++; else if (f < -.3) miss++;
   }
-  return { hit, miss, rate: hit + miss ? hit / (hit + miss) : null };
+  const q = (a, p) => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(p * b.length))]; };
+  // t1/t2 = median and 75th percentile of the best move our way within H bars; sl = 75th percentile of the worst move against us; all in ATR units (closes only)
+  return { hit, miss, rate: hit + miss ? hit / (hit + miss) : null, n: fav.length, t1: q(fav, .5), t2: q(fav, .75), sl: q(adv, .75), swing: q(sw, .5) };
 }
 function tfTrend(c, step) {
   const r = []; for (let i = c.length - 1; i >= 0 && r.length < 60; i -= step) r.unshift(c[i]);
@@ -506,7 +514,7 @@ function compute() {
     const stale = !isOpen(s) ? true : wsLive() ? t - p.tickAt > 120000 : t - lastPoll > POLL_MS * 2.2;
     data[s] = { pair: s, type: typeOf(s), open: isOpen(s), bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
       trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
-      tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt };
+      tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir) };
   }
   if (!sel || !data[sel]) sel = Object.keys(data)[0] || null;
   if (changed) { render(); publish(); }
@@ -548,11 +556,38 @@ function render() {
     <div class="tfs">${["M5", "M15", "M30"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
     <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
+    ${lvBlock(sel, d)}
     <p class="mut">Bars show signal strength, not a probability. Tested: ${bt}. Last tick ${d.age ?? 0}s ago.</p>`;
   const c = $("cv"), a = d.spark; if (!c || a.length < 2) return;
-  const x = c.getContext("2d"), w = c.width, h = c.height, lo = Math.min(...a), r = Math.max(...a) - lo || 1;
+  const L = (d.signal === "BUY" || d.signal === "SELL") && d.lv ? d.lv : null, all = L ? [...a, L.t2, L.stop, L.entry] : a;
+  const x = c.getContext("2d"), w = c.width, h = c.height, lo = Math.min(...all), r = Math.max(...all) - lo || 1, py = v => h - 6 - (v - lo) / r * (h - 12);
+  if (L) {                                           // dashed lines: entry, targets, stop
+    x.lineWidth = 1; x.setLineDash([6, 4]);
+    [[L.entry, "#8fa5ba"], [L.t1, "#2ec4b6"], [L.t2, "#2ec4b6"], [L.stop, "#ff3b5c"]].forEach(([v, col]) => { x.strokeStyle = col; x.beginPath(); x.moveTo(0, py(v)); x.lineTo(w, py(v)); x.stroke(); });
+    x.setLineDash([]);
+  }
   x.strokeStyle = "#2ec4b6"; x.lineWidth = 2; x.beginPath();
-  a.forEach((v, i) => { const px = i / (a.length - 1) * w, py = h - 6 - (v - lo) / r * (h - 12); i ? x.lineTo(px, py) : x.moveTo(px, py); }); x.stroke();
+  a.forEach((v, i) => { const px = i / (a.length - 1) * w; i ? x.lineTo(px, py(v)) : x.moveTo(px, py(v)); }); x.stroke();
+}
+
+// ---------- start / target / stop levels ----------
+function levels(p, atr, dir) {                       // price levels from how far past signals on this pair actually moved
+  const bt = p.bt, ok = !!(bt && bt.n >= 8 && bt.t1 != null), sg = dir >= 0 ? 1 : -1, e = p.price;
+  let k1 = ok ? bt.t1 : 1, k2 = ok ? bt.t2 : 1.8, ks = ok ? bt.sl : 1;
+  k1 = clamp(k1, .3, 3); k2 = Math.max(clamp(k2, .5, 4), k1 + .3); ks = clamp(ks, .5, 3);
+  return { entry: e, atr, t1: e + sg * k1 * atr, t2: e + sg * k2 * atr, stop: e - sg * ks * atr, src: ok ? "history" : "default", n: ok ? bt.n : 0, swing: bt && bt.swing != null ? bt.swing : atr * 2 };
+}
+function lvBlock(s, d) {
+  const L = d.lv; if (!L) return "";
+  const fx = typeOf(s) === "forex", pip = s.includes("JPY") ? .01 : .0001;
+  const df = (a, b) => fx ? (Math.abs(a - b) / pip).toFixed(1) + " pips" : (Math.abs(a - b) / L.entry * 100).toFixed(2) + "%";
+  const sw = L.swing != null ? `<div class="mut" style="margin-top:4px">Typical move in 10 minutes: about ${df(L.entry, L.entry + L.swing)}</div>` : "";
+  if (d.signal !== "BUY" && d.signal !== "SELL") return `<div class="lv"><b>How far it may move</b>${sw}<div class="mut">No setup right now, so there are no start or stop levels.</div></div>`;
+  const row = (n, v, c, dist) => `<div class="lvr"><span style="color:${c}">${n}</span><span class="num">${fmt(s, v)}${dist ? ` <span class="mut">${df(L.entry, v)} ${v > L.entry ? "up" : "down"}</span>` : ""}</span></div>`;
+  const note = L.src === "history" ? `From ${L.n} past signals on this pair: price reached Target 1 about half the time and Target 2 about a quarter of the time within 10 minutes. It went past the stop level about a quarter of the time.` : "Default levels. Not enough past signals on this pair yet.";
+  return `<div class="lv"><b>${d.signal === "BUY" ? "If price goes up" : "If price goes down"}</b>
+    ${row("Start (entry)", L.entry, "var(--tx)", false)}${row("Target 1", L.t1, "var(--buy)", true)}${row("Target 2", L.t2, "var(--buy)", true)}${row("Stop (setup fails)", L.stop, "var(--danger)", true)}
+    ${sw}<div class="mut" style="margin-top:4px">${note} These are estimates from past price moves, not a promise.</div></div>`;
 }
 
 // ---------- demo ----------
