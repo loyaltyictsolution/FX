@@ -1,11 +1,10 @@
 {
-  "name": "radar-engine",
+  "name": "steve-fx-radar-engine",
   "version": "1.0.0",
-  "description": "Always-on signal engine for the radar portal",
-  "main": "server.js",
-  "scripts": { "start": "node server.js", "test": "node --test test/" },
-  "engines": { "node": ">=20" },
-  "dependencies": { "firebase-admin": "^12.0.0", "ws": "^8.18.0" },
-  "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "description": "Always-on signal engine for Steve FX Radar",
+  "main": "radar-engine.js",
+  "scripts": { "start": "node radar-engine.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "firebase-admin": "^12.0.0", "ws": "^8.16.0" }
 }
