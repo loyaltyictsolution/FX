@@ -167,6 +167,18 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 header{background:rgba(11,22,34,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:10px 12px;border-radius:12px}
 header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
 @media(prefers-reduced-motion:reduce){body::before{animation:none}}
+
+/* ---- Chart panel ---- */
+#chartpanel{margin-top:16px}
+.ctb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+.ctb .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.ctb button{padding:4px 10px;font-size:12px}
+.ctb button.on{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.ctb .lbl{font-size:11px;color:var(--mut);margin-right:2px}
+#cc{height:340px;touch-action:pan-y;cursor:crosshair}
+#c_rsi,#c_macd,#c_sto,#c_adx{height:80px;margin-top:6px;display:none}
+#c_info{font-size:12px;min-height:18px;color:var(--mut);margin:4px 0;font-family:"IBM Plex Mono",monospace;overflow-x:auto;white-space:nowrap}
+@media(max-width:600px){#cc{height:260px}}
 </style>
 </head>
 <body>
@@ -212,7 +224,37 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <section class="panel" id="list" aria-label="Currency pairs"></section>
   <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
 </main>
+<section class="panel" id="chartpanel" aria-label="Price chart">
+  <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline"><b>Chart <span id="c_pair" class="mut"></span></b><span class="mut" style="font-size:12px">Move over the chart to read each candle</span></div>
+  <div class="ctb" role="group" aria-label="Chart type">
+    <span class="lbl">Type</span>
+    <button data-ct="candles">Candles</button><button data-ct="ha">Heikin Ashi</button><button data-ct="ohlc">Bars</button><button data-ct="line">Line</button><button data-ct="area">Area</button>
+    <span class="sep"></span><span class="lbl">Time frame</span>
+    <button data-ctf="m1">1m</button><button data-ctf="m5">5m</button><button data-ctf="m15">15m</button><button data-ctf="h1">1h</button>
+  </div>
+  <div class="ctb" role="group" aria-label="Indicators">
+    <span class="lbl">On chart</span>
+    <button data-ci="ema">EMA 9/21/50</button><button data-ci="bb">Bollinger</button><button data-ci="lv">Entry / targets / stop</button>
+    <span class="sep"></span><span class="lbl">Below</span>
+    <button data-ci="rsi">RSI</button><button data-ci="macd">MACD</button><button data-ci="sto">Stochastic</button><button data-ci="adx">ADX</button>
+  </div>
+  <div id="c_info" aria-live="off"></div>
+  <canvas id="cc"></canvas>
+  <canvas id="c_rsi"></canvas><canvas id="c_macd"></canvas><canvas id="c_sto"></canvas><canvas id="c_adx"></canvas>
+  <div id="c_read"></div>
+</section>
 <section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
+<section class="panel" id="track" style="margin-top:16px"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
+  <div id="track_body"><p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.</p></div></section>
+<details class="panel" id="calc" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Position size and risk calculator</summary>
+  <div class="adduser">
+    <input id="cb" type="number" min="0" placeholder="Account balance (USD)" style="width:190px">
+    <input id="cr" type="number" min="0.1" max="10" step="0.1" placeholder="Risk % per trade" style="width:150px">
+    <input id="cs" type="number" min="0" step="0.1" placeholder="Your spread (pips)" style="width:150px">
+  </div>
+  <div id="calc_out" class="mut" role="status">Select a pair that shows BUY or SELL to see its trade size.</div>
+  <p class="mut">Lots = (balance x risk %) / (stop in pips x pip value). Pip values here are for USD pairs. Check the result with your broker's calculator before trading.</p>
+</details>
 </div>
 <section class="panel" id="news" style="display:none;margin-top:16px"></section>
 <details class="panel" id="chat" style="margin-top:16px"><summary>Chat <span id="ch_n" class="pill apr" style="display:none"></span></summary>
@@ -456,7 +498,7 @@ function onTick(sym, price, ts) {
   const p = P[sym]; if (!p || !p.candles.length) return;
   const m = Math.floor(ts / 60) * 60, c = p.candles, last = c[c.length - 1];
   if (last.t === m) { last.c = price; last.h = Math.max(last.h, price); last.l = Math.min(last.l, price); }
-  else if (m > last.t) { c.push({ t: m, o: price, h: price, l: price, c: price }); if (c.length > 1500) c.shift(); }
+  else if (m > last.t) { c.push({ t: m, o: price, h: price, l: price, c: price }); if (c.length > 1700) c.shift(); }
   p.price = price; p.tickAt = lastAny = rt(); p.dirty = true;
 }
 function merge(p, fresh) {
@@ -468,7 +510,7 @@ async function bootstrap() {
   loaded = 0; loadErr = "";
   for (const s of PAIRS) {
     try {
-      const cd = await fetchCandles(s, 1000);
+      const cd = await fetchCandles(s, 1440);
       P[s] = { candles: cd, price: cd[cd.length - 1].c, tickAt: 0, dirty: true, sig: "WAIT", dir: 0, dangerUntil: 0, reason: "", bt: null };
       P[s].bt = backtest(series(cd), THR); loaded++;
     } catch (e) { loadErr = e.message; if (/key|api|credit|limit/i.test(e.message)) break; }
@@ -491,9 +533,10 @@ async function pollOnce() {
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
   stop(); if (!KEY) return;
+  if (srvUp()) { asViewer = true; startFeed(); return; }
   await bootstrap(); connectWS();
   every(() => { if (!demo && KEY && PAIRS.some(isOpen) && !wsLive() && loaded && rt() - lastPoll > POLL_MS) pollOnce(); }, 15000);
-  every(compute, 1000);
+  every(compute, 1000); every(resolveOpen, 20000);
 }
 function stop() { timers.forEach(clearInterval); timers = []; clearInterval(hbT); if (ws) { ws.onclose = null; ws.close(); } wsUp = false; P = {}; data = {}; loaded = 0; }
 
@@ -510,11 +553,14 @@ function compute() {
     if (reason) { p.dangerUntil = t + 60000; p.reason = reason; }
     if (t < p.dangerUntil) sig = "DANGER"; else p.reason = "";
     if (sig !== p.sig && (sig !== "WAIT" || ["BUY", "SELL", "DANGER"].includes(p.sig)) && sig !== "WAIT") raise(s, p.sig, sig, p.reason, str);
-    p.sig = sig; if (sig === "BUY" || sig === "SELL") p.str = str; else p.str = p.str || 0;
+    const prevSig = p.sig; p.sig = sig; if (sig === "BUY" || sig === "SELL") p.str = str; else p.str = p.str || 0;
     const stale = !isOpen(s) ? true : wsLive() ? t - p.tickAt > 120000 : t - lastPoll > POLL_MS * 2.2;
     data[s] = { pair: s, type: typeOf(s), open: isOpen(s), bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
       trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
-      tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir) };
+      tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30), H1: tfTrend(S.c, 60) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir), day: dayStats(S, p.price) };
+    if (isAdmin && p.seen && !stale && (sig === "BUY" || sig === "SELL") && prevSig !== sig && t - (p.lastLog || 0) > 300000) { p.lastLog = t; logSignal(s, sig, data[s]); }
+    if (isAdmin && !asViewer && t - (p.chPub || 0) > 60000) { p.chPub = t; pubCharts(s, p.candles); }
+    p.seen = true;                                   // first pass after a reload never logs, so old setups are not counted as new
   }
   if (!sel || !data[sel]) sel = Object.keys(data)[0] || null;
   if (changed) { render(); publish(); }
@@ -526,7 +572,7 @@ function status() {
   let st, why;
   if (demo) { st = "DEMO"; why = "Demo data. These are not real signals."; }
   else if (!isMember()) { st = "OFFLINE"; why = "Membership needed. Pay using the details below, then send your payment code. Access starts when the admin confirms it."; }
-  else if (!isAdmin) { const old = !feedTs || rt() - feedTs > 180000; const anyO = Object.values(data).some(d => d.open !== false); st = !anyO || old ? "STALE" : "LIVE"; why = !anyO ? "All tracked markets are closed right now." : !feedTs ? "Waiting for the signal feed..." : old ? "The signal feed has paused. It updates only while the admin's page is open." : "Live feed connected."; }
+  else if (!isAdmin || asViewer) { const old = !feedTs || rt() - feedTs > 180000; const anyO = Object.values(data).some(d => d.open !== false); st = !anyO || old ? "STALE" : "LIVE"; why = !anyO ? "All tracked markets are closed right now." : !feedTs ? "Waiting for the signal feed..." : old ? "The signal feed has paused. It should resume shortly." : "Live feed connected."; }
   else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
   else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
   else if (!PAIRS.some(isOpen)) { st = "STALE"; why = "All tracked markets are closed right now. Forex reopens Sunday about 22:00 UTC, US stocks trade Mon to Fri 9:30 to 16:00 New York time, and crypto never closes."; }
@@ -534,14 +580,15 @@ function status() {
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
   const el = $("status"); el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
   $("why").className = "panel " + st;
-  $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>Pairs loaded ${isAdmin ? loaded : vals.length}/${PAIRS.length}</span></div>`;
-  if (isAdmin) $("health").innerHTML = [["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", PAIRS.some(isOpen) ? "Open" : "Closed"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
+  $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>${esc(sessChip())}</span><span>Pairs loaded ${isAdmin && !asViewer ? loaded : vals.length}/${isAdmin && !asViewer ? PAIRS.length : vals.length}</span></div>`;
+  if (isAdmin) $("health").innerHTML = [["Engine", asViewer ? "Server (24/7)" : "This page"], ["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", PAIRS.some(isOpen) ? "Open" : "Closed"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
     .map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
   return st;
 }
 setInterval(() => auth.currentUser && status(), 2000);
 
-function render() {
+function render() { renderMain(); syncChartListener(); drawChart(); }
+function renderMain() {
   const st = status();
   $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin ? "Waiting for the signal feed." : loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
     marketTabs() + Object.entries(data).filter(([p, d]) => MK === "all" || (d.type || typeOf(p)) === MK).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
@@ -551,12 +598,14 @@ function render() {
   document.querySelectorAll("#list .tabs button").forEach(b => { b.onclick = () => { MK = b.dataset.mk; render(); }; });
   const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
   const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
-  const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~16 hours, spread ignored)` : "not enough past signals to measure";
+  const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~24 hours, spread ignored)` : "not enough past signals to measure";
   $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div><canvas id="cv" width="600" height="120"></canvas>
-    <div class="tfs">${["M5", "M15", "M30"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
+    <div class="tfs">${["M5", "M15", "M30", "H1"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
     <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
     ${lvBlock(sel, d)}
+    ${dayBlock(sel, d)}
+    <div id="live_line">${liveLine(sel)}</div>
     <p class="mut">Bars show signal strength, not a probability. Tested: ${bt}. Last tick ${d.age ?? 0}s ago.</p>`;
   const c = $("cv"), a = d.spark; if (!c || a.length < 2) return;
   const L = (d.signal === "BUY" || d.signal === "SELL") && d.lv ? d.lv : null, all = L ? [...a, L.t2, L.stop, L.entry] : a;
@@ -568,6 +617,319 @@ function render() {
   }
   x.strokeStyle = "#2ec4b6"; x.lineWidth = 2; x.beginPath();
   a.forEach((v, i) => { const px = i / (a.length - 1) * w; i ? x.lineTo(px, py(v)) : x.moveTo(px, py(v)); }); x.stroke();
+}
+
+// ---------- live results log ----------
+let resRef = null, RES = {}, RESOLVING = false;
+function startResults() {
+  if (resRef) return; resRef = dbr.ref("results").limitToLast(300);
+  resRef.on("value", s => { RES = {}; s.forEach(c => { RES[c.key] = c.val(); }); renderResults(); }, () => { resRef = null; });
+}
+function stopResults() { if (resRef) resRef.off(); resRef = null; RES = {}; }
+function logSignal(s, sig, d) {                      // admin page only: record every new BUY or SELL
+  const L = d.lv, t = rt(); if (!L || ![L.entry, L.t1, L.t2, L.stop, L.atr].every(Number.isFinite)) return;
+  const key = String(Math.floor(t / 60000)).padStart(10, "0") + "_" + s.replace(/[.#$\[\]\/]/g, "_");
+  dbr.ref("results/" + key).set({ pair: s, sig, entry: L.entry, t1: L.t1, t2: L.t2, stop: L.stop, atr: L.atr, src: L.src, ts: t, due: t + 600000, status: "open" }).catch(() => {});
+}
+async function resolveOpen() {                       // admin page only: score each signal 10 minutes after it fired
+  if (!isAdmin || demo || RESOLVING) return; RESOLVING = true;
+  try {
+    const now = rt();
+    for (const [id, r] of Object.entries(RES)) {
+      if (!r || r.status !== "open" || now < r.due) continue;
+      const p = P[r.pair]; if (!p) continue;
+      const t0 = Math.floor(r.ts / 1000), t1 = Math.floor(r.due / 1000), sg = r.sig === "BUY" ? 1 : -1;
+      const cs = p.candles.filter(c => c.t > t0 && c.t < t1);
+      if (cs.length < 5 || cs[cs.length - 1].t < t1 - 120) {
+        if (now > r.due + 1800000) await dbr.ref("results/" + id).update({ status: "void", closedAt: TS }).catch(() => {});
+        continue;
+      }
+      let mf = 0, ma = 0; for (const c of cs) { const e = (c.c - r.entry) / r.atr * sg; if (e > mf) mf = e; if (-e > ma) ma = -e; }
+      const end = cs[cs.length - 1].c, mv = (end - r.entry) / r.atr * sg;
+      const k1 = Math.abs(r.t1 - r.entry) / r.atr, k2 = Math.abs(r.t2 - r.entry) / r.atr, ks = Math.abs(r.stop - r.entry) / r.atr;
+      await dbr.ref("results/" + id).update({ status: mv > .3 ? "win" : mv < -.3 ? "loss" : "flat", end, move: Math.round(mv * 100) / 100, t1hit: mf >= k1, t2hit: mf >= k2, stophit: ma >= ks, closedAt: TS }).catch(() => {});
+    }
+  } finally { RESOLVING = false; }
+}
+function resStats(pair) {
+  const all = Object.values(RES).filter(r => r && (!pair || r.pair === pair)), a = all.filter(r => ["win", "loss", "flat"].includes(r.status));
+  const w = a.filter(r => r.status === "win").length, l = a.filter(r => r.status === "loss").length;
+  return { n: a.length, w, l, f: a.length - w - l, rate: w + l ? w / (w + l) : null, t1: a.filter(r => r.t1hit).length, stop: a.filter(r => r.stophit).length,
+    ex: a.length ? a.reduce((m, r) => m + rOf(r), 0) / a.length : null, exn: a.length ? a.reduce((m, r) => m + rOf(r) - costR(r), 0) / a.length : null,
+    open: all.filter(r => r.status === "open").length, first: a.reduce((m, r) => Math.min(m, r.ts || m), Infinity) };
+}
+function liveLine(pair) {
+  const s = pair ? resStats(pair) : null;
+  if (!s || !(s.w + s.l)) return '<p class="mut">Live record on this pair: no decided signals yet.</p>';
+  return `<p class="mut">Live record on this pair: ${pct(s.rate)} of ${s.w + s.l} decided signals moved the right way${s.w + s.l < 30 ? " (too few to trust yet)" : ""}.</p>`;
+}
+function renderResults() {
+  const box = $("track_body"); if (!box) return;
+  $("res_csv").style.display = isAdmin ? "" : "none";
+  const o = resStats(), done = o.w + o.l, pairs = [...new Set(Object.values(RES).map(r => r && r.pair).filter(Boolean))].sort();
+  let h = o.n ? `<p><b class="num">${done ? pct(o.rate) : "-"}</b> of ${done} decided signals moved the right way since ${fmtD(o.first)}.</p>
+    <div class="chips"><span>Wins ${o.w}</span><span>Losses ${o.l}</span><span>Flat ${o.f}</span><span>Target 1 reached ${pct(o.t1 / o.n)}</span><span>Stop level passed ${pct(o.stop / o.n)}</span><span>Waiting ${o.open}</span></div>
+    <p class="mut">Expectancy per trade: <b class="num">${o.ex >= 0 ? "+" : ""}${o.ex.toFixed(2)}R</b> before costs, <b class="num">${o.exn >= 0 ? "+" : ""}${o.exn.toFixed(2)}R</b> after a ${SPREAD}-pip spread (forex). ${o.exn < 0 ? "Negative: on these results the setup loses money after costs." : "Positive on these results."}${o.n < 30 ? " Too few signals to trust yet." : ""} Here 1R is the distance to the stop, a trade exits at Target 1, the stop, or after 10 minutes, and if both levels were reached the stop is assumed to come first.</p>`
+    : `<p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.${o.open ? " Waiting: " + o.open + "." : ""}</p>`;
+  h += '<div style="margin-top:10px">' + pairs.map(p => { const s = resStats(p); return s.n ? `<div class="lvr"><span>${esc(p)}</span><span class="num">${s.w + s.l ? pct(s.rate) : "-"} <span class="mut">of ${s.w + s.l}${s.w + s.l < 30 ? " (few)" : ""}</span></span></div>` : ""; }).join("") + "</div>";
+  const rec = Object.values(RES).filter(r => r && r.status && r.status !== "open").sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
+  h += rec.length ? '<div style="margin-top:10px">' + rec.map(r => `<div class="mut">${fmtT(r.ts)} ${esc(r.pair)} ${esc(r.sig)} &rarr; ${esc(r.status)}${r.move != null ? " (" + (r.move > 0 ? "+" : "") + r.move + " ATR)" : ""}</div>`).join("") + "</div>" : "";
+  h += '<p class="mut" style="margin-top:10px">A signal is a win if price is more than 0.3 ATR in its direction after 10 minutes, and a loss if more than 0.3 ATR against it. Spread is ignored. Fewer than 30 decided signals is too small to judge.</p>';
+  box.innerHTML = h;
+  const ll = $("live_line"); if (ll) ll.innerHTML = liveLine(sel);
+}
+$("res_csv").onclick = () => {
+  const cell = v => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const rows = [["Time", "Pair", "Signal", "Entry", "Target1", "Target2", "Stop", "Status", "Move (ATR)", "T1 reached", "T2 reached", "Stop passed"]].concat(Object.values(RES).filter(r => r).sort((a, b) => (a.ts || 0) - (b.ts || 0))
+    .map(r => [new Date(r.ts || 0).toISOString(), r.pair, r.sig, r.entry, r.t1, r.t2, r.stop, r.status, r.move, r.t1hit, r.t2hit, r.stophit]));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(cell).join(",")).join("\n")], { type: "text/csv" }));
+  a.download = "signal-results.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+
+// ---------- charts: candles, bars, Heikin Ashi, line, area, with indicators ----------
+const CHTF = [["m1", 1, 150], ["m5", 5, 150], ["m15", 15, 96], ["h1", 60, 24]];   // time frame, minutes per candle, candles kept
+let CH = { type: "candles", tf: "m1", ind: { ema: true, bb: false, lv: true, rsi: false, macd: false, sto: false, adx: false }, hover: -1, n: 0 }, CHD = {}, chRefC = null, chKeyC = "", chErrAt = 0;
+try { const s0 = JSON.parse(localStorage.getItem("fr_chart") || "null"); if (s0) { CH.type = s0.type || CH.type; CH.tf = s0.tf || CH.tf; CH.ind = { ...CH.ind, ...(s0.ind || {}) }; } } catch {}
+const saveCH = () => { try { localStorage.setItem("fr_chart", JSON.stringify({ type: CH.type, tf: CH.tf, ind: CH.ind })); } catch {} };
+function aggCandles(cd, m, n) {                      // 1-minute candles into m-minute candles, newest n
+  const step = m * 60, out = []; let cur = null;
+  for (const c of cd) { const k = Math.floor(c.t / step) * step; if (!cur || cur.t !== k) { cur = { t: k, o: c.o, h: c.h, l: c.l, c: c.c }; out.push(cur); } else { cur.h = Math.max(cur.h, c.h); cur.l = Math.min(cur.l, c.l); cur.c = c.c; } }
+  return out.slice(-n);
+}
+const encC = a => a.map(c => [c.t, c.o, c.h, c.l, c.c].join("|")).join(";");
+const decC = s => String(s).split(";").map(z => { const v = z.split("|").map(Number); return { t: v[0], o: v[1], h: v[2], l: v[3], c: v[4] }; }).filter(c => Number.isFinite(c.c));
+function pubCharts(s, cd) {                          // admin page or server: publish candles for members, once a minute
+  const k = s.replace(/[.#$\[\]\/]/g, "_"), u = {};
+  for (const [tf, m, n] of CHTF) u["feed/ch/" + k + "/" + tf] = { s: encC(aggCandles(cd, m, n)), t: TS };
+  dbr.ref().update(u).catch(() => {});
+}
+function chartCandles(pair, tf) {
+  const def = CHTF.find(z => z[0] === tf) || CHTF[0];
+  if (isAdmin && !asViewer && P[pair] && P[pair].candles.length > 30) return aggCandles(P[pair].candles, def[1], def[2]);
+  return CHD[pair + "|" + tf] || [];
+}
+function withLive(a, pair, tf) {                     // members: move the newest candle with the latest price from the feed
+  const d = data[pair], def = CHTF.find(z => z[0] === tf) || CHTF[0];
+  if (!a.length || !d || d.stale || d.open === false || !(d.bid > 0) || (isAdmin && !asViewer)) return a;
+  const step = def[1] * 60, cur = Math.floor(rt() / 1000 / step) * step, last = a[a.length - 1];
+  if (last.t !== cur) return a;
+  const b = a.slice(); b[b.length - 1] = { ...last, c: d.bid, h: Math.max(last.h, d.bid), l: Math.min(last.l, d.bid) }; return b;
+}
+function stopChartListener() { if (chRefC) chRefC.off(); chRefC = null; chKeyC = ""; }
+function syncChartListener() {
+  if (!auth.currentUser || (isAdmin && !asViewer)) { stopChartListener(); return; }
+  const key = sel ? sel + "|" + CH.tf : ""; if (key === chKeyC) return;
+  if (rt() - chErrAt < 30000) return; stopChartListener(); if (!key) return;
+  chKeyC = key; const pair = sel, tf = CH.tf, k = pair.replace(/[.#$\[\]\/]/g, "_");
+  chRefC = dbr.ref("feed/ch/" + k + "/" + tf);
+  chRefC.on("value", s => { const v = s.val(); CHD[pair + "|" + tf] = v && v.s ? decC(v.s) : []; drawChart(); }, () => { chRefC = null; chKeyC = ""; chErrAt = rt(); });
+}
+// indicators
+const smaN = (a, n) => a.map((_, i) => { if (i < n - 1) return null; const w = a.slice(i - n + 1, i + 1); return w.some(v => v == null) ? null : w.reduce((s, v) => s + v, 0) / n; });
+function bbands(c, n = 20, k = 2) { const m = smaN(c, n); return c.map((_, i) => { if (m[i] == null) return null; const sd = Math.sqrt(c.slice(i - n + 1, i + 1).reduce((s, v) => s + (v - m[i]) ** 2, 0) / n); return { m: m[i], u: m[i] + k * sd, l: m[i] - k * sd }; }); }
+function rsiS(c, n = 14) {
+  const o = c.map(() => null); let g = 0, l = 0;
+  for (let i = 1; i < c.length; i++) { const d = c[i] - c[i - 1], up = Math.max(d, 0), dn = Math.max(-d, 0);
+    if (i <= n) { g += up / n; l += dn / n; if (i === n) o[i] = 100 - 100 / (1 + g / (l || 1e-12)); }
+    else { g = (g * (n - 1) + up) / n; l = (l * (n - 1) + dn) / n; o[i] = 100 - 100 / (1 + g / (l || 1e-12)); } }
+  return o;
+}
+function macdS(c) { const e12 = ema(c, 12), e26 = ema(c, 26), m = c.map((_, i) => e12[i] - e26[i]), s = ema(m, 9); return { m, s, h: m.map((v, i) => v - s[i]) }; }
+function stochS(h, l, c, n = 14) {
+  const raw = c.map((_, i) => { if (i < n - 1) return null; const hh = Math.max(...h.slice(i - n + 1, i + 1)), ll = Math.min(...l.slice(i - n + 1, i + 1)); return hh === ll ? 50 : (c[i] - ll) / (hh - ll) * 100; });
+  const k = smaN(raw, 3); return { k, d: smaN(k, 3) };
+}
+function adxS(h, l, c, n = 14) {                     // Wilder ADX with +DI and -DI
+  const L = c.length, adx = c.map(() => null), pdi = c.map(() => null), mdi = c.map(() => null); if (L < n * 2 + 1) return { adx, pdi, mdi };
+  let tr = 0, pd = 0, md = 0, dx = [];
+  for (let i = 1; i < L; i++) {
+    const up = h[i] - h[i - 1], dn = l[i - 1] - l[i], t = Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1])), p = up > dn && up > 0 ? up : 0, m = dn > up && dn > 0 ? dn : 0;
+    if (i <= n) { tr += t; pd += p; md += m; } else { tr = tr - tr / n + t; pd = pd - pd / n + p; md = md - md / n + m; }
+    if (i >= n) { const a = 100 * pd / (tr || 1e-12), b = 100 * md / (tr || 1e-12); pdi[i] = a; mdi[i] = b; dx[i] = 100 * Math.abs(a - b) / ((a + b) || 1e-12);
+      if (i === n * 2 - 1) adx[i] = dx.slice(n, n * 2).reduce((s, v) => s + v, 0) / n; else if (i >= n * 2) adx[i] = (adx[i - 1] * (n - 1) + dx[i]) / n; }
+  }
+  return { adx, pdi, mdi };
+}
+function heikin(a) { const o = []; let po = null, pc = null; for (const c of a) { const hc = (c.o + c.h + c.l + c.c) / 4, ho = po == null ? (c.o + c.c) / 2 : (po + pc) / 2; o.push({ t: c.t, o: ho, c: hc, h: Math.max(c.h, ho, hc), l: Math.min(c.l, ho, hc) }); po = ho; pc = hc; } return o; }
+function readout(full, d) {                          // plain-language read of each indicator, and how many agree with the current signal
+  const cl = full.map(c => c.c), n = cl.length - 1; if (n < 30) return '<p class="mut">Not enough candles on this time frame for the indicators yet. Try 1m or 5m.</p>';
+  const e9 = ema(cl, 9), e21 = ema(cl, 21), e50 = ema(cl, 50), rs = rsiS(cl), md = macdS(cl), st = stochS(full.map(c => c.h), full.map(c => c.l), cl), bb = bbands(cl), rows = [];
+  const tr = e9[n] > e21[n] && e21[n] > e50[n] ? 1 : e9[n] < e21[n] && e21[n] < e50[n] ? -1 : 0;
+  rows.push(["Trend (EMA 9/21/50)", tr, tr > 0 ? "up: fast above slow" : tr < 0 ? "down: fast below slow" : "mixed: the averages are tangled"]);
+  const r = rs[n]; if (r != null) rows.push(["RSI 14", r > 55 ? 1 : r < 45 ? -1 : 0, r.toFixed(0) + (r >= 70 ? ", overbought: a pullback is more likely" : r <= 30 ? ", oversold: a bounce is more likely" : r > 55 ? ", bullish momentum" : r < 45 ? ", bearish momentum" : ", neutral")]);
+  const hs = md.h[n], hp = md.h[n - 1]; rows.push(["MACD 12/26/9", hs > 0 ? 1 : hs < 0 ? -1 : 0, (hs > 0 ? "above its signal line" : "below its signal line") + (Math.abs(hs) > Math.abs(hp) ? ", widening" : ", narrowing")]);
+  const k = st.k[n], dd = st.d[n]; if (k != null && dd != null) rows.push(["Stochastic 14/3/3", k > dd ? 1 : k < dd ? -1 : 0, k.toFixed(0) + (k >= 80 ? ", overbought" : k <= 20 ? ", oversold" : "") + (k > dd ? ", K above D" : ", K below D")]);
+  const b = bb[n]; if (b) { const pb = (cl[n] - b.l) / ((b.u - b.l) || 1e-12), bwNow = (b.u - b.l) / b.m, past = bb.slice(Math.max(0, n - 50), n).filter(Boolean).map(z => (z.u - z.l) / z.m), avg = past.length ? past.reduce((s, v) => s + v, 0) / past.length : bwNow;
+    rows.push(["Bollinger 20/2", cl[n] > b.m ? 1 : -1, pb > 1 ? "above the upper band: stretched" : pb < 0 ? "below the lower band: stretched" : Math.round(pb * 100) + "% of the way up the band" + (bwNow < avg * .7 ? ", squeeze: a bigger move may come, direction unknown" : "")]); }
+  const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), av = ax.adx[n], pv = ax.pdi[n], mv = ax.mdi[n];
+  if (av != null) rows.push(["ADX 14", pv > mv ? 1 : -1, av.toFixed(0) + (av >= 25 ? ", strong trend" : av < 20 ? ", weak or sideways: trend signals are less reliable" : ", trend building") + (pv > mv ? ", buyers lead (+DI above -DI)" : ", sellers lead (-DI above +DI)")]);
+  const sg = d ? (d.signal === "BUY" ? 1 : d.signal === "SELL" ? -1 : 0) : 0, agree = sg ? rows.filter(z => z[1] === sg).length : 0;
+  const head = sg ? `<b>${agree} of ${rows.length}</b> indicators agree with the ${d.signal} signal.` : "No BUY or SELL signal right now.";
+  return `<div class="lv"><div>${head}</div>${rows.map(([nm, v, t]) => `<div class="lvr"><span>${esc(nm)}</span><span style="color:${v > 0 ? "var(--buy)" : v < 0 ? "var(--sell)" : "var(--mut)"}">${v > 0 ? "up" : v < 0 ? "down" : "flat"} <span class="mut">${esc(t)}</span></span></div>`).join("")}
+    <div class="mut" style="margin-top:4px">These indicators all come from the same price series, so agreement is context, not independent proof.</div></div>`;
+}
+// drawing
+function cssv(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888"; }
+function prep(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return null;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const x = cv.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h); return { x, w, h };
+}
+function drawChart() {
+  const cv = $("cc"), sw = $("sigwrap"); if (!cv || !sw || sw.style.display === "none") return;
+  ["rsi", "macd", "sto", "adx"].forEach(k => { $("c_" + k).style.display = CH.ind[k] ? "block" : "none"; });
+  const pair = sel, d = pair && data[pair]; $("c_pair").textContent = pair || "";
+  const g = prep(cv); if (!g) return; const { x, w, h } = g, mut = cssv("--mut"), lineC = cssv("--line"), upc = cssv("--buy"), dnc = cssv("--sell"), txc = cssv("--tx");
+  const msg = t => { x.fillStyle = mut; x.font = "13px sans-serif"; x.fillText(t, 12, 24); $("c_info").textContent = ""; $("c_read").innerHTML = ""; ["c_rsi", "c_macd", "c_sto", "c_adx"].forEach(id => { prep($(id)); }); };
+  if (!d) return msg("Select a pair to see its chart.");
+  const full = withLive(chartCandles(pair, CH.tf), pair, CH.tf);
+  if (full.length < 5) return msg(demo ? "Charts need live data. Switch off demo data." : "Waiting for chart data...");
+  const R = 58, B = 18, T = 6, pw = w - R, nVis = Math.min(full.length, Math.max(20, Math.floor(pw / 7))), off = full.length - nVis; CH.n = nVis;
+  const cl = full.map(c => c.c), e9 = ema(cl, 9), e21 = ema(cl, 21), e50 = ema(cl, 50), bb = bbands(cl), src = CH.type === "ha" ? heikin(full) : full, vis = src.slice(off);
+  const lv = CH.ind.lv && (d.signal === "BUY" || d.signal === "SELL") && d.lv ? d.lv : null;
+  let hi = Math.max(...vis.map(c => c.h)), lo = Math.min(...vis.map(c => c.l));
+  if (CH.ind.bb) for (let i = off; i < full.length; i++) if (bb[i]) { hi = Math.max(hi, bb[i].u); lo = Math.min(lo, bb[i].l); }
+  if (lv) for (const v of [lv.t2, lv.stop, lv.entry]) { hi = Math.max(hi, v); lo = Math.min(lo, v); }
+  const pad = (hi - lo) * .06 || hi * .0005; hi += pad; lo -= pad;
+  const X = i => (i + .5) / nVis * pw, Y = v => T + (hi - v) / (hi - lo) * (h - T - B), bw = Math.max(1, Math.min(14, pw / nVis * .7));
+  const fm = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false }), fd = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "2-digit", month: "short" });
+  const lab = c => (CH.tf === "h1" || CH.tf === "m15" ? fd.format(c.t * 1000) + " " : "") + fm.format(c.t * 1000);
+  x.font = "11px IBM Plex Mono, monospace"; x.textBaseline = "middle"; x.lineWidth = 1; x.strokeStyle = lineC; x.fillStyle = mut;
+  for (let k = 0; k <= 4; k++) { const v = hi - (hi - lo) * k / 4, y = Y(v); x.beginPath(); x.moveTo(0, y); x.lineTo(pw, y); x.stroke(); x.textAlign = "left"; x.fillText(fmt(pair, v), pw + 4, y); }
+  x.textAlign = "center"; for (let k = 0; k < 5; k++) { const i = Math.round(k * (nVis - 1) / 4); x.fillText(lab(vis[i]), Math.min(pw - 30, Math.max(30, X(i))), h - 7); } x.textAlign = "left";
+  const line = (arr, col, wd) => { x.strokeStyle = col; x.lineWidth = wd || 1.3; x.beginPath(); let on = false; for (let i = off; i < full.length; i++) { const v = arr[i]; if (v == null) { on = false; continue; } const px = X(i - off), py = Y(v); on ? x.lineTo(px, py) : x.moveTo(px, py); on = true; } x.stroke(); };
+  if (CH.ind.bb) {
+    x.fillStyle = "rgba(143,176,255,.10)"; x.beginPath(); let first = true;
+    for (let i = off; i < full.length; i++) if (bb[i]) { first ? x.moveTo(X(i - off), Y(bb[i].u)) : x.lineTo(X(i - off), Y(bb[i].u)); first = false; }
+    for (let i = full.length - 1; i >= off; i--) if (bb[i]) x.lineTo(X(i - off), Y(bb[i].l)); x.closePath(); x.fill();
+    line(bb.map(z => z && z.u), "#8fb0ff", 1); line(bb.map(z => z && z.l), "#8fb0ff", 1); line(bb.map(z => z && z.m), "rgba(143,176,255,.6)", 1);
+  }
+  if (CH.type === "line" || CH.type === "area") {
+    x.strokeStyle = upc; x.lineWidth = 2; x.beginPath(); vis.forEach((c, i) => { i ? x.lineTo(X(i), Y(c.c)) : x.moveTo(X(i), Y(c.c)); }); x.stroke();
+    if (CH.type === "area") { x.lineTo(X(nVis - 1), h - B); x.lineTo(X(0), h - B); x.closePath(); x.globalAlpha = .15; x.fillStyle = upc; x.fill(); x.globalAlpha = 1; }
+  } else vis.forEach((c, i) => {
+    const col = c.c >= c.o ? upc : dnc, xx = X(i); x.strokeStyle = col; x.fillStyle = col; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(xx, Y(c.h)); x.lineTo(xx, Y(c.l)); x.stroke();
+    if (CH.type === "ohlc") { x.beginPath(); x.moveTo(xx - bw / 2, Y(c.o)); x.lineTo(xx, Y(c.o)); x.moveTo(xx, Y(c.c)); x.lineTo(xx + bw / 2, Y(c.c)); x.stroke(); }
+    else { const y1 = Y(Math.max(c.o, c.c)), y2 = Y(Math.min(c.o, c.c)); x.fillRect(xx - bw / 2, y1, bw, Math.max(1, y2 - y1)); }
+  });
+  if (CH.ind.ema) { line(e9, "#f2b84b"); line(e21, "#b69cff"); line(e50, "#8fb0ff"); }
+  if (lv) {
+    x.setLineDash([6, 4]); x.lineWidth = 1; x.font = "11px IBM Plex Mono, monospace";
+    [["Entry", lv.entry, mut], ["T1", lv.t1, upc], ["T2", lv.t2, upc], ["Stop", lv.stop, "#ff3b5c"]].forEach(([nm, v, col]) => { x.strokeStyle = col; x.fillStyle = col; x.beginPath(); x.moveTo(0, Y(v)); x.lineTo(pw, Y(v)); x.stroke(); x.fillText(nm, 4, Y(v) - 6); });
+    x.setLineDash([]);
+  }
+  const lastC = full[full.length - 1].c, ly = Y(lastC);                          // last price tag
+  x.setLineDash([2, 3]); x.strokeStyle = txc; x.beginPath(); x.moveTo(0, ly); x.lineTo(pw, ly); x.stroke(); x.setLineDash([]);
+  x.fillStyle = lastC >= full[full.length - 1].o ? upc : dnc; x.fillRect(pw, ly - 8, R, 16); x.fillStyle = "#06231f"; x.fillText(fmt(pair, lastC), pw + 3, ly);
+  const hv = CH.hover >= 0 && CH.hover < nVis ? CH.hover : -1, hc = hv >= 0 ? full[off + hv] : full[full.length - 1];
+  if (hv >= 0) { x.strokeStyle = mut; x.setLineDash([3, 3]); x.beginPath(); x.moveTo(X(hv), T); x.lineTo(X(hv), h - B); x.stroke(); x.setLineDash([]); }
+  $("c_info").textContent = `${lab(hc)}  O ${fmt(pair, hc.o)}  H ${fmt(pair, hc.h)}  L ${fmt(pair, hc.l)}  C ${fmt(pair, hc.c)}  ${((hc.c - hc.o) / hc.o * 100).toFixed(2)}%`;
+  const frame = (key, label, lo2, hi2, guides) => {
+    if (!CH.ind[key]) return null; const g2 = prep($("c_" + key)); if (!g2) return null; const x2 = g2.x, hh = g2.h, Y2 = v => 4 + (hi2 - v) / (hi2 - lo2) * (hh - 8);
+    x2.strokeStyle = lineC; x2.fillStyle = mut; x2.lineWidth = 1; x2.font = "11px IBM Plex Mono, monospace"; x2.textBaseline = "middle"; x2.strokeRect(.5, .5, pw - 1, hh - 1);
+    x2.setLineDash([4, 4]); guides.forEach(v => { x2.beginPath(); x2.moveTo(0, Y2(v)); x2.lineTo(pw, Y2(v)); x2.stroke(); x2.fillText(String(v), pw + 4, Y2(v)); }); x2.setLineDash([]);
+    x2.fillText(label, 4, 9); return { x2, Y2 };
+  };
+  const path = (f, arr, col) => { f.x2.strokeStyle = col; f.x2.lineWidth = 1.3; f.x2.beginPath(); let on = false; for (let i = off; i < full.length; i++) { const v = arr[i]; if (v == null) { on = false; continue; } const px = X(i - off), py = f.Y2(v); on ? f.x2.lineTo(px, py) : f.x2.moveTo(px, py); on = true; } f.x2.stroke(); };
+  const rs = rsiS(cl), f1 = frame("rsi", "RSI 14" + (rs[full.length - 1] != null ? "  " + rs[full.length - 1].toFixed(0) : ""), 0, 100, [30, 70]); if (f1) path(f1, rs, "#b69cff");
+  if (CH.ind.macd) {
+    const md = macdS(cl); let M = 1e-12; for (let i = off; i < full.length; i++) M = Math.max(M, Math.abs(md.m[i]), Math.abs(md.s[i]), Math.abs(md.h[i]));
+    const f2 = frame("macd", "MACD 12/26/9", -M * 1.1, M * 1.1, [0]);
+    if (f2) { for (let i = off; i < full.length; i++) { const v = md.h[i], y0 = f2.Y2(0), y1 = f2.Y2(v); f2.x2.fillStyle = v >= 0 ? upc : dnc; f2.x2.globalAlpha = .6; f2.x2.fillRect(X(i - off) - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0))); f2.x2.globalAlpha = 1; } path(f2, md.m, "#8fb0ff"); path(f2, md.s, "#f2b84b"); }
+  }
+  if (CH.ind.sto) { const st = stochS(full.map(c => c.h), full.map(c => c.l), cl), f3 = frame("sto", "Stochastic 14/3/3", 0, 100, [20, 80]); if (f3) { path(f3, st.k, "#8fb0ff"); path(f3, st.d, "#f2b84b"); } }
+  if (CH.ind.adx) { const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), f4 = frame("adx", "ADX 14" + (ax.adx[full.length - 1] != null ? "  " + ax.adx[full.length - 1].toFixed(0) : ""), 0, 60, [20, 25]); if (f4) { path(f4, ax.adx, "#f2b84b"); path(f4, ax.pdi, upc); path(f4, ax.mdi, dnc); } }
+  $("c_read").innerHTML = readout(full, d);
+}
+function syncToolbar() {
+  document.querySelectorAll("#chartpanel button[data-ct]").forEach(b => b.classList.toggle("on", b.dataset.ct === CH.type));
+  document.querySelectorAll("#chartpanel button[data-ctf]").forEach(b => b.classList.toggle("on", b.dataset.ctf === CH.tf));
+  document.querySelectorAll("#chartpanel button[data-ci]").forEach(b => b.classList.toggle("on", !!CH.ind[b.dataset.ci]));
+}
+$("chartpanel").onclick = e => {
+  const b = e.target.closest("button[data-ct],button[data-ctf],button[data-ci]"); if (!b) return;
+  if (b.dataset.ct) CH.type = b.dataset.ct; if (b.dataset.ctf) CH.tf = b.dataset.ctf; if (b.dataset.ci) CH.ind[b.dataset.ci] = !CH.ind[b.dataset.ci];
+  saveCH(); syncToolbar(); syncChartListener(); drawChart();
+};
+$("cc").onpointermove = e => { const r = $("cc").getBoundingClientRect(), i = Math.floor((e.clientX - r.left) / (r.width - 58) * CH.n); CH.hover = i >= 0 && i < CH.n ? i : -1; drawChart(); };
+$("cc").onpointerleave = () => { CH.hover = -1; drawChart(); };
+window.addEventListener("resize", () => drawChart());
+syncToolbar();
+
+// ---------- risk and context checks (sessions, spread, size, expectancy) ----------
+let SPREAD = 1;                                      // your broker spread in pips; used for cost checks and after-cost expectancy
+const SESS = { Sydney: ["Australia/Sydney", 8, 17], Tokyo: ["Asia/Tokyo", 9, 18], London: ["Europe/London", 8, 17], "New York": ["America/New_York", 8, 17] };
+const HOME = { EUR: "London", GBP: "London", CHF: "London", USD: "New York", CAD: "New York", JPY: "Tokyo", AUD: "Sydney", NZD: "Sydney" };
+function sessOpen(name, now) {                       // a session is open 8:00 to 17:00 local time (Tokyo 9:00 to 18:00), so daylight saving is handled by the time zone
+  const [tz, a, b] = SESS[name], f = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hour12: false }).formatToParts(new Date(now));
+  const h = +((f.find(x => x.type === "hour") || {}).value) % 24; return h >= a && h < b;
+}
+function sessChip() { const now = rt(); if (weekend()) return "Forex weekend break"; const o = Object.keys(SESS).filter(n => sessOpen(n, now)); return o.length ? "Sessions open: " + o.join(", ") : "Sessions: quiet hours"; }
+function sessionFor(pair, now) {                     // liquidity is best when the home sessions of both currencies are open
+  if (typeOf(pair) !== "forex" || weekend()) return null;
+  const home = [...new Set(pair.split("/").map(c => HOME[c]).filter(Boolean))]; if (!home.length) return null;
+  const open = home.filter(n => sessOpen(n, now));
+  if (home.length > 1 && open.length === home.length) return { q: "best", text: open.join(" and ") + " are both open: best liquidity for this pair." };
+  if (open.length) return { q: "ok", text: open.join(" and ") + " open, but not every home session of this pair: fair liquidity." };
+  return { q: "thin", text: "The home sessions of this pair are closed: thin liquidity, wider spreads and less reliable signals." };
+}
+function checks(s, d) {
+  const L = d.lv, fx = typeOf(s) === "forex", pip = s.includes("JPY") ? .01 : .0001, out = [];
+  const w = t => `<div style="color:var(--wait);margin-top:4px">${esc(t)}</div>`, g = t => `<div class="mut" style="margin-top:4px">${esc(t)}</div>`;
+  const h1 = d.tf && d.tf.H1;
+  if (h1) out.push((d.signal === "BUY") === (h1 > 0) ? g("The H1 trend agrees with this signal.") : w("This signal is against the H1 trend. Trading against the higher time frame is riskier."));
+  const ss = fx ? sessionFor(s, rt()) : null; if (ss) out.push(ss.q === "thin" ? w(ss.text) : g(ss.text));
+  if (fx) { const t1p = Math.abs(L.t1 - L.entry) / pip, share = SPREAD / (t1p || 1e-9);
+    out.push(share >= .2 ? w(`A ${SPREAD}-pip spread takes ${pct(share)} of Target 1 (${t1p.toFixed(1)} pips). Costs may erase the edge.`) : g(`A ${SPREAD}-pip spread takes ${pct(share)} of Target 1 (${t1p.toFixed(1)} pips).`)); }
+  return out.join("");
+}
+function rOf(r) {                                    // result of one logged signal in R (1R = distance to the stop); if T1 and stop were both reached, assume the stop came first
+  const risk = Math.abs(r.entry - r.stop) || 1e-9;
+  if (r.stophit) return -1; if (r.t1hit) return Math.abs(r.t1 - r.entry) / risk; return (r.move || 0) * r.atr / risk;
+}
+function costR(r) { if (typeOf(r.pair) !== "forex") return 0; const pip = r.pair.includes("JPY") ? .01 : .0001; return SPREAD * pip / (Math.abs(r.entry - r.stop) || 1e-9); }
+function calcRender() {
+  const out = $("calc_out"); if (!out) return;
+  const bal = +$("cb").value, rk = +$("cr").value, sp = +$("cs").value; if (sp > 0) SPREAD = sp;
+  if (!(bal > 0 && rk > 0)) { out.textContent = "Enter your balance and the percent you accept to lose on one trade. Most guides suggest 1 to 2 percent."; return; }
+  const d = data[sel]; if (!d || !d.lv || (d.signal !== "BUY" && d.signal !== "SELL")) { out.textContent = "Select a pair that shows BUY or SELL to see its trade size."; return; }
+  const L = d.lv, fx = typeOf(sel) === "forex", pip = sel.includes("JPY") ? .01 : .0001, dist = Math.abs(L.entry - L.stop), risk = bal * rk / 100;
+  let h = `Risk ${rk}% = $${risk.toFixed(2)}. The stop is ${fx ? (dist / pip).toFixed(1) + " pips" : (dist / L.entry * 100).toFixed(2) + "%"} away.`;
+  if (fx) {
+    const [b, q] = sel.split("/"), pv = q === "USD" ? 10 : b === "USD" ? 100000 * pip / L.entry : null;   // pip value in USD for one standard lot
+    if (pv == null) h += " Lot size for this pair needs a currency conversion that is not available here. Use a pip value calculator.";
+    else { const lots = risk / ((dist / pip) * pv); h += ` Size: about <b>${lots.toFixed(2)} lots</b> (${Math.round(lots * 100000).toLocaleString()} units).${lots < .01 ? " That is below the usual 0.01 minimum, so even the smallest trade risks more than you chose." : ""}`; }
+  } else h += ` Size: about <b>${(risk / dist).toFixed(4)} units</b>.`;
+  if (rk > 2) h += ' <span style="color:var(--wait)">Risking more than 2% per trade is above the usual guideline.</span>';
+  out.innerHTML = h;
+}
+try { $("cb").value = localStorage.getItem("fr_bal") || ""; $("cr").value = localStorage.getItem("fr_risk") || "1"; $("cs").value = localStorage.getItem("fr_spread") || "1"; SPREAD = +$("cs").value || 1; } catch {}
+["cb", "cr", "cs"].forEach(id => { $(id).oninput = () => { try { localStorage.setItem({ cb: "fr_bal", cr: "fr_risk", cs: "fr_spread" }[id], $(id).value); } catch {} calcRender(); if (data[sel]) render(); }; });
+setInterval(calcRender, 1000);
+
+// ---------- 24-hour analysis ----------
+function dayStats(S, price) {                        // what the last ~24 hours of 1-minute data show
+  const c = S.c, n = Math.min(c.length, 1440), w = c.slice(-n), hi = Math.max(...w), lo = Math.min(...w), op = w[0], rng = hi - lo || 1e-9;
+  const h1 = tfTrend(c, 60), m30 = tfTrend(c, 30), m15 = tfTrend(c, 15), ups = [h1, m30, m15].filter(v => v > 0).length;
+  return { hi, lo, chg: (price - op) / op * 100, pos: clamp((price - lo) / rng, 0, 1), hours: Math.round(n / 60), h1, m30, m15, bias: ups === 3 ? "UP" : ups === 0 ? "DOWN" : "MIXED", vr: volRatio(S, c.length - 1) };
+}
+function dayBlock(s, d) {
+  const y = d.day; if (!y) return "";
+  const fx = typeOf(s) === "forex", pip = s.includes("JPY") ? .01 : .0001;
+  const rng = fx ? ((y.hi - y.lo) / pip).toFixed(0) + " pips" : ((y.hi - y.lo) / y.lo * 100).toFixed(2) + "%";
+  const zone = y.pos >= .8 ? "near the top" : y.pos <= .2 ? "near the bottom" : "in the middle";
+  const tf = v => v > 0 ? "up" : v < 0 ? "down" : "-";
+  const note = y.bias === "UP" ? (y.pos >= .85 ? "Short and medium trends are up, but price is already near the high, so a pullback is possible." : "Short and medium trends agree on up.")
+    : y.bias === "DOWN" ? (y.pos <= .15 ? "Short and medium trends are down, but price is already near the low, so a bounce is possible." : "Short and medium trends agree on down.")
+    : "Short and medium trends disagree. That lowers confidence in any signal.";
+  return `<div class="lv"><b>Last ${y.hours} hours</b>
+    <div class="lvr"><span>High / Low</span><span class="num">${fmt(s, y.hi)} / ${fmt(s, y.lo)}</span></div>
+    <div class="lvr"><span>Range</span><span class="num">${rng}</span></div>
+    <div class="lvr"><span>Change</span><span class="num ${y.chg >= 0 ? "up" : "dn"}">${y.chg >= 0 ? "+" : ""}${y.chg.toFixed(2)}%</span></div>
+    <div class="lvr"><span>Price is ${zone} of the range</span><span class="num">${Math.round(y.pos * 100)}%</span></div>
+    <div class="lvr"><span>H1 / M30 / M15</span><span class="num">${tf(y.h1)} / ${tf(y.m30)} / ${tf(y.m15)}</span></div>
+    <div class="mut" style="margin-top:4px">${note} Volatility is ${y.vr > 1.5 ? "high" : y.vr < .7 ? "low" : "normal"}. This describes what happened. It is not a forecast.</div></div>`;
 }
 
 // ---------- start / target / stop levels ----------
@@ -587,7 +949,7 @@ function lvBlock(s, d) {
   const note = L.src === "history" ? `From ${L.n} past signals on this pair: price reached Target 1 about half the time and Target 2 about a quarter of the time within 10 minutes. It went past the stop level about a quarter of the time.` : "Default levels. Not enough past signals on this pair yet.";
   return `<div class="lv"><b>${d.signal === "BUY" ? "If price goes up" : "If price goes down"}</b>
     ${row("Start (entry)", L.entry, "var(--tx)", false)}${row("Target 1", L.t1, "var(--buy)", true)}${row("Target 2", L.t2, "var(--buy)", true)}${row("Stop (setup fails)", L.stop, "var(--danger)", true)}
-    ${sw}<div class="mut" style="margin-top:4px">${note} These are estimates from past price moves, not a promise.</div></div>`;
+    ${sw}${checks(s, d)}<div class="mut" style="margin-top:4px">${note} These are estimates from past price moves, not a promise.</div></div>`;
 }
 
 // ---------- demo ----------
@@ -607,8 +969,16 @@ $("demo").onclick = () => {
 
 // ---------- user management + presence ----------
 let U = {}, PR = {}, AD = {}, AP = {}, uRefs = [], hb, apErr = false, MS = {}, PAY = {}, MYPAY = {}, SITE = {}, LG = [], MEM = { apr: false, until: 0 }, knownPay = null, feedRef = null, feedOn = false, feedTs = 0, lastPub = 0, sweepT, IDLE_MIN = 30, lastIdleReset = 0;
+let asViewer = false, SRV = { src: null, ts: 0 }, guardT;     // when the 24/7 server engine is alive, this page only watches the feed
+const srvUp = () => SRV.src === "server" && rt() - (SRV.ts || 0) < 120000;
+function guard() {                                  // hand over to the server engine, or take over again if it stops
+  if (!isAdmin || demo || !auth.currentUser) return;
+  const up = srvUp();
+  if (up && !asViewer) { asViewer = true; stop(); startFeed(); status(); }
+  else if (!up && asViewer) { asViewer = false; stopFeed(); if (KEY) start(); }
+}
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); stopFeed(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
+function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); clearInterval(guardT); asViewer = false; SRV = { src: null, ts: 0 }; stopFeed(); stopResults(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
@@ -761,7 +1131,7 @@ function access() {
   $("atabs").style.display = isAdmin ? "flex" : "none";
   if (isAdmin) showTab(ATAB); else ["users", "admin", "pay", "ann", "logs"].forEach(i => { $(i).style.display = "none"; });
   $("demo").style.display = isAdmin ? "" : "none";
-  if (!isAdmin) { mem ? startFeed() : stopFeed(); }
+  if (!isAdmin) { if (mem) { startFeed(); startResults(); } else { stopFeed(); stopResults(); } }
   renderMember(); chOptions(); status();
 }
 setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
@@ -789,7 +1159,7 @@ function applyFeed(f) {
 function publish() {
   if (!isAdmin || demo || rt() - lastPub < 4000 || !Object.keys(data).length) return; lastPub = rt();
   const pairs = {}; for (const [k, v] of Object.entries(data)) pairs[k.replace(/[.#$\[\]\/]/g, "_")] = v;
-  dbr.ref("feed").set(JSON.parse(JSON.stringify({ ts: TS, pairs }))).catch(() => {});
+  dbr.ref("feed").update(JSON.parse(JSON.stringify({ ts: TS, src: "page", pairs }))).catch(() => {});
 }
 
 // ----- member panel -----
@@ -833,7 +1203,10 @@ function startAdminExtras() {
     knownPay = new Set(pend.map(p => p.pid)); renderPay();
   });
   listen(dbr.ref("logs").limitToLast(100), s => { LG = []; s.forEach(c => { LG.push(c.val()); }); renderLogs(); });
-  clearInterval(sweepT); sweepT = setInterval(sweep, 60000);
+  clearInterval(sweepT); sweepT = setInterval(sweep, 60000); startResults();
+  listen(dbr.ref("feed/src"), s => { SRV.src = s.val(); });
+  listen(dbr.ref("feed/ts"), s => { SRV.ts = s.val() || 0; });
+  clearInterval(guardT); guardT = setInterval(guard, 10000);
 }
 function renderPay() {
   if (!isAdmin) return;
@@ -1183,6 +1556,7 @@ auth.onAuthStateChanged(async u => {
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
   startCommon(u);
   if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
+  if (isAdmin) { try { const [a, b] = await Promise.all([dbr.ref("feed/src").get(), dbr.ref("feed/ts").get()]); SRV = { src: a.val(), ts: b.val() || 0 }; } catch {} }
   status(); render(); start();
 });
 </script>
