@@ -61,6 +61,16 @@ function aggCandles(cd, m, n) {
 }
 const encC = a => a.map(c => [c.t, c.o, c.h, c.l, c.c].join("|")).join(";");
 
+// ---- Central Bank of Kenya official shilling rates (public page, read gently: a few times a day) ----
+function parseCbk(html) {
+  const rows = [], re = /<tr[^>]*>\s*<td[^>]*>\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*<\/td>\s*<td[^>]*>\s*([^<]{2,30}?)\s*<\/td>\s*<td[^>]*>\s*([0-9][0-9,]*\.?[0-9]*)\s*<\/td>/gi; let m, asOf = 0;
+  while ((m = re.exec(html))) {
+    const t = Date.UTC(+m[3], +m[2] - 1, +m[1]), rate = +m[5].replace(/,/g, ""); if (!Number.isFinite(rate) || rate <= 0) continue;
+    if (t > asOf) asOf = t; rows.push({ cur: m[4].replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").trim(), rate, t });
+  }
+  const latest = rows.filter(r => r.t === asOf).slice(0, 20).map(({ cur, rate }) => ({ cur, rate }));   // only the newest day
+  return { asOf, rows: latest };
+}
 const CRYPTO = new Set(["BTC", "ETH", "SOL", "XRP", "ADA", "DOGE", "BNB", "LTC", "DOT", "AVAX", "LINK", "MATIC", "TRX", "SHIB", "BCH", "XLM"]);
 const typeOf = x => !x.includes("/") ? "stocks" : CRYPTO.has(x.split("/")[0]) ? "crypto" : "forex";
 const SYM_OK = /^[A-Z0-9.\-]{1,12}(\/[A-Z0-9]{2,6})?$/;
@@ -225,7 +235,17 @@ async function main() {
   }
 
   db.ref("results").limitToLast(300).on("value", s => { RES = {}; s.forEach(c => { RES[c.key] = c.val(); }); });
+  async function cbkOnce() {
+    try {
+      const r = await fetch("https://www.centralbank.go.ke/forex/", { headers: { "user-agent": "Mozilla/5.0 (compatible; SteveFXRadar/1.0)", accept: "text/html" }, signal: AbortSignal.timeout(25000) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const c = parseCbk(await r.text());
+      if (!c.rows.length) return log("CBK page read, but no rate rows were found. The page layout may have changed.");
+      await db.ref("feed/cbk").set({ asOf: c.asOf, rows: c.rows, ts: TS }); log("CBK rates updated:", c.rows.length, "currencies, as of", new Date(c.asOf).toISOString().slice(0, 10));
+    } catch (e) { log("CBK fetch failed:", e.message); }
+  }
   await loadSettings(); await startEngine();
+  cbkOnce(); setInterval(cbkOnce, 6 * 3600 * 1000);
   setInterval(async () => { try { if (await loadSettings()) { log("settings changed, restarting engine"); await startEngine(); } } catch (e) { log("settings check failed:", e.message); } }, 60000);
   const bye = async () => { log("stopping"); try { await db.ref("feed/src").set("stopped"); } catch {} process.exit(0); };
   process.on("SIGINT", bye); process.on("SIGTERM", bye);
@@ -233,5 +253,5 @@ async function main() {
   log("Steve FX Radar engine is running");
 }
 
-module.exports = { aggCandles, encC, series, dirAt, volRatio, backtest, tfTrend, levels, dayStats, isOpen, typeOf };
+module.exports = { parseCbk, aggCandles, encC, series, dirAt, volRatio, backtest, tfTrend, levels, dayStats, isOpen, typeOf };
 if (require.main === module) main().catch(e => { console.error("Fatal:", e); process.exit(1); });
