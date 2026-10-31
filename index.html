@@ -1794,7 +1794,7 @@ let ME = null, ST = null, C = {}, refs = [], ROUTE = "home", lastAct = 0, signed
 const LV = { none: 0, view: 1, edit: 2, manage: 3 }, LVN = ["none", "view", "edit", "manage"];
 const lvl = m => ME && (ME.owner || ME.sup) ? 3 : (ST && ST.active === true ? LV[(ST.modules || {})[m]] || 0 : 0);
 const can = (m, l) => lvl(m) >= LV[l];
-const MODS = { finance: "Finance", hr: "HR", rec: "Reception" };
+const MODS = { finance: "Finance", hr: "HR", rec: "Reception", payroll: "Payroll" };
 const anyAccess = () => ME && (ME.owner || ME.sup || (ST && ST.active === true && Object.keys(MODS).some(m => lvl(m) > 0)));
 function audit(mod, action, detail) {
   if (!ME) return;
@@ -1806,7 +1806,9 @@ function startData() {
   stopData(); if (!ME) return;
   const day = dayKey(now());
   if (can("finance", "view")) { sub("invoices", dbr.ref("fin/invoices").limitToLast(1000)); sub("payments", dbr.ref("fin/payments").limitToLast(1000)); sub("reversals", dbr.ref("fin/reversals").limitToLast(500)); }
-  if (can("hr", "view")) { sub("employees", dbr.ref("hr/employees")); sub("leave", dbr.ref("hr/leave").limitToLast(500)); sub("att", dbr.ref("hr/attendance/" + day)); }
+  if (can("hr", "view") || can("payroll", "view")) { sub("employees", dbr.ref("hr/employees")); sub("groups", dbr.ref("hr/groups")); }
+  if (can("hr", "view")) { sub("leave", dbr.ref("hr/leave").limitToLast(500)); sub("att", dbr.ref("hr/attendance/" + day)); }
+  if (can("payroll", "view")) { sub("scales", dbr.ref("pay/scales")); sub("runs", dbr.ref("pay/runs")); }
   if (can("rec", "view")) { sub("visitors", dbr.ref("rec/visitors").limitToLast(500)); sub("appts", dbr.ref("rec/appointments").limitToLast(500)); sub("msgs", dbr.ref("rec/messages").limitToLast(500)); }
   if (ME.sup || ME.owner) { sub("staff", dbr.ref("staff")); sub("users", dbr.ref("users")); }
   if (ME.owner) sub("slog", dbr.ref("slog").limitToLast(400));
@@ -1815,9 +1817,10 @@ function startData() {
 // ---------- shell ----------
 const NAV = [
   { sec: "MAIN", c: "var(--buy)" }, { id: "home", t: "Dashboard" },
-  { sec: "FINANCE", c: "var(--fin)", m: "finance" }, { id: "f_inv", t: "Invoices", m: "finance" }, { id: "f_pay", t: "Payments & receipts", m: "finance" }, { id: "f_stm", t: "Student statement", m: "finance" }, { id: "f_rev", t: "Reversal requests", m: "finance" }, { id: "f_day", t: "Daybook", m: "finance" },
+  { sec: "FINANCE", c: "var(--fin)", m: "finance" }, { id: "f_inv", t: "Invoices", m: "finance" }, { id: "f_pay", t: "Payments & receipts", m: "finance" }, { id: "f_stm", t: "Member statement", m: "finance" }, { id: "f_rev", t: "Reversal requests", m: "finance" }, { id: "f_day", t: "Daybook", m: "finance" },
   { sec: "HUMAN RESOURCES", c: "var(--hr)", m: "hr" }, { id: "h_emp", t: "Employees", m: "hr" }, { id: "h_lv", t: "Leave", m: "hr" }, { id: "h_att", t: "Attendance", m: "hr" },
   { sec: "RECEPTION", c: "var(--rec)", m: "rec" }, { id: "r_vis", t: "Visitors", m: "rec" }, { id: "r_apt", t: "Appointments", m: "rec" }, { id: "r_msg", t: "Messages & calls", m: "rec" },
+  { sec: "PAYROLL", c: "var(--hr)", m: "payroll" }, { id: "p_grp", t: "Job groups", m: "payroll" }, { id: "p_run", t: "Payroll", m: "payroll" },
   { sec: "OVERSIGHT", c: "var(--ovr)", o: "sup" }, { id: "x_apr", t: "Approvals", o: "sup" }, { id: "x_acc", t: "Access control", o: "sup" }, { id: "x_log", t: "Audit log", o: "owner" }
 ];
 const visible = n => n.m ? can(n.m, "view") : n.o === "sup" ? (ME.sup || ME.owner) : n.o === "owner" ? ME.owner : true;
@@ -1914,23 +1917,23 @@ V.home = {
 // ---------- FINANCE: invoices ----------
 V.f_inv = {
   mount: () => gate("finance", "edit", `<div class="card"><h3>New invoice</h3><div class="frm">
-    <input id="i_adm" placeholder="Admission no." maxlength="30"><input id="i_nm" placeholder="Student name" maxlength="80" class="grow">
-    <select id="i_ty"><option>Tuition</option><option>Accommodation</option><option>Exam fees</option><option>Activity fee</option><option>Other</option></select>
-    <input id="i_term" placeholder="Term e.g. 2026 Sem 1" maxlength="30"><input id="i_amt" type="number" min="1" placeholder="Amount (KES)" style="width:150px"><label class="mut">Due <input id="i_due" type="date"></label>
+    <input id="i_adm" placeholder="Member ID" maxlength="30"><input id="i_nm" placeholder="Member name" maxlength="80" class="grow">
+    <select id="i_ty"><option>Subscription</option><option>Signals plan</option><option>VIP plan</option><option>Other</option></select>
+    <input id="i_term" placeholder="Period e.g. Nov 2026" maxlength="30"><input id="i_amt" type="number" min="1" placeholder="Amount (KES)" style="width:150px"><label class="mut">Due <input id="i_due" type="date"></label>
     <button class="pri" data-act="invNew">Create invoice</button><span id="i_msg" class="mut"></span></div></div>`) +
-    `<div class="card"><div class="bar"><h3>Invoices</h3><input id="q" data-live="1" placeholder="Search admission, name, invoice"></div><div id="list"></div></div>`,
+    `<div class="card"><div class="bar"><h3>Invoices</h3><input id="q" data-live="1" placeholder="Search member ID, name, invoice"></div><div id="list"></div></div>`,
   live() {
     const q = ($("q") && $("q").value || "").toLowerCase();
     const r = invs().filter(i => !q || [i.adm, i.name, i.no].join(" ").toLowerCase().includes(q)).slice(0, 200).map(i => { const p = paidOf(i.id), b = balOf(i), s = b === 0 ? "cleared" : p > 0 ? "part" : "open";
       return [`<span class="num">${esc(i.no)}</span>`, esc(i.adm), esc(i.name), esc(i.desc) + '<div class="mut">' + esc(i.term) + "</div>", `<span class="num">${money(i.amt)}</span>`, `<span class="num">${money(p)}</span>`, `<span class="num">${money(b)}</span>`, `<span class="pill ${stBadge(s)}">${s === "cleared" ? "Cleared" : s === "part" ? "Part paid" : "Open"}</span>`, esc(i.due || "-")]; });
-    $("list").innerHTML = tbl(["Invoice", "Adm", "Student", "Item", "Amount", "Paid", "Balance", "Status", "Due"], r);
+    $("list").innerHTML = tbl(["Invoice", "Member ID", "Member", "Item", "Amount", "Paid", "Balance", "Status", "Due"], r);
   }
 };
 const ACT = {};
 ACT.invNew = async () => {
   if (!can("finance", "edit")) return;
   const adm = val("i_adm").toUpperCase(), nm = val("i_nm"), amt = num($("i_amt").value);
-  if (!adm || !nm || !(amt > 0)) return msgFlash("i_msg", "Enter admission no., name and an amount above zero.");
+  if (!adm || !nm || !(amt > 0)) return msgFlash("i_msg", "Enter member ID, name and an amount above zero.");
   const no = "INV-" + dayKey(now()).replace(/-/g, "").slice(2) + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
   await dbr.ref("fin/invoices").push({ no, adm, name: nm, desc: $("i_ty").value, term: val("i_term"), amt, due: $("i_due").value || "", ts: TS, by: ME.uid, byEmail: ME.email });
   audit("finance", "Invoice created", no + " " + adm + " " + money(amt));
@@ -1940,19 +1943,19 @@ ACT.invNew = async () => {
 // ---------- FINANCE: payments ----------
 V.f_pay = {
   mount: () => gate("finance", "edit", `<div class="card"><h3>Record a payment</h3><div class="frm">
-    <input id="p_q" placeholder="Find invoice: admission or name" class="grow" data-pq="1"><select id="p_inv" class="grow"></select></div><div class="frm">
+    <input id="p_q" placeholder="Find invoice: member ID or name" class="grow" data-pq="1"><select id="p_inv" class="grow"></select></div><div class="frm">
     <input id="p_amt" type="number" min="1" placeholder="Amount (KES)" style="width:150px"><select id="p_m"><option value="MPESA">M-Pesa</option><option value="BANK">Bank</option><option value="CASH">Cash</option><option value="CHEQUE">Cheque</option></select>
     <input id="p_ref" placeholder="Transaction code / reference" maxlength="30"><input id="p_by" placeholder="Paid by (name or phone)" maxlength="60">
     <button class="pri" data-act="payNew">Record payment</button><span id="p_msg" class="mut"></span></div>
     <p class="mut">A code can only be used once. The same code cannot be recorded twice.</p></div>`) +
-    `<div class="card"><div class="bar"><h3>Payments</h3><input id="q" data-live="1" placeholder="Search code, admission, receipt"></div><div id="list"></div></div>`,
+    `<div class="card"><div class="bar"><h3>Payments</h3><input id="q" data-live="1" placeholder="Search code, member ID, receipt"></div><div id="list"></div></div>`,
   after() { const q = $("p_q"); if (q) q.oninput = fillInvSel; fillInvSel(); },
   live() {
     const q = ($("q") && $("q").value || "").toLowerCase(), ed = can("finance", "edit");
     const r = pays().filter(p => !q || [p.ref, p.adm, p.rct, p.name].join(" ").toLowerCase().includes(q)).slice(0, 200).map(p => {
       const rv = openRev(p.id), act = `<button data-act="rcpt" data-id="${esc(p.id)}">Receipt</button>` + (ed && p.status === "paid" ? (rv ? ' <span class="pill wt">Reversal pending</span>' : ` <button class="bad" data-act="revReq" data-id="${esc(p.id)}">Request reversal</button>`) : "");
       return [fDT(p.ts), `<span class="num">${esc(p.rct)}</span>`, esc(p.adm) + '<div class="mut">' + esc(p.name) + "</div>", esc(p.method) + '<div class="mut num">' + esc(p.ref) + "</div>", `<span class="num">${money(p.amt)}</span>`, `<span class="pill ${stBadge(p.status)}">${p.status === "paid" ? "Paid" : "Reversed"}</span>`, act]; });
-    $("list").innerHTML = tbl(["Time", "Receipt", "Student", "Method / code", "Amount", "Status", ""], r); if ($("p_inv")) fillInvSel();
+    $("list").innerHTML = tbl(["Time", "Receipt", "Member", "Method / code", "Amount", "Status", ""], r); if ($("p_inv")) fillInvSel();
   }
 };
 function fillInvSel() {
@@ -1977,7 +1980,7 @@ ACT.payNew = async () => {
 ACT.rcpt = d => {
   const p = (C.payments || {})[d.id]; if (!p) return; const st = p.status === "paid" ? "PAID" : "REVERSED";
   modal(`<h2>${esc($("co").textContent)}</h2><div style="color:#555">Payment receipt</div><div style="margin:12px 0"><span class="stamp ${st}">${st}</span></div>
-    <table>${[["Receipt no.", p.rct], ["Date", fDT(p.ts)], ["Student", p.name + " (" + p.adm + ")"], ["Invoice", p.invNo], ["Method", p.method], ["Code", p.ref], ["Paid by", p.payer || "-"], ["Amount", money(p.amt)], ["Received by", p.byEmail || "-"]].map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
+    <table>${[["Receipt no.", p.rct], ["Date", fDT(p.ts)], ["Member", p.name + " (" + p.adm + ")"], ["Invoice", p.invNo], ["Method", p.method], ["Code", p.ref], ["Paid by", p.payer || "-"], ["Amount", money(p.amt)], ["Received by", p.byEmail || "-"]].map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
     <div style="color:#777;font-size:12px">Status as at ${fDT(now())}.</div>`);
 };
 ACT.revReq = async d => {
@@ -1990,7 +1993,7 @@ ACT.revReq = async d => {
 
 // ---------- FINANCE: statement ----------
 V.f_stm = {
-  mount: () => `<div class="card"><div class="frm"><input id="s_adm" placeholder="Admission no." maxlength="30"><button class="pri" data-act="stmGo">Open statement</button></div><div id="stm"></div></div>`,
+  mount: () => `<div class="card"><div class="frm"><input id="s_adm" placeholder="Member ID" maxlength="30"><button class="pri" data-act="stmGo">Open statement</button></div><div id="stm"></div></div>`,
   live() { if (STM) showStm(STM); }
 };
 let STM = "";
@@ -2048,7 +2051,7 @@ ACT.revDec = async d => {
 async function finalApprove(d, override) {
   const r = (C.reversals || {})[d.id], p = r && (C.payments || {})[r.pid]; if (!ME.owner || !r || !p) return;
   if (!(r.status === "recommended" || (override && r.status === "requested")) || p.status !== "paid") return alert("This request can no longer be approved.");
-  if (!confirm((override ? "OVERRIDE: this skips the super admin review.\n" : "") + "Reverse payment " + r.rct + " of " + money(r.amt) + " for " + r.name + "?\nThe receipt becomes REVERSED and the student's balance goes back up. This is recorded in the audit log.")) return;
+  if (!confirm((override ? "OVERRIDE: this skips the super admin review.\n" : "") + "Reverse payment " + r.rct + " of " + money(r.amt) + " for " + r.name + "?\nThe receipt becomes REVERSED and the member's balance goes back up. This is recorded in the audit log.")) return;
   const u = {}; u["fin/reversals/" + d.id + "/status"] = "approved"; u["fin/reversals/" + d.id + "/approvedBy"] = ME.email; u["fin/reversals/" + d.id + "/approvedAt"] = TS; if (override) u["fin/reversals/" + d.id + "/override"] = true;
   u["fin/payments/" + r.pid + "/status"] = "reversed"; u["fin/payments/" + r.pid + "/reversedAt"] = TS; u["fin/payments/" + r.pid + "/reversalId"] = d.id;
   await dbr.ref().update(u); audit("finance", override ? "Reversal approved (OVERRIDE)" : "Reversal approved", r.rct + " " + money(r.amt));
@@ -2063,38 +2066,39 @@ V.f_day = {
     ok.forEach(p => { by[p.method] = (by[p.method] || 0) + num(p.amt); });
     const tot = ok.reduce((s, p) => s + num(p.amt), 0), rv = P.filter(p => p.status === "reversed").reduce((s, p) => s + num(p.amt), 0);
     $("list").innerHTML = `<div class="kpis"><div class="kpi f"><span>TOTAL COLLECTED</span><b class="num">${money(tot)}</b></div>${Object.entries(by).map(([m, v]) => `<div class="kpi f"><span>${esc(m)}</span><b class="num">${money(v)}</b></div>`).join("")}<div class="kpi o"><span>REVERSED (counted out)</span><b class="num">${money(rv)}</b></div></div>` +
-      tbl(["Time", "Receipt", "Student", "Method / code", "Amount", "Status", "Cashier"], P.map(p => [fT(p.ts), esc(p.rct), esc(p.name), esc(p.method) + " " + esc(p.ref), money(p.amt), p.status, esc(p.byEmail)]));
+      tbl(["Time", "Receipt", "Member", "Method / code", "Amount", "Status", "Cashier"], P.map(p => [fT(p.ts), esc(p.rct), esc(p.name), esc(p.method) + " " + esc(p.ref), money(p.amt), p.status, esc(p.byEmail)]));
   }
 };
 ACT.dayCsv = () => {
   const d = $("d_d").value, P = pays().filter(p => dayKey(p.ts) === d);
-  csv("daybook-" + d + ".csv", [["Time", "Receipt", "Admission", "Student", "Method", "Code", "Amount", "Status", "Cashier"]].concat(P.map(p => [fDT(p.ts), p.rct, p.adm, p.name, p.method, p.ref, p.amt, p.status, p.byEmail])));
+  csv("daybook-" + d + ".csv", [["Time", "Receipt", "Member ID", "Member", "Method", "Code", "Amount", "Status", "Cashier"]].concat(P.map(p => [fDT(p.ts), p.rct, p.adm, p.name, p.method, p.ref, p.amt, p.status, p.byEmail])));
   audit("finance", "Exported daybook", d);
 };
 
 // ---------- HR: employees ----------
 V.h_emp = {
   mount: () => gate("hr", "edit", `<div class="card"><h3 id="e_t">Add employee</h3><input type="hidden" id="e_id"><div class="frm">
-    <input id="e_no" placeholder="Staff no." maxlength="20" style="width:120px"><input id="e_nm" placeholder="Full name" maxlength="80" class="grow">
-    <input id="e_dp" placeholder="Department" maxlength="50" list="dps"><datalist id="dps"><option>Finance</option><option>Academic</option><option>Administration</option><option>ICT</option><option>Library</option><option>Reception</option><option>Security</option><option>Human Resources</option></datalist>
-    <input id="e_ti" placeholder="Job title" maxlength="60"><input id="e_ph" placeholder="Phone" maxlength="20"><input id="e_em" type="email" placeholder="Email" maxlength="100"><label class="mut">Started <input id="e_st" type="date"></label>
+    <input id="e_no" placeholder="Auto" readonly title="Generated automatically" style="width:110px"><input id="e_nm" placeholder="Full name" maxlength="80" class="grow">
+    <input id="e_dp" placeholder="Department" maxlength="50" list="dps"><datalist id="dps"><option>Finance</option><option>Trading Desk</option><option>Administration</option><option>ICT</option><option>Support</option><option>Reception</option><option>Security</option><option>Human Resources</option></datalist>
+    <input id="e_ti" placeholder="Job title" maxlength="60"><select id="e_g" aria-label="Job group"></select><input id="e_ph" placeholder="Phone" maxlength="20"><input id="e_em" type="email" placeholder="Email" maxlength="100"><label class="mut">Started <input id="e_st" type="date"></label>
     <select id="e_s"><option value="active">Active</option><option value="inactive">Inactive</option></select>
     <button class="pri" data-act="empSave">Save</button><button data-act="empClr">Clear</button><span id="e_msg" class="mut"></span></div></div>`) +
     `<div class="card"><div class="bar"><h3>Employees</h3><input id="q" data-live="1" placeholder="Search name, no., department"></div><div id="list"></div></div>`,
   live() {
+    const gs = $("e_g"); if (gs) { const k = gs.value; gs.innerHTML = '<option value="">Job group</option>' + rows(C.groups).sort((x, y) => (x.name || "").localeCompare(y.name || "")).map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join(""); gs.value = k; }
     const q = ($("q") && $("q").value || "").toLowerCase(), ed = can("hr", "edit");
     $("list").innerHTML = tbl(["No.", "Name", "Department / title", "Contact", "Started", "Status", ""], rows(C.employees).sort((a, b) => (a.name || "").localeCompare(b.name || "")).filter(e => !q || [e.no, e.name, e.dept, e.title].join(" ").toLowerCase().includes(q))
-      .map(e => [esc(e.no), "<b>" + esc(e.name) + "</b>", esc(e.dept) + '<div class="mut">' + esc(e.title) + "</div>", esc(e.phone) + '<div class="mut">' + esc(e.email) + "</div>", esc(e.start || "-"), `<span class="pill ${e.status === "inactive" ? "no" : "ok"}">${e.status === "inactive" ? "Inactive" : "Active"}</span>`, ed ? `<button data-act="empEdit" data-id="${esc(e.id)}">Edit</button>` : ""]));
+      .map(e => [esc(e.no), "<b>" + esc(e.name) + "</b>", esc(e.dept) + '<div class="mut">' + esc(e.title) + (e.grp ? " &middot; " + esc(gname(e.grp)) : "") + "</div>", esc(e.phone) + '<div class="mut">' + esc(e.email) + "</div>", esc(e.start || "-"), `<span class="pill ${e.status === "inactive" ? "no" : "ok"}">${e.status === "inactive" ? "Inactive" : "Active"}</span>`, ed ? `<button data-act="empEdit" data-id="${esc(e.id)}">Edit</button>` : ""]));
   }
 };
-ACT.empClr = () => { ["e_id", "e_no", "e_nm", "e_dp", "e_ti", "e_ph", "e_em", "e_st"].forEach(i => { $(i).value = ""; }); $("e_s").value = "active"; $("e_t").textContent = "Add employee"; };
-ACT.empEdit = d => { const e = (C.employees || {})[d.id]; if (!e) return; $("e_id").value = d.id; $("e_no").value = e.no || ""; $("e_nm").value = e.name || ""; $("e_dp").value = e.dept || ""; $("e_ti").value = e.title || ""; $("e_ph").value = e.phone || ""; $("e_em").value = e.email || ""; $("e_st").value = e.start || ""; $("e_s").value = e.status || "active"; $("e_t").textContent = "Edit " + e.name; window.scrollTo({ top: 0, behavior: "smooth" }); };
+ACT.empClr = () => { ["e_id", "e_no", "e_nm", "e_dp", "e_ti", "e_g", "e_ph", "e_em", "e_st"].forEach(i => { $(i).value = ""; }); $("e_s").value = "active"; $("e_t").textContent = "Add employee"; };
+ACT.empEdit = d => { const e = (C.employees || {})[d.id]; if (!e) return; $("e_id").value = d.id; $("e_no").value = e.no || ""; $("e_nm").value = e.name || ""; $("e_dp").value = e.dept || ""; $("e_ti").value = e.title || ""; $("e_g").value = e.grp || ""; $("e_ph").value = e.phone || ""; $("e_em").value = e.email || ""; $("e_st").value = e.start || ""; $("e_s").value = e.status || "active"; $("e_t").textContent = "Edit " + e.name; window.scrollTo({ top: 0, behavior: "smooth" }); };
 ACT.empSave = async () => {
-  if (!can("hr", "edit")) return; const o = { no: val("e_no"), name: val("e_nm"), dept: val("e_dp"), title: val("e_ti"), phone: val("e_ph"), email: val("e_em"), start: $("e_st").value, status: $("e_s").value };
-  if (!o.no || !o.name) return msgFlash("e_msg", "Staff number and name are required."); const id = $("e_id").value;
+  if (!can("hr", "edit")) return; const o = { no: val("e_no"), name: val("e_nm"), dept: val("e_dp"), title: val("e_ti"), grp: $("e_g").value, phone: val("e_ph"), email: val("e_em"), start: $("e_st").value, status: $("e_s").value };
+  if (!o.name) return msgFlash("e_msg", "Name is required."); const id = $("e_id").value;
   if (id) { await dbr.ref("hr/employees/" + id).update(o); audit("hr", "Employee updated", o.no + " " + o.name); }
-  else { if (rows(C.employees).some(e => e.no === o.no)) return msgFlash("e_msg", "That staff number already exists."); o.ts = TS; await dbr.ref("hr/employees").push(o); audit("hr", "Employee added", o.no + " " + o.name); }
-  ACT.empClr(); msgFlash("e_msg", "Saved.");
+  else { { const c = await dbr.ref("hr/counter").transaction(n => (n || 0) + 1); o.no = "STF-" + String(c.snapshot.val()).padStart(4, "0"); } o.ts = TS; await dbr.ref("hr/employees").push(o); audit("hr", "Employee added", o.no + " " + o.name); }
+  ACT.empClr(); msgFlash("e_msg", "Saved." + (id ? "" : " Staff number " + o.no));
 };
 
 // ---------- HR: leave ----------
@@ -2171,19 +2175,19 @@ const lvSel = (id, cur) => `<select id="${id}">${LVN.map(l => `<option value="${
 V.x_acc = {
   mount: () => `<div class="card"><h3>Add a staff member</h3><p class="mut">Rights per module: <b>View</b> reads only, <b>Edit</b> adds and changes records, <b>Manage</b> also approves (for example leave). Nobody here can see the market signals.</p>
     <div class="frm"><input id="n_em" type="email" placeholder="Work email" autocomplete="off"><input id="n_nm" placeholder="Full name" maxlength="60"><input id="n_pw" type="text" placeholder="Temporary password (8+)" autocomplete="off"><button id="n_gen">Generate</button></div>
-    <div class="lvsel"><label>Finance</label>${lvSel("n_f", "none")}<label>HR</label>${lvSel("n_h", "none")}<label>Reception</label>${lvSel("n_r", "none")}</div>
+    <div class="lvsel"><label>Role</label><select id="n_role"><option value="">Choose a role...</option>${Object.keys(ROLES).map(r => `<option>${esc(r)}</option>`).join("")}</select><label>Finance</label>${lvSel("n_f", "none")}<label>HR</label>${lvSel("n_h", "none")}<label>Reception</label>${lvSel("n_r", "none")}<label>Payroll</label>${lvSel("n_p", "none")}</div>
     <div class="frm"><button class="pri" data-act="stfAdd">Create account</button><span id="n_msg" class="mut"></span></div><div id="n_share" class="frm"></div></div>
     <div class="card"><h3>Staff and rights</h3><div id="list"></div></div>`,
-  after() { $("n_gen").onclick = () => { const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let g; do { g = Array.from(crypto.getRandomValues(new Uint32Array(12)), x => ch[x % ch.length]).join(""); } while (!pw8(g)); $("n_pw").value = g; }; },
+  after() { $("n_role").onchange = () => applyRole(["n_f", "n_h", "n_r", "n_p"], $("n_role").value); $("n_gen").onclick = () => { const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let g; do { g = Array.from(crypto.getRandomValues(new Uint32Array(12)), x => ch[x % ch.length]).join(""); } while (!pw8(g)); $("n_pw").value = g; }; },
   live() {
     if ($("list") && $("list").contains(document.activeElement)) return;
     $("list").innerHTML = rows(C.staff).sort((a, b) => (a.email || "").localeCompare(b.email || "")).map(s => { const m = s.modules || {};
-      return `<div class="rev"><div class="bar"><b>${esc(s.name || s.email)}</b><span class="pill ${s.active === true ? "ok" : "no"}">${s.active === true ? "Active" : "Suspended"}</span></div><div class="mut">${esc(s.email)}</div>
-        <div class="lvsel" style="margin-top:8px"><label>Finance</label>${lvSel("sf_" + s.id, m.finance || "none")}<label>HR</label>${lvSel("sh_" + s.id, m.hr || "none")}<label>Reception</label>${lvSel("sr_" + s.id, m.rec || "none")}</div>
+      return `<div class="rev"><div class="bar"><b>${esc(s.name || s.email)}</b><span class="pill ${s.active === true ? "ok" : "no"}">${s.active === true ? "Active" : "Suspended"}</span></div><div class="mut">${esc(s.email)}${s.role ? " &middot; " + esc(s.role) : ""}</div>
+        <div class="lvsel" style="margin-top:8px"><label>Finance</label>${lvSel("sf_" + s.id, m.finance || "none")}<label>HR</label>${lvSel("sh_" + s.id, m.hr || "none")}<label>Reception</label>${lvSel("sr_" + s.id, m.rec || "none")}<label>Payroll</label>${lvSel("sp_" + s.id, m.payroll || "none")}<label>Role</label><select id="srole_${esc(s.id)}">${Object.keys(ROLES).map(r => `<option ${s.role === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select><button data-act="stfRole" data-id="${esc(s.id)}">Apply role</button></div>
         <div class="acts"><button class="pri" data-act="stfSave" data-id="${esc(s.id)}">Save rights</button><button class="${s.active === true ? "bad" : ""}" data-act="stfTog" data-id="${esc(s.id)}">${s.active === true ? "Suspend" : "Reactivate"}</button><button data-act="stfReset" data-id="${esc(s.id)}">Send password reset</button></div></div>`; }).join("") || '<div class="empty">No staff yet. Add the first one above.</div>';
   } };
 ACT.stfAdd = async () => {
-  if (!(ME.sup || ME.owner)) return; const em = val("n_em").toLowerCase(), nm = val("n_nm"), pw = $("n_pw").value, mods = { finance: $("n_f").value, hr: $("n_h").value, rec: $("n_r").value };
+  if (!(ME.sup || ME.owner)) return; const em = val("n_em").toLowerCase(), nm = val("n_nm"), pw = $("n_pw").value, mods = { finance: $("n_f").value, hr: $("n_h").value, rec: $("n_r").value, payroll: $("n_p").value };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) || !nm) return msgFlash("n_msg", "Enter a valid email and a name.");
   if (em === OWNER_EMAIL) return msgFlash("n_msg", "That email belongs to the owner.");
   let uid = null, existing = rows(C.users).find(u => (u.email || "").toLowerCase() === em);
@@ -2194,15 +2198,15 @@ ACT.stfAdd = async () => {
     catch (e) { return msgFlash("n_msg", e.code === "auth/email-already-in-use" ? "That email has an account, but it is not in the users list yet. Ask them to sign in once, then add them here." : e.message); }
     try { await dbr.ref("users/" + uid).update({ email: em, createdAt: TS }); } catch {}
   }
-  await dbr.ref("staff/" + uid).set({ email: em, name: nm, active: true, modules: mods, createdAt: TS, by: ME.email });
+  await dbr.ref("staff/" + uid).set({ email: em, name: nm, active: true, modules: mods, role: $("n_role").value || "Custom", createdAt: TS, by: ME.email });
   audit("access", "Staff added", em + " F:" + mods.finance + " H:" + mods.hr + " R:" + mods.rec);
   if (!existing) { try { await auth.sendPasswordResetEmail(em); } catch {}
     const url = location.origin + location.pathname, t = "Hello " + nm + ",\n\nYour staff workspace account is ready.\n\nSign in: " + url + "\nEmail: " + em + "\nTemporary password: " + pw + "\n\nPlease change your password after signing in (use Forgot password on the sign-in page).";
     $("n_share").innerHTML = `<a class="btn" href="mailto:${encodeURIComponent(em)}?subject=${encodeURIComponent("Your staff account")}&body=${encodeURIComponent(t)}">Email login details</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}">WhatsApp login details</a>`; }
   ["n_em", "n_nm", "n_pw"].forEach(i => { $(i).value = ""; }); msgFlash("n_msg", "Account created and rights set.");
 };
-ACT.stfSave = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const mods = { finance: $("sf_" + d.id).value, hr: $("sh_" + d.id).value, rec: $("sr_" + d.id).value };
-  await dbr.ref("staff/" + d.id + "/modules").set(mods); audit("access", "Rights changed", s.email + " F:" + (s.modules || {}).finance + ">" + mods.finance + " H:" + (s.modules || {}).hr + ">" + mods.hr + " R:" + (s.modules || {}).rec + ">" + mods.rec); alert("Rights saved for " + s.email + "."); };
+ACT.stfSave = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const mods = { finance: $("sf_" + d.id).value, hr: $("sh_" + d.id).value, rec: $("sr_" + d.id).value, payroll: $("sp_" + d.id).value };
+  await dbr.ref("staff/" + d.id + "/modules").set(mods); await dbr.ref("staff/" + d.id + "/role").set($("srole_" + d.id).value || "Custom"); audit("access", "Rights changed", s.email + " F:" + (s.modules || {}).finance + ">" + mods.finance + " H:" + (s.modules || {}).hr + ">" + mods.hr + " R:" + (s.modules || {}).rec + ">" + mods.rec); alert("Rights saved for " + s.email + "."); };
 ACT.stfTog = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const on = s.active !== true; if (!confirm((on ? "Reactivate " : "Suspend ") + s.email + "?")) return; await dbr.ref("staff/" + d.id + "/active").set(on); audit("access", on ? "Staff reactivated" : "Staff suspended", s.email); };
 ACT.stfReset = async d => { const s = (C.staff || {})[d.id]; if (s && confirm("Email a password reset link to " + s.email + "?")) { await auth.sendPasswordResetEmail(s.email); audit("access", "Password reset sent", s.email); alert("Sent."); } };
 
@@ -2214,6 +2218,66 @@ V.x_log = {
 };
 function logRows() { const m = $("g_m").value, q = $("g_q").value.toLowerCase(); return rows(C.slog).sort((a, b) => (b.t || 0) - (a.t || 0)).filter(l => (!m || l.mod === m) && (!q || [l.email, l.action, l.detail].join(" ").toLowerCase().includes(q))); }
 ACT.logCsv = () => { csv("audit-log.csv", [["Time", "Module", "Person", "Action", "Detail"]].concat(logRows().map(l => [fDT(l.t), l.mod, l.email, l.action, l.detail]))); audit("access", "Exported audit log", ""); };
+
+
+// ---------- PAYROLL (Kenya statutory rates; verify yearly with KRA, NSSF and SHA) ----------
+const RATES = { nssf: .06, nssfCap: 108000, shif: .0275, shifMin: 300, ahl: .015, relief: 2400, bands: [[24000, .10], [8333, .25], [467667, .30], [300000, .325], [Infinity, .35]] };
+const r2 = x => Math.round(x * 100) / 100, gname = id => ((C.groups || {})[id] || {}).name || "";
+function calcPay(g) {
+  const nssf = r2(Math.min(g, RATES.nssfCap) * RATES.nssf), shif = r2(Math.max(RATES.shifMin, g * RATES.shif)), ahl = r2(g * RATES.ahl);
+  let rest = Math.max(0, g - nssf - shif - ahl), tax = 0; for (const [w, r] of RATES.bands) { const x = Math.min(rest, w); tax += x * r; rest -= x; if (rest <= 0) break; }
+  const paye = r2(Math.max(0, tax - RATES.relief));
+  return { nssf, shif, ahl, paye, net: r2(g - nssf - shif - ahl - paye), erNssf: nssf, erAhl: ahl };
+}
+const ROLES = { "Custom": null, "Accountant": { finance: "edit" }, "Finance Manager": { finance: "manage", payroll: "view" }, "HR Officer": { hr: "manage" }, "Payroll Officer": { payroll: "manage", hr: "view" }, "Receptionist": { rec: "edit" } };
+function applyRole(ids, name) { const r = ROLES[name]; if (!r) return; ["finance", "hr", "rec", "payroll"].forEach((m, i) => { const el = $(ids[i]); if (el) el.value = r[m] || "none"; }); }
+ACT.stfRole = d => applyRole(["sf_" + d.id, "sh_" + d.id, "sr_" + d.id, "sp_" + d.id], $("srole_" + d.id).value);
+V.p_grp = {
+  mount: () => gate("payroll", "manage", `<div class="card"><h3 id="g_t">Job group</h3><input type="hidden" id="g_id"><div class="frm"><input id="g_n" placeholder="Group name e.g. Manager" maxlength="40" class="grow"><input id="g_b" type="number" min="0" placeholder="Basic salary" style="width:140px"><input id="g_h" type="number" min="0" placeholder="Housing" style="width:110px"><input id="g_tr" type="number" min="0" placeholder="Transport" style="width:110px"><input id="g_o" type="number" min="0" placeholder="Other allowance" style="width:140px"><button class="pri" data-act="grpSave">Save group</button><button data-act="grpClr">Clear</button><span id="g_msg" class="mut"></span></div></div>`) + `<div class="card"><h3>Job groups and pay scale</h3><div id="list"></div></div>`,
+  live() {
+    const mg = can("payroll", "manage"), E = rows(C.employees).filter(e => e.status !== "inactive");
+    $("list").innerHTML = tbl(["Group", "Basic", "Allowances", "Gross", "Employees", ""], rows(C.groups).sort((x, y) => (x.name || "").localeCompare(y.name || "")).map(g => { const s = (C.scales || {})[g.id] || {}, al = num(s.house) + num(s.transport) + num(s.other);
+      return [esc(g.name), money(s.basic), money(al), money(num(s.basic) + al), E.filter(e => e.grp === g.id).length, mg ? `<button data-act="grpEdit" data-id="${esc(g.id)}">Edit</button>` : ""]; }));
+  } };
+ACT.grpClr = () => { ["g_id", "g_n", "g_b", "g_h", "g_tr", "g_o"].forEach(i => { $(i).value = ""; }); $("g_t").textContent = "Job group"; };
+ACT.grpEdit = d => { const g = (C.groups || {})[d.id], s = (C.scales || {})[d.id] || {}; if (!g) return; $("g_id").value = d.id; $("g_n").value = g.name; $("g_b").value = s.basic || ""; $("g_h").value = s.house || ""; $("g_tr").value = s.transport || ""; $("g_o").value = s.other || ""; $("g_t").textContent = "Edit " + g.name; window.scrollTo({ top: 0, behavior: "smooth" }); };
+ACT.grpSave = async () => {
+  if (!can("payroll", "manage")) return; const n = val("g_n"), b = num($("g_b").value); if (!n || !(b > 0)) return msgFlash("g_msg", "Enter a group name and a basic salary.");
+  const id = $("g_id").value || dbr.ref("hr/groups").push().key, u = {}; u["hr/groups/" + id] = { name: n }; u["pay/scales/" + id] = { basic: b, house: num($("g_h").value), transport: num($("g_tr").value), other: num($("g_o").value) };
+  await dbr.ref().update(u); audit("payroll", "Job group saved", n + " basic " + money(b)); ACT.grpClr(); msgFlash("g_msg", "Saved.");
+};
+const runRows = ym => rows((C.runs || {})[ym]).sort((x, y) => (x.no || "").localeCompare(y.no || ""));
+V.p_run = {
+  mount: () => `<div class="card"><div class="bar"><div class="frm" style="margin:0"><label class="mut">Month <input id="r_m" type="month" data-live="1" value="${dayKey(now()).slice(0, 7)}"></label>${gate("payroll", "edit", '<button class="pri" data-act="runGen">Generate payslips</button>')}${gate("payroll", "manage", '<button data-act="runApr">Approve all</button><button class="warn" data-act="runPaid">Mark all paid</button>')}<button data-act="runCsv">Export CSV</button></div><span id="r_msg" class="mut"></span></div>
+    <p class="mut">Pay comes from each employee's job group. NSSF, SHIF, Housing Levy and PAYE are worked out automatically. Draft payslips can be regenerated; approved ones are locked.</p><div id="list"></div></div>`,
+  live() {
+    const ym = $("r_m").value, P = runRows(ym), s = k => P.reduce((t, p) => t + num(p[k]), 0), ded = s("nssf") + s("shif") + s("ahl") + s("paye");
+    $("list").innerHTML = `<div class="kpis"><div class="kpi h"><span>GROSS</span><b class="num">${money(s("gross"))}</b></div><div class="kpi h"><span>DEDUCTIONS</span><b class="num">${money(ded)}</b></div><div class="kpi h"><span>NET PAY</span><b class="num">${money(s("net"))}</b></div><div class="kpi h"><span>EMPLOYER COST</span><b class="num">${money(s("gross") + s("erNssf") + s("erAhl"))}</b></div></div>` +
+      tbl(["No.", "Name", "Gross", "NSSF", "SHIF", "Housing", "PAYE", "Net", "Status", ""], P.map(p => [esc(p.no), esc(p.name) + '<div class="mut">' + esc(p.grp) + "</div>", money(p.gross), money(p.nssf), money(p.shif), money(p.ahl), money(p.paye), "<b>" + money(p.net) + "</b>", `<span class="pill ${p.status === "paid" ? "ok" : p.status === "approved" ? "wt" : ""}">${esc(p.status)}</span>`, `<button data-act="slip" data-id="${esc(p.id)}">Payslip</button>`]));
+  } };
+ACT.runGen = async () => {
+  if (!can("payroll", "edit")) return; const ym = $("r_m").value; if (!ym) return msgFlash("r_msg", "Pick a month."); const cur = (C.runs || {})[ym] || {}, u = {}, skip = []; let n = 0;
+  for (const e of rows(C.employees).filter(e => e.status !== "inactive")) {
+    const s = (C.scales || {})[e.grp]; if (!s) { skip.push(e.name); continue; } if (cur[e.id] && cur[e.id].status !== "draft") continue;
+    const al = num(s.house) + num(s.transport) + num(s.other), gross = num(s.basic) + al;
+    u["pay/runs/" + ym + "/" + e.id] = { no: e.no, name: e.name, grp: gname(e.grp), basic: num(s.basic), allow: al, gross, ...calcPay(gross), status: "draft", ts: TS, by: ME.uid }; n++;
+  }
+  if (!n) return msgFlash("r_msg", skip.length ? "No employee has a job group yet." : "Nothing to generate.");
+  await dbr.ref().update(u); audit("payroll", "Payroll generated", ym + ", " + n + " payslips"); msgFlash("r_msg", n + " payslips generated." + (skip.length ? " No job group: " + skip.join(", ") + "." : ""));
+};
+async function runMove(from, to, label) {
+  if (!can("payroll", "manage")) return; const ym = $("r_m").value, P = runRows(ym).filter(p => p.status === from); if (!P.length) return msgFlash("r_msg", "No " + from + " payslips this month.");
+  if (!confirm(label + " " + P.length + " payslips for " + ym + "?")) return; const u = {};
+  P.forEach(p => { u["pay/runs/" + ym + "/" + p.id + "/status"] = to; u["pay/runs/" + ym + "/" + p.id + "/" + to + "By"] = ME.email; u["pay/runs/" + ym + "/" + p.id + "/" + to + "At"] = TS; });
+  await dbr.ref().update(u); audit("payroll", "Payroll " + to, ym + ", " + P.length + " payslips"); msgFlash("r_msg", "Done.");
+}
+ACT.runApr = () => runMove("draft", "approved", "Approve"); ACT.runPaid = () => runMove("approved", "paid", "Mark as paid");
+ACT.runCsv = () => { const ym = $("r_m").value; csv("payroll-" + ym + ".csv", [["Staff no.", "Name", "Group", "Basic", "Allowances", "Gross", "NSSF", "SHIF", "Housing levy", "PAYE", "Net", "Status"]].concat(runRows(ym).map(p => [p.no, p.name, p.grp, p.basic, p.allow, p.gross, p.nssf, p.shif, p.ahl, p.paye, p.net, p.status]))); audit("payroll", "Exported payroll", ym); };
+ACT.slip = d => {
+  const ym = $("r_m").value, p = ((C.runs || {})[ym] || {})[d.id]; if (!p) return;
+  modal(`<h2>${esc($("co").textContent)}</h2><div style="color:#555">Payslip for ${esc(ym)}</div><table>${[["Staff no.", p.no], ["Name", p.name], ["Job group", p.grp], ["Basic salary", money(p.basic)], ["Allowances", money(p.allow)], ["Gross pay", money(p.gross)], ["NSSF", money(p.nssf)], ["SHIF", money(p.shif)], ["Housing Levy", money(p.ahl)], ["PAYE", money(p.paye)], ["Net pay", money(p.net)], ["Status", p.status]].map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>`);
+  audit("payroll", "Viewed payslip", p.name + " " + ym);
+};
 
 // ---------- sign in / out ----------
 
