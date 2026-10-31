@@ -53,14 +53,13 @@ function dayStats(S, price) {
   return { hi, lo, chg: (price - op) / op * 100, pos: clamp((price - lo) / rng, 0, 1), hours: Math.round(n / 60), h1, m30, m15, bias: ups === 3 ? "UP" : ups === 0 ? "DOWN" : "MIXED", vr: volRatio(S, c.length - 1) };
 }
 
-const CHTF = [["m1", 1, 150], ["m5", 5, 150], ["m15", 15, 96], ["h1", 60, 24]];   // time frame, minutes per candle, candles kept
+const CHTF = [["m1", 1, 150], ["m5", 5, 150], ["m15", 15, 96], ["h1", 60, 24]];   // same time frames as the page
 function aggCandles(cd, m, n) {
   const step = m * 60, out = []; let cur = null;
   for (const c of cd) { const k = Math.floor(c.t / step) * step; if (!cur || cur.t !== k) { cur = { t: k, o: c.o, h: c.h, l: c.l, c: c.c }; out.push(cur); } else { cur.h = Math.max(cur.h, c.h); cur.l = Math.min(cur.l, c.l); cur.c = c.c; } }
   return out.slice(-n);
 }
-const encC = a => a.map(c => [c.t, ...[c.o, c.h, c.l, c.c].map(v => +v.toPrecision(8))].join("|")).join(";");
-const decC = s => String(s).split(";").map(z => { const v = z.split("|").map(Number); return { t: v[0], o: v[1], h: v[2], l: v[3], c: v[4] }; }).filter(c => Number.isFinite(c.c));
+const encC = a => a.map(c => [c.t, c.o, c.h, c.l, c.c].join("|")).join(";");
 
 const CRYPTO = new Set(["BTC", "ETH", "SOL", "XRP", "ADA", "DOGE", "BNB", "LTC", "DOT", "AVAX", "LINK", "MATIC", "TRX", "SHIB", "BCH", "XLM"]);
 const typeOf = x => !x.includes("/") ? "stocks" : CRYPTO.has(x.split("/")[0]) ? "crypto" : "forex";
@@ -148,8 +147,15 @@ async function main() {
     every(compute, 1000);
     every(heartbeat, 20000);
     every(resolveOpen, 20000);
+    every(expireMembers, 60000);
   }
 
+  async function expireMembers() {                   // removes access when a timed plan (hours, days...) runs out, even if no admin page is open
+    const [m, a, ad, sa] = await Promise.all(["memberships", "approved", "admins", "superadmins"].map(k => db.ref(k).once("value"))), now = Date.now(), up = {};
+    const ms = m.val() || {}, ap = a.val() || {}, adm = ad.val() || {}, sup = sa.val() || {};
+    for (const [id, v] of Object.entries(ms)) if (v && v.until && v.until < now && ap[id] === true && adm[id] !== true && sup[id] !== true) up["approved/" + id] = null;   // admins are never locked out
+    if (Object.keys(up).length) { await db.ref().update(up); log("expired", Object.keys(up).length, "membership(s)"); }
+  }
   function logSignal(s, sig, d) {
     const L = d.lv, t = Date.now(); if (!L || ![L.entry, L.t1, L.t2, L.stop, L.atr].every(Number.isFinite)) return;
     const key = String(Math.floor(t / 60000)).padStart(10, "0") + "_" + s.replace(/[.#$\[\]\/]/g, "_");
@@ -176,11 +182,6 @@ async function main() {
     } finally { resolving = false; }
   }
 
-  function pubCharts(s, cd) {                        // candles for the page's chart, once a minute per pair
-    const k = s.replace(/[.#$\[\]\/]/g, "_"), u = {};
-    for (const [tf, m, n] of CHTF) u["feed/ch/" + k + "/" + tf] = { s: encC(aggCandles(cd, m, n)), t: TS };
-    db.ref().update(u).catch(e => log("chart publish failed", e.message));
-  }
   function compute() {
     let changed = false;
     for (const s of PAIRS) {
@@ -198,10 +199,15 @@ async function main() {
         trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
         tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30), H1: tfTrend(S.c, 60) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir), day: dayStats(S, p.price) };
       if (p.seen && !stale && (sig === "BUY" || sig === "SELL") && prevSig !== sig && t - (p.lastLog || 0) > 300000) { p.lastLog = t; logSignal(s, sig, data[s]); }
+      if (Date.now() - (p.chPub || 0) > 60000) { p.chPub = Date.now(); pubCharts(s, p.candles); }
       p.seen = true;
-      if (p.candles.length > 130 && Math.floor(t / 60000) !== p.chMin) { p.chMin = Math.floor(t / 60000); pubCharts(s, p.candles); }
     }
     if (changed) publish(false);
+  }
+  function pubCharts(s, cd) {                        // candles for the member charts, once a minute per pair
+    const k = s.replace(/[.#$\[\]\/]/g, "_"), u = {};
+    for (const [tf, m, n] of CHTF) u["feed/ch/" + k + "/" + tf] = { s: encC(aggCandles(cd, m, n)), t: TS };
+    db.ref().update(u).catch(e => log("chart publish failed", e.message));
   }
   function heartbeat() {                             // keeps the feed fresh, and keeps open/closed and stale flags right when no ticks arrive
     const t = Date.now();
@@ -227,5 +233,5 @@ async function main() {
   log("Steve FX Radar engine is running");
 }
 
-module.exports = { aggCandles, encC, decC, series, dirAt, volRatio, backtest, tfTrend, levels, dayStats, isOpen, typeOf };
+module.exports = { aggCandles, encC, series, dirAt, volRatio, backtest, tfTrend, levels, dayStats, isOpen, typeOf };
 if (require.main === module) main().catch(e => { console.error("Fatal:", e); process.exit(1); });
