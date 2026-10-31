@@ -215,11 +215,13 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <b>Membership</b>
   <p id="m_status" class="mut"></p>
   <div id="m_info"></div>
+  <details id="m_terms" style="display:none;margin:8px 0"><summary style="cursor:pointer;font-weight:600">Membership rules</summary><div id="m_terms_t" style="white-space:pre-wrap;margin-top:6px"></div></details>
   <div class="adduser">
     <select id="m_method" aria-label="Payment method"><option value="mpesa">M-Pesa</option><option value="bank">Bank</option><option value="other">Other</option></select>
     <input id="m_code" placeholder="Payment code" autocomplete="off" maxlength="24" style="text-transform:uppercase">
     <input id="m_amt" type="number" min="0" placeholder="Amount paid">
     <input id="m_payer" placeholder="Name or phone used" maxlength="60">
+    <label id="m_agree_l" style="display:none;flex:1 1 100%"><input type="checkbox" id="m_agree"> I have read and accept the membership rules</label>
     <button class="pri" id="m_go">Send payment code</button>
     <a class="btn wa" id="m_wa" target="_blank" rel="noopener">WhatsApp the code</a>
     <a class="btn" id="m_mail">Email us</a>
@@ -330,6 +332,7 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
       <input id="s_price" placeholder="Price e.g. KES 1,500" maxlength="90">
       <input id="s_days" type="number" min="1" max="3650" placeholder="Days per payment (used when no plans below)">
       <textarea id="s_plans" rows="6" maxlength="1500" style="flex:1 1 100%;font-family:inherit" placeholder="Plans, one per line:  Name | Price | Length | Level&#10;1 Hour | KES 50 | 1h | Basic&#10;1 Day | KES 150 | 1d | Basic&#10;1 Week | KES 800 | 1w | Pro&#10;Yearly VIP | KES 25,000 | 1y | VIP&#10;Lengths: 30min, 2h, 1d, 1w, 1mo, 1y. Levels: Basic, Pro, VIP."></textarea>
+      <textarea id="s_terms" rows="6" maxlength="3000" style="flex:1 1 100%;font-family:inherit" placeholder="Membership rules shown to every member and accepted when they send a payment code. Example: one account per person, no sharing logins, signals are not financial advice, what happens on refunds, and that sharing or abuse ends the subscription without refund."></textarea>
       <input id="s_idle" type="number" min="5" max="1440" placeholder="Idle logout (minutes)">
       <input id="s_mpesa" placeholder="M-Pesa: Paybill / Till / number" maxlength="390" style="flex:1 1 260px">
       <input id="s_bank" placeholder="Bank: name, account number, account name" maxlength="390" style="flex:1 1 260px">
@@ -995,6 +998,7 @@ async function initSelf(u) {                       // profile, block check, pres
   if (s && !s.exists()) { try { await ur.update({ email: u.email, createdAt: TS }); } catch (e) { console.warn(e.message); } }
   else if (s && s.val().blocked === true) { $("err").textContent = "Your access has been blocked by the admin."; await logEvt("Blocked account tried to sign in"); await auth.signOut(); return false; }
   listen(dbr.ref("users/" + u.uid + "/blocked"), x => { if (x.val() === true) { $("err").textContent = "Your access has been blocked by the admin."; auth.signOut(); } });
+  listen(dbr.ref("users/" + u.uid + "/terminated"), x => { MEM.term = x.val(); renderMember(); });
   const pr = dbr.ref("presence/" + u.uid);
   listen(dbr.ref(".info/connected"), x => { if (x.val()) { pr.onDisconnect().set({ online: false, last: TS }); pr.set({ online: true, last: TS }); } });
   hb = setInterval(() => pr.update({ last: TS }), 60000);
@@ -1023,7 +1027,7 @@ function renderUsers() {
       if (id === me) acts = '<span class="mut">Your account</span>';
       else if (!canAct(id, v)) acts = '<span class="mut">' + (t === 3 ? "Owner (protected)" : "Protected") + "</span>";
       else {
-        if (t === 0) acts += (amSuper() ? btn("apr", id, apr ? "Unapprove" : "Approve") : "") + btn("kick", id, "Sign out");
+        if (t === 0) acts += (amSuper() ? btn("apr", id, apr ? "Unapprove" : "Approve") + (apr ? btn("term", id, "Terminate", "bad") : "") : "") + btn("kick", id, "Sign out");
         if (mt >= 2 && t <= 1) acts += btn("adm", id, t === 1 ? "Remove admin" : "Make admin");
         if (mt === 3 && t === 1) acts += btn("sup", id, "Make super admin");
         if (mt === 3 && t === 2) acts += btn("unsup", id, "Remove super admin");
@@ -1050,6 +1054,14 @@ $("ulist").onclick = async e => {
       else { const PL = SITE.plans || [], d = prompt("Access for " + nm(id) + " (blank = no expiry).\n" + (PL.length ? "Type a plan number:\n" + PL.map((q, i) => (i + 1) + ". " + q.name + " (" + durText(q.days) + ", " + lvName(q.level) + ")").join("\n") + "\nor a length like 3h, 10d, 1w." : "Days, or a length like 3h, 10d, 1w."), ""); if (d === null) return;
         const k = Math.floor(+d); let days = 0, plan = "", level = ""; if (PL.length && k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "basic"; } else if (d.trim()) { days = /^\d+$/.test(d.trim()) ? +d.trim() : parseDur(d); if (!days) return alert("Use a plan number or a length like 3h, 10d, 1w."); }
         await grant(id, days, plan, level); logEvt("Approved " + nm(id) + (days ? " for " + durText(days) + (plan ? " (" + plan + ")" : "") : " with no expiry")); }
+    }
+    if (a === "term") {
+      if (!amSuper()) return alert("Only a super admin can terminate a subscription.");
+      if (!confirm("Terminate the subscription of " + nm(id) + "?\nTheir access ends now and they are signed out.")) return;
+      const why = prompt("Reason (the member will see it, optional):", ""); if (why === null) return;
+      await dbr.ref().update({ ["approved/" + id]: null, ["memberships/" + id]: null, ["users/" + id + "/terminated"]: { t: TS, reason: why.trim().slice(0, 200) } });
+      try { await dbr.ref("sessions/" + id).update({ id: "kicked-" + rt(), t: TS }); } catch {}
+      logEvt("Terminated the subscription of " + nm(id) + (why.trim() ? ": " + why.trim().slice(0, 120) : ""));
     }
     if (a === "em") {
       const old = (U[id].email || "").trim();
@@ -1142,7 +1154,7 @@ function parsePlans(text) {                          // returns { plans, error }
 const plansText = a => (a || []).map(p => [p.name, p.price, durText(p.days).replace(" hours", "h").replace(" hour", "h").replace(/ min/, "min").replace(/ days?/, "d").replace(/ weeks?/, "w").replace(/ months?/, "mo").replace(/ years?/, "y"), lvName(p.level)].join(" | ")).join("\n");
 async function grant(id, days, plan, level) {        // approve a user; days = 0 means no expiry; days may be a fraction (hours)
   const now = rt(), cur = (MS[id] && MS[id].until) || 0, u = {};
-  u["approved/" + id] = true;
+  u["approved/" + id] = true; u["users/" + id + "/terminated"] = null;
   u["memberships/" + id] = days ? Object.assign({ until: Math.max(now, cur) + Math.round(days * 86400000), plan: plan || durText(days) }, level ? { level } : {}) : null;
   await dbr.ref().update(u);
 }
@@ -1218,8 +1230,9 @@ function renderMember() {
   if (isAdmin || !auth.currentUser) return;
   const now = rt(), act = isMember();
   $("m_status").innerHTML = `<span class="pill ${act ? "adm" : "blk"}" style="margin:0 8px 0 0">${act ? "PAID" : "NOT PAID"}</span>` + (act ? (MEM.until ? `${MEM.plan ? "<b>" + esc(MEM.plan) + "</b>" + (MEM.level ? '<span class="lv ' + esc(MEM.level) + '">' + lvName(MEM.level) + "</span>" : "") + ". " : ""}Active until <b>${fmtDT(MEM.until)}</b> (${leftText(MEM.until - now)} left).` : "Active. No expiry date.")
-    : MEM.until && MEM.until <= now ? `Your membership expired on <b>${fmtD(MEM.until)}</b>. Pay below to renew.` : "You do not have an active membership yet.");
+    : MEM.term ? `Your subscription was terminated on <b>${fmtD(MEM.term.t)}</b>${MEM.term.reason ? ": " + esc(MEM.term.reason) : ""}. Contact the admin if you think this is a mistake.` : MEM.until && MEM.until <= now ? `Your membership expired on <b>${fmtD(MEM.until)}</b>. Pay below to renew.` : "You do not have an active membership yet.");
   const rows = [["Price", SITE.price], ["Access period", !(SITE.plans || []).length && SITE.days ? SITE.days + " days" : ""], ["M-Pesa", SITE.mpesa], ["Bank", SITE.bank], ["Other", SITE.other]].filter(r => r[1]);
+  const hasT = !!SITE.terms; $("m_terms").style.display = hasT ? "block" : "none"; $("m_terms_t").textContent = SITE.terms || ""; $("m_agree_l").style.display = hasT ? "block" : "none";
   const PL = SITE.plans || [], planHtml = PL.length ? '<div class="plans">' + PL.map(q => `<div class="plan ${esc(q.level || "")}"><b>${esc(q.name)}${q.level && q.level !== "basic" ? '<span class="lv ' + esc(q.level) + '">' + lvName(q.level) + "</span>" : ""}</b><div class="pp">${esc(q.price || "")}</div><span class="mut">${durText(q.days)} of access</span></div>`).join("") + "</div>" : "";
   $("m_info").innerHTML = planHtml + (rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>');
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
@@ -1231,10 +1244,11 @@ $("m_go").onclick = async () => {
   if (code.length < 6 || code.length > 20) return m.textContent = "Enter the payment code exactly as in your payment message (6 to 20 letters and numbers).";
   const pid = dbr.ref("payments/" + u.uid).push().key, rec = { method: $("m_method").value, code, status: "pending", ts: TS, email: u.email || "", payer };
   if (amt > 0) rec.amount = amt;
+  if (SITE.terms) { if (!$("m_agree").checked) return m.textContent = "Please read and accept the membership rules first."; rec.rulesOk = true; }
   try {
     await dbr.ref().update({ ["paycodes/" + code]: u.uid, ["payments/" + u.uid + "/" + pid]: rec });
     logEvt("Sent payment code " + code + " (" + rec.method + ")");
-    m.textContent = "Sent. The admin will confirm it and your access will start."; $("m_code").value = $("m_amt").value = $("m_payer").value = "";
+    m.textContent = "Sent. The admin will confirm it and your access will start."; $("m_code").value = $("m_amt").value = $("m_payer").value = ""; $("m_agree").checked = false;
   } catch (err) { m.textContent = /permission|denied/i.test(err.code + err.message) ? "That code was already used, or the request was refused. Check the code or contact the admin." : err.message; }
 };
 
@@ -1323,7 +1337,7 @@ function fillSite() {
   if (!isAdmin) return;
   if (!$("pay_form").contains(document.activeElement)) {
     $("s_company").value = SITE.company || ""; $("s_wa").value = SITE.wa || ""; $("s_mail").value = SITE.mail || "";
-    $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; if (!$("s_plans").matches(":focus")) $("s_plans").value = plansText(SITE.plans); $("s_idle").value = SITE.idleMinutes || "";
+    $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; if (!$("s_plans").matches(":focus")) $("s_plans").value = plansText(SITE.plans); if (!$("s_terms").matches(":focus")) $("s_terms").value = SITE.terms || ""; $("s_idle").value = SITE.idleMinutes || "";
     $("s_mpesa").value = SITE.mpesa || ""; $("s_bank").value = SITE.bank || ""; $("s_other").value = SITE.other || "";
   }
   if (!$("ann").contains(document.activeElement)) $("bb_txt").value = SITE.billboard || "";
@@ -1333,9 +1347,9 @@ $("s_save").onclick = async () => {
   if (days && (days < 1 || days > 3650)) return m.textContent = "Days must be 1 to 3650.";
   if (idle && (idle < 5 || idle > 1440)) return m.textContent = "Idle logout must be 5 to 1440 minutes.";
   const pl = parsePlans($("s_plans").value); if (pl.error) return m.textContent = pl.error;
-  const o = { plans: pl.plans.length ? pl.plans : null, company: $("s_company").value.trim(), wa: $("s_wa").value.replace(/\D/g, ""), mail: $("s_mail").value.trim(), price: $("s_price").value.trim(),
+  const o = { terms: $("s_terms").value.trim().slice(0, 3000) || null, plans: pl.plans.length ? pl.plans : null, company: $("s_company").value.trim(), wa: $("s_wa").value.replace(/\D/g, ""), mail: $("s_mail").value.trim(), price: $("s_price").value.trim(),
     mpesa: $("s_mpesa").value.trim(), bank: $("s_bank").value.trim(), other: $("s_other").value.trim(), days: days || null, idleMinutes: idle || null };
-  if (!amSuper()) { delete o.plans; delete o.days; }   // only a super admin sets prices and plan lengths
+  if (!amSuper()) { delete o.plans; delete o.days; delete o.terms; }   // only a super admin sets prices and plan lengths
   try { await dbr.ref("site").update(o); m.textContent = "Saved."; logEvt("Updated settings (company, contact, membership)"); }
   catch (err) { m.textContent = "Save failed: " + err.message; }
   setTimeout(() => m.textContent = "", 5000);
