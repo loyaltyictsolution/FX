@@ -1,0 +1,113 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      }
+    },
+    "superadmins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "(auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')"
+      }
+    },
+    "approved": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      }
+    },
+    "memberships": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      }
+    },
+    "paycodes": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$code": {
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && !data.exists() && newData.val() === auth.uid)"
+      }
+    },
+    "payments": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        "$pid": {
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && auth.uid === $uid && !data.exists() && newData.child('status').val() === 'pending')"
+        }
+      }
+    },
+    "users": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && auth.uid === $uid && !data.exists())"
+      }
+    },
+    "site": {
+      ".read": "auth != null",
+      "plans": {
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      },
+      "days": {
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      },
+      "$other": {
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      }
+    },
+    "settings": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+    },
+    "feed": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+    },
+    "results": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+    },
+    "news": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+    },
+    "chat": {
+      "room": {
+        ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))"
+      },
+      "dm": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+          ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        }
+      }
+    },
+    "logs": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$id": {
+        ".write": "auth != null && !data.exists()"
+      }
+    },
+    "presence": {
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      }
+    },
+    "sessions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      }
+    }
+  }
+}
