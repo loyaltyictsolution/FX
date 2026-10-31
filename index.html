@@ -14,7 +14,7 @@
 :root{--bg:#12202e;--panel:#1a2c3f;--line:#2b4259;--tx:#e8eef4;--mut:#8fa5ba;
 --buy:#2ec4b6;--sell:#ef6a5b;--wait:#f2b84b;--danger:#ff3b5c;--off:#6b7b8c}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding:16px;max-width:1500px;margin-inline:auto}
 .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
 h1{font-size:20px;margin:0;font-weight:600}
@@ -25,8 +25,9 @@ button{background:var(--panel);color:var(--tx);border:1px solid var(--line);padd
 button:focus-visible,.row:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
 #banner{display:none;margin-bottom:14px;padding:12px 16px;border-radius:10px;background:var(--danger);color:#fff;font-weight:600}
 #banner.show{display:block}
-main{display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr);gap:16px;align-items:start}
-#rightcol{display:grid;gap:16px;min-width:0}
+main{display:grid;grid-template-columns:minmax(230px,270px) minmax(0,1fr) minmax(300px,350px);grid-template-areas:"list chart detail";gap:16px;align-items:start}
+#list{grid-area:list;min-width:0}#chartpanel{grid-area:chart;min-width:0}#detail{grid-area:detail;min-width:0}
+@media(max-width:1149px){main{grid-template-columns:minmax(240px,330px) minmax(0,1fr);grid-template-areas:"list chart" "detail chart"}}
 .ctb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
 .ctb button{padding:4px 10px;font-size:12px;border-radius:999px}
 .ctb button.on{background:var(--buy);color:#06231f;border:0;font-weight:600}
@@ -35,7 +36,7 @@ main{display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr);gap:16
 #c_det summary{cursor:pointer;font-weight:600;font-size:13px}
 #c_read .lvr{font-size:12px}
 @media(max-width:800px){
-  main{grid-template-columns:1fr}
+  main{grid-template-columns:minmax(0,1fr);grid-template-areas:"list" "chart" "detail"}
   #list{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:8px}
   #list .tabs{flex:0 0 auto;padding:0!important}
   #list .row{flex:0 0 150px;grid-template-columns:1fr;gap:2px;padding:8px;border:1px solid var(--line);border-radius:10px;border-left-width:4px}
@@ -226,7 +227,6 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 </section>
 <div id="sigwrap"><main>
   <section class="panel" id="list" aria-label="Currency pairs"></section>
-  <div id="rightcol">
     <section class="panel" id="chartpanel">
       <div class="ctb" style="justify-content:space-between"><span><b>Chart</b> <span id="c_pair" class="mut"></span></span><span class="mut">Move over the chart to read each candle</span></div>
       <div class="ctb"><span class="gl">Type</span><button data-ct="candles">Candles</button><button data-ct="ha">Heikin Ashi</button><button data-ct="ohlc">Bars</button><button data-ct="line">Line</button><button data-ct="area">Area</button><span class="vs"></span><span class="gl">Time frame</span><button data-ctf="m1">1m</button><button data-ctf="m5">5m</button><button data-ctf="m15">15m</button><button data-ctf="h1">1h</button></div>
@@ -241,7 +241,6 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
       <p class="mut" style="margin:6px 0 0">Built from 1-minute data for up to the last 24 hours, so 1h shows about 24 candles. Indicators need warm-up candles and are less reliable at the left edge.</p>
     </section>
     <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
-  </div>
 </main>
 <section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
 <section class="panel" id="track" style="margin-top:16px"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
