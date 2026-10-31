@@ -25,8 +25,24 @@ button{background:var(--panel);color:var(--tx);border:1px solid var(--line);padd
 button:focus-visible,.row:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
 #banner{display:none;margin-bottom:14px;padding:12px 16px;border-radius:10px;background:var(--danger);color:#fff;font-weight:600}
 #banner.show{display:block}
-main{display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
-@media(max-width:800px){main{grid-template-columns:1fr}}
+main{display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr);gap:16px;align-items:start}
+#rightcol{display:grid;gap:16px;min-width:0}
+.ctb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.ctb button{padding:4px 10px;font-size:12px;border-radius:999px}
+.ctb button.on{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.ctb .gl{color:var(--mut);font-size:12px;margin-right:2px}
+.ctb .vs{width:1px;height:20px;background:var(--line);margin:0 4px}
+#c_det summary{cursor:pointer;font-weight:600;font-size:13px}
+#c_read .lvr{font-size:12px}
+@media(max-width:800px){
+  main{grid-template-columns:1fr}
+  #list{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:8px}
+  #list .tabs{flex:0 0 auto;padding:0!important}
+  #list .row{flex:0 0 150px;grid-template-columns:1fr;gap:2px;padding:8px;border:1px solid var(--line);border-radius:10px;border-left-width:4px}
+  #list .row .mut{display:none}
+  #list .row .num{display:block!important;font-size:14px}
+  #list .row .tag{min-width:0;justify-self:start}
+}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
 .row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-left:4px solid transparent}
 .row:last-child{border-bottom:0}.row.sel{background:#223a52}
@@ -167,18 +183,6 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 header{background:rgba(11,22,34,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:10px 12px;border-radius:12px}
 header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
 @media(prefers-reduced-motion:reduce){body::before{animation:none}}
-
-/* ---- Chart panel ---- */
-#chartpanel{margin-top:16px}
-.ctb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
-.ctb .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
-.ctb button{padding:4px 10px;font-size:12px}
-.ctb button.on{background:var(--buy);color:#06231f;border:0;font-weight:600}
-.ctb .lbl{font-size:11px;color:var(--mut);margin-right:2px}
-#cc{height:340px;touch-action:pan-y;cursor:crosshair}
-#c_rsi,#c_macd,#c_sto,#c_adx{height:80px;margin-top:6px;display:none}
-#c_info{font-size:12px;min-height:18px;color:var(--mut);margin:4px 0;font-family:"IBM Plex Mono",monospace;overflow-x:auto;white-space:nowrap}
-@media(max-width:600px){#cc{height:260px}}
 </style>
 </head>
 <body>
@@ -222,27 +226,23 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 </section>
 <div id="sigwrap"><main>
   <section class="panel" id="list" aria-label="Currency pairs"></section>
-  <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
+  <div id="rightcol">
+    <section class="panel" id="chartpanel">
+      <div class="ctb" style="justify-content:space-between"><span><b>Chart</b> <span id="c_pair" class="mut"></span></span><span class="mut">Move over the chart to read each candle</span></div>
+      <div class="ctb"><span class="gl">Type</span><button data-ct="candles">Candles</button><button data-ct="ha">Heikin Ashi</button><button data-ct="ohlc">Bars</button><button data-ct="line">Line</button><button data-ct="area">Area</button><span class="vs"></span><span class="gl">Time frame</span><button data-ctf="m1">1m</button><button data-ctf="m5">5m</button><button data-ctf="m15">15m</button><button data-ctf="h1">1h</button></div>
+      <div class="ctb"><span class="gl">On chart</span><button data-ci="ema">EMA 9/21/50</button><button data-ci="bb">Bollinger</button><button data-ci="lv">Entry / targets / stop</button><span class="vs"></span><span class="gl">Below</span><button data-ci="rsi">RSI</button><button data-ci="macd">MACD</button><button data-ci="sto">Stochastic</button><button data-ci="adx">ADX</button></div>
+      <div id="c_info" class="mut num" style="min-height:20px;font-size:12px"></div>
+      <canvas id="cc" style="width:100%;height:300px;touch-action:pan-y"></canvas>
+      <canvas id="c_rsi" style="width:100%;height:80px;display:none"></canvas>
+      <canvas id="c_macd" style="width:100%;height:80px;display:none"></canvas>
+      <canvas id="c_sto" style="width:100%;height:80px;display:none"></canvas>
+      <canvas id="c_adx" style="width:100%;height:80px;display:none"></canvas>
+      <details id="c_det" open style="margin-top:8px"><summary>Indicator read-out</summary><div id="c_read"></div></details>
+      <p class="mut" style="margin:6px 0 0">Built from 1-minute data for up to the last 24 hours, so 1h shows about 24 candles. Indicators need warm-up candles and are less reliable at the left edge.</p>
+    </section>
+    <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
+  </div>
 </main>
-<section class="panel" id="chartpanel" aria-label="Price chart">
-  <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline"><b>Chart <span id="c_pair" class="mut"></span></b><span class="mut" style="font-size:12px">Move over the chart to read each candle</span></div>
-  <div class="ctb" role="group" aria-label="Chart type">
-    <span class="lbl">Type</span>
-    <button data-ct="candles">Candles</button><button data-ct="ha">Heikin Ashi</button><button data-ct="ohlc">Bars</button><button data-ct="line">Line</button><button data-ct="area">Area</button>
-    <span class="sep"></span><span class="lbl">Time frame</span>
-    <button data-ctf="m1">1m</button><button data-ctf="m5">5m</button><button data-ctf="m15">15m</button><button data-ctf="h1">1h</button>
-  </div>
-  <div class="ctb" role="group" aria-label="Indicators">
-    <span class="lbl">On chart</span>
-    <button data-ci="ema">EMA 9/21/50</button><button data-ci="bb">Bollinger</button><button data-ci="lv">Entry / targets / stop</button>
-    <span class="sep"></span><span class="lbl">Below</span>
-    <button data-ci="rsi">RSI</button><button data-ci="macd">MACD</button><button data-ci="sto">Stochastic</button><button data-ci="adx">ADX</button>
-  </div>
-  <div id="c_info" aria-live="off"></div>
-  <canvas id="cc"></canvas>
-  <canvas id="c_rsi"></canvas><canvas id="c_macd"></canvas><canvas id="c_sto"></canvas><canvas id="c_adx"></canvas>
-  <div id="c_read"></div>
-</section>
 <section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
 <section class="panel" id="track" style="margin-top:16px"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
   <div id="track_body"><p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.</p></div></section>
@@ -559,8 +559,8 @@ function compute() {
       trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
       tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30), H1: tfTrend(S.c, 60) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir), day: dayStats(S, p.price) };
     if (isAdmin && p.seen && !stale && (sig === "BUY" || sig === "SELL") && prevSig !== sig && t - (p.lastLog || 0) > 300000) { p.lastLog = t; logSignal(s, sig, data[s]); }
-    if (isAdmin && !asViewer && t - (p.chPub || 0) > 60000) { p.chPub = t; pubCharts(s, p.candles); }
     p.seen = true;                                   // first pass after a reload never logs, so old setups are not counted as new
+    if (isAdmin && !asViewer && p.candles.length > 130 && Math.floor(t / 60000) !== p.chMin) { p.chMin = Math.floor(t / 60000); pubCharts(s, p.candles); }
   }
   if (!sel || !data[sel]) sel = Object.keys(data)[0] || null;
   if (changed) { render(); publish(); }
@@ -587,9 +587,9 @@ function status() {
 }
 setInterval(() => auth.currentUser && status(), 2000);
 
-function render() { renderMain(); syncChartListener(); drawChart(); }
-function renderMain() {
+function render() {
   const st = status();
+  queueMicrotask(() => { syncChartListener(); drawChart(); });
   $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin ? "Waiting for the signal feed." : loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
     marketTabs() + Object.entries(data).filter(([p, d]) => MK === "all" || (d.type || typeOf(p)) === MK).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
       <div><b>${esc(p)}</b> <span class="mut">${esc(TL[d.type || typeOf(p)] || "")}</span><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}${d.open === false ? " / market closed" : ""}</div></div>
@@ -599,7 +599,7 @@ function renderMain() {
   const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
   const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
   const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~24 hours, spread ignored)` : "not enough past signals to measure";
-  $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div><canvas id="cv" width="600" height="120"></canvas>
+  $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div>
     <div class="tfs">${["M5", "M15", "M30", "H1"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
     <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
@@ -696,7 +696,7 @@ function aggCandles(cd, m, n) {                      // 1-minute candles into m-
   for (const c of cd) { const k = Math.floor(c.t / step) * step; if (!cur || cur.t !== k) { cur = { t: k, o: c.o, h: c.h, l: c.l, c: c.c }; out.push(cur); } else { cur.h = Math.max(cur.h, c.h); cur.l = Math.min(cur.l, c.l); cur.c = c.c; } }
   return out.slice(-n);
 }
-const encC = a => a.map(c => [c.t, c.o, c.h, c.l, c.c].join("|")).join(";");
+const encC = a => a.map(c => [c.t, ...[c.o, c.h, c.l, c.c].map(v => +v.toPrecision(8))].join("|")).join(";");
 const decC = s => String(s).split(";").map(z => { const v = z.split("|").map(Number); return { t: v[0], o: v[1], h: v[2], l: v[3], c: v[4] }; }).filter(c => Number.isFinite(c.c));
 function pubCharts(s, cd) {                          // admin page or server: publish candles for members, once a minute
   const k = s.replace(/[.#$\[\]\/]/g, "_"), u = {};
@@ -739,15 +739,17 @@ function stochS(h, l, c, n = 14) {
   const raw = c.map((_, i) => { if (i < n - 1) return null; const hh = Math.max(...h.slice(i - n + 1, i + 1)), ll = Math.min(...l.slice(i - n + 1, i + 1)); return hh === ll ? 50 : (c[i] - ll) / (hh - ll) * 100; });
   const k = smaN(raw, 3); return { k, d: smaN(k, 3) };
 }
-function adxS(h, l, c, n = 14) {                     // Wilder ADX with +DI and -DI
-  const L = c.length, adx = c.map(() => null), pdi = c.map(() => null), mdi = c.map(() => null); if (L < n * 2 + 1) return { adx, pdi, mdi };
-  let tr = 0, pd = 0, md = 0, dx = [];
-  for (let i = 1; i < L; i++) {
+function adxS(h, l, c, n = 14) {                    // Wilder ADX with +DI and -DI
+  const len = c.length, pdi = Array(len).fill(null), mdi = Array(len).fill(null), adx = Array(len).fill(null);
+  if (len < n * 2 + 1) return { adx, pdi, mdi };
+  let tr = 0, pd = 0, md = 0; const dx = [];
+  for (let i = 1; i < len; i++) {
     const up = h[i] - h[i - 1], dn = l[i - 1] - l[i], t = Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1])), p = up > dn && up > 0 ? up : 0, m = dn > up && dn > 0 ? dn : 0;
-    if (i <= n) { tr += t; pd += p; md += m; } else { tr = tr - tr / n + t; pd = pd - pd / n + p; md = md - md / n + m; }
-    if (i >= n) { const a = 100 * pd / (tr || 1e-12), b = 100 * md / (tr || 1e-12); pdi[i] = a; mdi[i] = b; dx[i] = 100 * Math.abs(a - b) / ((a + b) || 1e-12);
-      if (i === n * 2 - 1) adx[i] = dx.slice(n, n * 2).reduce((s, v) => s + v, 0) / n; else if (i >= n * 2) adx[i] = (adx[i - 1] * (n - 1) + dx[i]) / n; }
+    if (i <= n) { tr += t; pd += p; md += m; if (i < n) continue; } else { tr = tr - tr / n + t; pd = pd - pd / n + p; md = md - md / n + m; }
+    const pi = 100 * pd / (tr || 1e-12), mi = 100 * md / (tr || 1e-12); pdi[i] = pi; mdi[i] = mi; dx[i] = 100 * Math.abs(pi - mi) / ((pi + mi) || 1e-12);
   }
+  let a = 0; for (let i = n; i < 2 * n; i++) a += dx[i] / n; adx[2 * n - 1] = a;
+  for (let i = 2 * n; i < len; i++) { a = (a * (n - 1) + dx[i]) / n; adx[i] = a; }
   return { adx, pdi, mdi };
 }
 function heikin(a) { const o = []; let po = null, pc = null; for (const c of a) { const hc = (c.o + c.h + c.l + c.c) / 4, ho = po == null ? (c.o + c.c) / 2 : (po + pc) / 2; o.push({ t: c.t, o: ho, c: hc, h: Math.max(c.h, ho, hc), l: Math.min(c.l, ho, hc) }); po = ho; pc = hc; } return o; }
@@ -761,8 +763,8 @@ function readout(full, d) {                          // plain-language read of e
   const k = st.k[n], dd = st.d[n]; if (k != null && dd != null) rows.push(["Stochastic 14/3/3", k > dd ? 1 : k < dd ? -1 : 0, k.toFixed(0) + (k >= 80 ? ", overbought" : k <= 20 ? ", oversold" : "") + (k > dd ? ", K above D" : ", K below D")]);
   const b = bb[n]; if (b) { const pb = (cl[n] - b.l) / ((b.u - b.l) || 1e-12), bwNow = (b.u - b.l) / b.m, past = bb.slice(Math.max(0, n - 50), n).filter(Boolean).map(z => (z.u - z.l) / z.m), avg = past.length ? past.reduce((s, v) => s + v, 0) / past.length : bwNow;
     rows.push(["Bollinger 20/2", cl[n] > b.m ? 1 : -1, pb > 1 ? "above the upper band: stretched" : pb < 0 ? "below the lower band: stretched" : Math.round(pb * 100) + "% of the way up the band" + (bwNow < avg * .7 ? ", squeeze: a bigger move may come, direction unknown" : "")]); }
-  const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), av = ax.adx[n], pv = ax.pdi[n], mv = ax.mdi[n];
-  if (av != null) rows.push(["ADX 14", pv > mv ? 1 : -1, av.toFixed(0) + (av >= 25 ? ", strong trend" : av < 20 ? ", weak or sideways: trend signals are less reliable" : ", trend building") + (pv > mv ? ", buyers lead (+DI above -DI)" : ", sellers lead (-DI above +DI)")]);
+  const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), av = ax.adx[n];
+  if (av != null) { const dir = ax.pdi[n] > ax.mdi[n] ? 1 : -1; rows.push(["ADX 14", av >= 20 ? dir : 0, av.toFixed(0) + (av >= 25 ? ", strong trend" : av >= 20 ? ", trend developing" : ", weak or no trend: trend signals are less reliable") + (ax.pdi[n] > ax.mdi[n] ? ", buyers lead (+DI above -DI)" : ", sellers lead (-DI above +DI)")]); }
   const sg = d ? (d.signal === "BUY" ? 1 : d.signal === "SELL" ? -1 : 0) : 0, agree = sg ? rows.filter(z => z[1] === sg).length : 0;
   const head = sg ? `<b>${agree} of ${rows.length}</b> indicators agree with the ${d.signal} signal.` : "No BUY or SELL signal right now.";
   return `<div class="lv"><div>${head}</div>${rows.map(([nm, v, t]) => `<div class="lvr"><span>${esc(nm)}</span><span style="color:${v > 0 ? "var(--buy)" : v < 0 ? "var(--sell)" : "var(--mut)"}">${v > 0 ? "up" : v < 0 ? "down" : "flat"} <span class="mut">${esc(t)}</span></span></div>`).join("")}
@@ -839,7 +841,7 @@ function drawChart() {
     if (f2) { for (let i = off; i < full.length; i++) { const v = md.h[i], y0 = f2.Y2(0), y1 = f2.Y2(v); f2.x2.fillStyle = v >= 0 ? upc : dnc; f2.x2.globalAlpha = .6; f2.x2.fillRect(X(i - off) - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0))); f2.x2.globalAlpha = 1; } path(f2, md.m, "#8fb0ff"); path(f2, md.s, "#f2b84b"); }
   }
   if (CH.ind.sto) { const st = stochS(full.map(c => c.h), full.map(c => c.l), cl), f3 = frame("sto", "Stochastic 14/3/3", 0, 100, [20, 80]); if (f3) { path(f3, st.k, "#8fb0ff"); path(f3, st.d, "#f2b84b"); } }
-  if (CH.ind.adx) { const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), f4 = frame("adx", "ADX 14" + (ax.adx[full.length - 1] != null ? "  " + ax.adx[full.length - 1].toFixed(0) : ""), 0, 60, [20, 25]); if (f4) { path(f4, ax.adx, "#f2b84b"); path(f4, ax.pdi, upc); path(f4, ax.mdi, dnc); } }
+  if (CH.ind.adx) { const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), f4 = frame("adx", "ADX 14" + (ax.adx[full.length - 1] != null ? "  " + ax.adx[full.length - 1].toFixed(0) : ""), 0, 60, [20, 40]); if (f4) { path(f4, ax.pdi, upc); path(f4, ax.mdi, dnc); path(f4, ax.adx, txc); } }
   $("c_read").innerHTML = readout(full, d);
 }
 function syncToolbar() {
@@ -978,7 +980,7 @@ function guard() {                                  // hand over to the server e
   else if (!up && asViewer) { asViewer = false; stopFeed(); if (KEY) start(); }
 }
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); clearInterval(guardT); asViewer = false; SRV = { src: null, ts: 0 }; stopFeed(); stopResults(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
+function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb); clearInterval(sweepT); clearInterval(guardT); asViewer = false; SRV = { src: null, ts: 0 }; stopFeed(); stopResults(); stopChartListener(); CHD = {}; resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
@@ -1138,10 +1140,12 @@ setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
 
 // ----- member side: signal feed (published by the admin's open page) -----
 function startFeed() {
-  if (feedOn) return; feedOn = true; feedRef = dbr.ref("feed");
-  feedRef.on("value", s => applyFeed(s.val()), e => { feedOn = false; loadErr = e.message; });
+  if (feedOn) return; feedOn = true; let FP = null, FT = 0;
+  const rp = dbr.ref("feed/pairs"), rts = dbr.ref("feed/ts"), bad = e => { feedOn = false; loadErr = e.message; }; feedRef = [rp, rts];
+  rp.on("value", s => { FP = s.val(); applyFeed({ ts: FT, pairs: FP }); }, bad);
+  rts.on("value", s => { FT = s.val() || 0; if (FP) feedTs = FT; }, bad);
 }
-function stopFeed() { if (feedRef) { feedRef.off(); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
+function stopFeed() { if (feedRef) { feedRef.forEach(r => r.off()); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
 function applyFeed(f) {
   if (!f || !f.pairs) { feedTs = 0; return; }
   feedTs = f.ts || 0; const prev = data, old = rt() - feedTs > 180000; data = {};
