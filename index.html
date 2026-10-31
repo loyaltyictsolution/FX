@@ -186,12 +186,97 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 #c_rsi,#c_macd,#c_sto,#c_adx{height:80px;margin-top:6px;display:none}
 #c_info{font-size:12px;min-height:18px;color:var(--mut);margin:4px 0;font-family:"IBM Plex Mono",monospace;overflow-x:auto;white-space:nowrap}
 @media(max-width:600px){#cc{height:260px}}
+
+:root{--fin:#2ec4b6;--hr:#8fb0ff;--rec:#f2b84b;--ovr:#b69cff}
+body.staffmode{padding:0;max-width:none;margin:0}
+body.staffmode .note{display:none}
+/* ---- Staff workspace (scoped to #sx) ---- */
+#sx :root[data-theme=light]{--bg:#eef3f8;--panel:#ffffff;--line:#cdd8e3;--tx:#14202c;--mut:#566a7d;--off:#8a97a5}
+#sx .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+#sx .mut{color:var(--mut);font-size:13px}
+#sx h2,#sx h3{margin:0}
+#sx button,#sx .btn{background:var(--panel);color:var(--tx);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;text-decoration:none;display:inline-block}
+#sx button:focus-visible,#sx input:focus-visible,#sx select:focus-visible,#sx textarea:focus-visible{outline:2px solid var(--buy);outline-offset:2px}
+#sx button.pri{background:var(--buy);color:#06231f;border:0;font-weight:600}
+#sx button.bad{color:var(--danger);border-color:var(--danger)}
+#sx button.warn{color:var(--wait);border-color:var(--wait)}
+#sx button[disabled]{opacity:.5;cursor:not-allowed}
+#sx input,#sx select,#sx textarea{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;font-size:14px;min-width:0}
+#sx .card{background:rgba(20,36,54,.74);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+:root[data-theme=light] #sx .card{background:#fff;box-shadow:0 8px 24px rgba(20,40,60,.08)}
+#sx .grad{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#sx aside{position:fixed;left:0;top:0;bottom:0;width:236px;background:rgba(11,22,34,.92);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:20;overflow:auto}
+:root[data-theme=light] #sx aside{background:#fff}
+#sx .brand{padding:16px 16px 10px}
+#sx .brand b{font-size:18px;display:block}
+#sx nav{flex:1;padding:4px 8px}
+#sx nav .sec{font-size:11px;letter-spacing:.08em;color:var(--mut);padding:14px 10px 4px;display:flex;align-items:center;gap:6px}
+#sx nav .sec i{width:8px;height:8px;border-radius:50%;display:inline-block}
+#sx nav a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;color:var(--tx);text-decoration:none;font-size:14px;cursor:pointer}
+#sx nav a:hover{background:rgba(143,176,255,.10)}
+#sx nav a.on{background:var(--buy);color:#06231f;font-weight:600}
+#sx nav a .badge{background:var(--danger);color:#fff;border-radius:999px;font-size:11px;padding:0 7px}
+#sx .sideft{padding:12px;display:flex;gap:8px;border-top:1px solid var(--line)}
+#sx .sideft button{flex:1}
+#sx main{margin-left:236px;padding:18px;max-width:1180px}
+#sx #top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+#sx #top h2{font-size:22px;flex:1}
+#sx #burger{display:none}
+@media(max-width:860px){#sx aside{transform:translateX(-100%);transition:transform .2s}
+#sx aside.open{transform:none}
+#sx main{margin-left:0;padding:12px}
+#sx #burger{display:inline-block}
+}#sx .pill{font-size:11px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+#sx .pill.ok{color:var(--buy);border-color:var(--buy)}
+#sx .pill.no{color:var(--danger);border-color:var(--danger)}
+#sx .pill.wt{color:var(--wait);border-color:var(--wait)}
+#sx .pill.ow{color:var(--ovr);border-color:var(--ovr)}
+#sx .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}
+#sx .kpi{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(20,36,54,.74)}
+:root[data-theme=light] #sx .kpi{background:#fff}
+#sx .kpi span{font-size:12px;color:var(--mut);display:block}
+#sx .kpi b{font-size:24px;display:block}
+#sx .kpi.f{border-top:3px solid var(--fin)}
+#sx .kpi.h{border-top:3px solid var(--hr)}
+#sx .kpi.r{border-top:3px solid var(--rec)}
+#sx .kpi.o{border-top:3px solid var(--ovr)}
+#sx .frm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+#sx .frm .grow{flex:1 1 260px}
+#sx .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+#sx table{width:100%;border-collapse:collapse;font-size:13px}
+#sx th{text-align:left;color:var(--mut);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+#sx td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+#sx tr:last-child td{border-bottom:0}
+#sx .tw{overflow-x:auto}
+#sx .stg{display:inline-block;font-size:11px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin-right:4px}
+#sx .stg.on{background:var(--buy);color:#06231f;border-color:var(--buy);font-weight:600}
+#sx .stg.x{background:var(--danger);color:#fff;border-color:var(--danger)}
+#sx .rev{border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0}
+#sx .rev .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#sx .lvsel{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#sx .lvsel label{font-size:12px;color:var(--mut)}
+#sx .empty{padding:14px;color:var(--mut);text-align:center}
+#sx #modal{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.7);overflow:auto;padding:20px}
+#sx .sheet{background:#fff;color:#111;max-width:440px;margin:0 auto;border-radius:10px;padding:22px;font-size:14px}
+#sx .sheet h2{font-size:20px}
+#sx .sheet table{margin:10px 0}
+#sx .sheet td{border-color:#ddd}
+#sx .sheet td:first-child{color:#555;width:42%}
+#sx .stamp{display:inline-block;padding:3px 12px;border:2px solid #0a8a4a;color:#0a8a4a;border-radius:6px;font-weight:700;letter-spacing:1px;transform:rotate(-4deg)}
+#sx .stamp.REVERSED{color:#c0392b;border-color:#c0392b}
+#sx .acts2{display:flex;gap:8px;max-width:440px;margin:12px auto 0}
+#sx .acts2 button{flex:1}
+#sx .logl{font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);word-break:break-word}
+
+#sx main{display:block;grid-template-columns:none;gap:0}
+#sx .pill{margin-left:0}
+@media print{#modal,#modal *{visibility:visible}#modal{position:absolute;inset:0;background:#fff;padding:0}.acts2{display:none}}
 </style>
 </head>
 <body>
 <section id="login" class="panel">
   <h1 id="lname">Steve FX Radar</h1>
-  <p class="mut">Sign in to view live signals.</p>
+  <p class="mut">Members and staff sign in here. Staff are taken to the staff workspace automatically.</p>
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
     <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
@@ -206,7 +291,7 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 </section>
 <div id="app">
 <header><h1 id="hname">Steve FX Radar</h1>
-  <div class="bar"><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
+  <div class="bar"><button id="gostaff" style="display:none">Staff workspace</button><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
 <div id="why" class="panel OFFLINE" role="status"></div>
@@ -306,7 +391,7 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
     <div class="ctl"><button id="sec_kick">Sign out all members now</button><span id="sec_msg" class="mut" role="status"></span></div>
   </div>
 </details>
-<section class="panel" id="users"><b>Team, roles &amp; access</b>
+<section class="panel" id="users"><b>Team, roles &amp; access</b> <button id="goacc" style="display:none;margin-left:8px">Staff accounts &amp; roles</button>
   <div class="stats" id="ustats"></div>
   <div class="adduser">
     <input id="nu_em" type="text" inputmode="email" placeholder="New user email" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
@@ -360,7 +445,17 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 <div id="rcpt" style="display:none"></div>
 <p class="note" id="contact">Need help? <a id="c_wa" href="https://wa.me/254713474115" target="_blank" rel="noopener">WhatsApp +254713474115</a> &middot; <a id="c_em" href="mailto:wanjohisteve85@gmail.com">wanjohisteve85@gmail.com</a></p>
 <p class="note">Alerts only. No orders. Signals are rule-based scores from public price data, not guarantees, and prices can differ slightly from your Exness quotes. Check the tested hit rate on each pair. Alerts work only while this page stays open.</p>
-
+<div id="sx" style="display:none">
+  <aside id="side">
+    <div class="brand"><b class="grad" id="co">Staff Workspace</b><span class="mut" id="who"></span></div>
+    <nav id="nav"></nav>
+    <div class="sideft"><button id="gomkt" style="display:none">Market</button><button id="theme">Light</button><button id="out">Sign out</button></div>
+  </aside>
+  <main>
+    <div id="top"><button id="burger">Menu</button><h2 id="title">Dashboard</h2><span id="role" class="pill"></span></div>
+    <div id="view"></div>
+  </main>
+<div id="modal"></div></div>
 <script>
 // Loads Firebase from Google first, then jsDelivr if Google is blocked, then starts the app.
 (function () {
@@ -377,7 +472,36 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 <script>
 window.addEventListener("error", e => { const x = document.getElementById("err"); if (x && !x.textContent) x.textContent = "Page error: " + e.message; });
 </script>
-<script type="text/plain" id="mainjs">
+<script type="text/plain" id="mainjs">const firebaseConfig = { apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf" };
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), dbr = firebase.database(), TS = firebase.database.ServerValue.TIMESTAMP;
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+const SHELL0 = null;
+
+const SHELL = { ctx: null, mode: null };
+const G = id => document.getElementById(id);
+let RTK = 0;
+const OWNER_MAIL = "wanjohisteve85@gmail.com";
+async function enterMode(u, mode, route) {
+  SHELL.mode = mode; try { sessionStorage.setItem("fr_mode", mode); } catch {}
+  document.body.classList.toggle("staffmode", mode === "staff");
+  G("login").style.display = "none";
+  G("app").style.display = mode === "market" ? "block" : "none";
+  G("sx").style.display = mode === "staff" ? "block" : "none";
+  G("gostaff").style.display = SHELL.ctx.canStaff ? "" : "none";
+  if (route) location.hash = route;
+  if (mode === "market") await SHELL.market.enter(u); else await SHELL.staff.enter(u);
+}
+SHELL.switchTo = async (mode, route) => {
+  const u = auth.currentUser, c = SHELL.ctx; if (!u || !c) return;
+  if ((mode === "staff" && !c.canStaff) || (mode === "market" && !c.canMarket)) return;
+  SHELL.market.leave(); SHELL.staff.leave(); window.scrollTo(0, 0); await enterMode(u, mode, route);
+};
+
+(function () {
+let MON = false;
+const setInterval = (f, ms) => window.setInterval(() => { if (MON) f(); }, ms);   // market timers only run while the market view is open
+
 // ENGINE START
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 function ema(a, n) { const k = 2 / (n + 1), o = [a[0]]; for (let i = 1; i < a.length; i++) o.push(a[i] * k + o[i - 1] * (1 - k)); return o; }
@@ -422,16 +546,7 @@ function tfTrend(c, step) {
 // ENGINE END
 
 let PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD"];
-// Paste apiKey and appId from Firebase > Project settings > Your apps > Web app. The rest is filled in.
-const firebaseConfig = { apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf" };
-if (Object.values(firebaseConfig).includes("PASTE")) {
-  document.getElementById("err").textContent = "Setup needed: open index.html and paste your Firebase apiKey and appId into firebaseConfig.";
-  throw new Error("firebaseConfig incomplete");
-}
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(), dbr = firebase.database();
-const TS = firebase.database.ServerValue.TIMESTAMP;
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
 
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -1013,7 +1128,7 @@ function startAdminUsers() {
 function renderUsers() {
   if (!isAdmin || !auth.currentUser) return;
   const now = rt(), me = auth.currentUser.uid, mt = myTier();
-  $("lg_clr").style.display = amSuper() ? "" : "none"; $("nu_ad").parentElement.style.display = amSuper() ? "" : "none";
+  $("lg_clr").style.display = amSuper() ? "" : "none"; $("goacc").style.display = amSuper() ? "" : "none"; $("nu_ad").parentElement.style.display = amSuper() ? "" : "none";
   const rows = Object.entries(U).filter(([, v]) => v && !v.removed).map(([id, v]) => ({ id, v, t: tier(id, v), blk: v.blocked === true, apr: AP[id] === true,
     live: !!(PR[id] && PR[id].online && now - (PR[id].last || 0) < 180000) }));
   const n = f => rows.filter(f).length;
@@ -1625,17 +1740,526 @@ $("save").onclick = async () => {
   catch (e) { toast(/permission|denied/i.test(e.code + e.message) ? "Firebase refused the save. Publish the new database rules, then try again." : "Save failed: " + e.message); }
 };
 function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 5000); }
-auth.onAuthStateChanged(async u => {
-  $("login").style.display = u ? "none" : "block"; $("app").style.display = u ? "block" : "none";
-  stopUsers();
-  if (!u) { stop(); isAdmin = false; KEY = ""; alerts = []; return; }
+async function marketEnter(u) {
+  MON = true; applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+    stopUsers();
   resetIdle();
-  if (!(await initSelf(u))) return;
+  if (!(await initSelf(u))) return false;
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
   startCommon(u);
   if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
   if (isAdmin) { try { const [a, b] = await Promise.all([dbr.ref("feed/src").get(), dbr.ref("feed/ts").get()]); SRV = { src: a.val(), ts: b.val() || 0 }; } catch {} }
   status(); render(); start();
+  return true;
+}
+function marketLeave() { MON = false; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
+$("goacc").onclick = () => SHELL.switchTo("staff", "x_acc"); $("gostaff").onclick = () => SHELL.switchTo("staff");
+SHELL.market = { enter: marketEnter, leave: marketLeave };
+
+
+})();
+(function () {
+
+const OWNER_EMAIL = "wanjohisteve85@gmail.com";
+
+
+// ---------- helpers ----------
+const $ = id => document.getElementById("sx").querySelector("#" + id);
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const val = id => $(id).value.trim();
+const num = x => Number.isFinite(+x) ? +x : 0;
+const rows = o => Object.entries(o || {}).map(([id, v]) => ({ id, ...v }));
+const money = n => "KES " + (Math.round(num(n) * 100) / 100).toLocaleString("en-KE", { maximumFractionDigits: 2 });
+const TZ = "Africa/Nairobi";
+let SOFF = 0; dbr.ref(".info/serverTimeOffset").on("value", x => { SOFF = x.val() || 0; });
+const now = () => Date.now() + SOFF;
+const okMs = v => Number.isFinite(+v) ? +v : 0;
+const FDT = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+const FD = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "2-digit", month: "short", year: "numeric" });
+const FT = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const FK = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const fDT = ms => ms ? FDT.format(okMs(ms)) : "-", fD = ms => ms ? FD.format(okMs(ms)) : "-", fT = ms => ms ? FT.format(okMs(ms)) : "-", dayKey = ms => FK.format(okMs(ms));
+function minsOfDay(ms) { const p = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(ms)); return (+p.find(x => x.type === "hour").value % 24) * 60 + +p.find(x => x.type === "minute").value; }
+function workDays(a, b) { let n = 0; if (!a || !b) return 0; for (let d = new Date(a + "T00:00:00Z"), e = new Date(b + "T00:00:00Z"); d <= e; d = new Date(d.getTime() + 864e5)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6) n++; } return n; }
+function csv(name, data) {
+  const cell = v => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data.map(r => r.map(cell).join(",")).join("\n")], { type: "text/csv" }));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const tbl = (h, r) => r.length ? `<div class="tw"><table><thead><tr>${h.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${r.map(c => `<tr>${c.map(x => `<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : '<div class="empty">Nothing here yet.</div>';
+const pw8 = x => typeof x === "string" && x.length >= 8 && /[A-Za-z]/.test(x) && /\d/.test(x);
+
+// ---------- state, rights ----------
+let ME = null, ST = null, C = {}, refs = [], ROUTE = "home", lastAct = 0, signedLogged = false;
+const LV = { none: 0, view: 1, edit: 2, manage: 3 }, LVN = ["none", "view", "edit", "manage"];
+const lvl = m => ME && (ME.owner || ME.sup) ? 3 : (ST && ST.active === true ? LV[(ST.modules || {})[m]] || 0 : 0);
+const can = (m, l) => lvl(m) >= LV[l];
+const MODS = { finance: "Finance", hr: "HR", rec: "Reception" };
+const anyAccess = () => ME && (ME.owner || ME.sup || (ST && ST.active === true && Object.keys(MODS).some(m => lvl(m) > 0)));
+function audit(mod, action, detail) {
+  if (!ME) return;
+  dbr.ref("slog").push({ t: TS, uid: ME.uid, email: ME.email || "", mod, action: String(action).slice(0, 60), detail: String(detail || "").slice(0, 300) }).catch(() => {});
+}
+function sub(key, ref) { ref.on("value", s => { C[key] = s.val() || {}; live(); }, e => { C[key] = {}; console.warn(key, e.message); live(); }); refs.push(ref); }
+function stopData() { refs.forEach(r => r.off()); refs = []; C = {}; }
+function startData() {
+  stopData(); if (!ME) return;
+  const day = dayKey(now());
+  if (can("finance", "view")) { sub("invoices", dbr.ref("fin/invoices").limitToLast(1000)); sub("payments", dbr.ref("fin/payments").limitToLast(1000)); sub("reversals", dbr.ref("fin/reversals").limitToLast(500)); }
+  if (can("hr", "view")) { sub("employees", dbr.ref("hr/employees")); sub("leave", dbr.ref("hr/leave").limitToLast(500)); sub("att", dbr.ref("hr/attendance/" + day)); }
+  if (can("rec", "view")) { sub("visitors", dbr.ref("rec/visitors").limitToLast(500)); sub("appts", dbr.ref("rec/appointments").limitToLast(500)); sub("msgs", dbr.ref("rec/messages").limitToLast(500)); }
+  if (ME.sup || ME.owner) { sub("staff", dbr.ref("staff")); sub("users", dbr.ref("users")); }
+  if (ME.owner) sub("slog", dbr.ref("slog").limitToLast(400));
+}
+
+// ---------- shell ----------
+const NAV = [
+  { sec: "MAIN", c: "var(--buy)" }, { id: "home", t: "Dashboard" },
+  { sec: "FINANCE", c: "var(--fin)", m: "finance" }, { id: "f_inv", t: "Invoices", m: "finance" }, { id: "f_pay", t: "Payments & receipts", m: "finance" }, { id: "f_stm", t: "Student statement", m: "finance" }, { id: "f_rev", t: "Reversal requests", m: "finance" }, { id: "f_day", t: "Daybook", m: "finance" },
+  { sec: "HUMAN RESOURCES", c: "var(--hr)", m: "hr" }, { id: "h_emp", t: "Employees", m: "hr" }, { id: "h_lv", t: "Leave", m: "hr" }, { id: "h_att", t: "Attendance", m: "hr" },
+  { sec: "RECEPTION", c: "var(--rec)", m: "rec" }, { id: "r_vis", t: "Visitors", m: "rec" }, { id: "r_apt", t: "Appointments", m: "rec" }, { id: "r_msg", t: "Messages & calls", m: "rec" },
+  { sec: "OVERSIGHT", c: "var(--ovr)", o: "sup" }, { id: "x_apr", t: "Approvals", o: "sup" }, { id: "x_acc", t: "Access control", o: "sup" }, { id: "x_log", t: "Audit log", o: "owner" }
+];
+const visible = n => n.m ? can(n.m, "view") : n.o === "sup" ? (ME.sup || ME.owner) : n.o === "owner" ? ME.owner : true;
+function buildNav() {
+  let h = "", pend = null;
+  for (const n of NAV) {
+    if (n.sec) { pend = n; continue; }
+    if (!visible(n)) continue;
+    if (pend) { h += `<div class="sec"><i style="background:${pend.c}"></i>${pend.sec}</div>`; pend = null; }
+    h += `<a data-go="${n.id}" id="nv_${n.id}">${esc(n.t)}<span class="badge" id="bd_${n.id}" style="display:none"></span></a>`;
+  }
+  $("nav").innerHTML = h; markNav();
+}
+function markNav() { $("nav").querySelectorAll("a").forEach(a => a.classList.toggle("on", a.dataset.go === ROUTE)); }
+$("nav").onclick = e => { const a = e.target.closest("a[data-go]"); if (a) { location.hash = a.dataset.go; $("side").classList.remove("open"); } };
+$("burger").onclick = () => $("side").classList.toggle("open");
+function roleText() {
+  if (ME.owner) return "Owner"; if (ME.sup) return "Super admin";
+  return Object.keys(MODS).filter(m => lvl(m) > 0).map(m => MODS[m] + " " + LVN[lvl(m)]).join(", ") || "No access";
+}
+function badges() {
+  const n = needMe().length, b = $("bd_x_apr"); if (b) { b.style.display = n ? "" : "none"; b.textContent = n; }
+}
+
+// ---------- router ----------
+const V = {};
+function go(id) {
+  const n = NAV.find(x => x.id === id);
+  if (!ME || !anyAccess()) return;
+  if (!n || !visible(n)) id = "home";
+  ROUTE = id; const nn = NAV.find(x => x.id === id);
+  $("title").textContent = nn.t; markNav();
+  const v = V[id]; $("view").innerHTML = v.mount(); if (v.after) v.after(); live();
+}
+function live() { if (!ME || !V[ROUTE]) return; try { V[ROUTE].live(); badges(); } catch (e) { console.warn(e); } }
+window.addEventListener("hashchange", () => go(location.hash.slice(1) || "home"));
+$("view").onclick = async e => {
+  const b = e.target.closest("[data-act]"); if (!b || b.disabled) return;
+  const f = ACT[b.dataset.act]; if (!f) return;
+  try { await f(b.dataset); } catch (er) { alert("That did not work: " + er.message); }
+};
+$("view").oninput = e => { if (e.target.dataset.live) live(); };
+$("view").onchange = e => { if (e.target.dataset.live) live(); };
+const gate = (m, l, html) => can(m, l) ? html : "";
+function msgFlash(id, t) { const el = $(id); if (!el) return; el.textContent = t; setTimeout(() => { if (el) el.textContent = ""; }, 6000); }
+function modal(html) {
+  $("modal").innerHTML = `<div class="sheet">${html}</div><div class="acts2"><button id="mp">Print / save PDF</button><button id="mx">Close</button></div>`;
+  $("modal").style.display = "block"; $("mp").onclick = () => window.print(); $("mx").onclick = () => { $("modal").style.display = "none"; };
+}
+
+// ---------- finance derived ----------
+const invs = () => rows(C.invoices).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+const pays = () => rows(C.payments).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+const paidOf = id => pays().filter(p => p.inv === id && p.status === "paid").reduce((s, p) => s + num(p.amt), 0);
+const balOf = i => Math.max(0, num(i.amt) - paidOf(i.id));
+const revs = () => rows(C.reversals).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+const openRev = pid => revs().find(r => r.pid === pid && (r.status === "requested" || r.status === "recommended"));
+function needMe() {
+  if (!ME) return []; if (!can("finance", "view")) return [];
+  if (ME.owner) return revs().filter(r => r.status === "recommended");
+  if (ME.sup) return revs().filter(r => r.status === "requested" && r.by !== ME.uid);
+  return [];
+}
+const stBadge = s => ({ paid: "ok", reversed: "no", open: "wt", part: "wt", cleared: "ok" })[s] || "";
+
+// ---------- HOME ----------
+V.home = {
+  mount: () => `<div id="h_k"></div><div id="h_x"></div>`,
+  live() {
+    let h = "";
+    if (can("finance", "view")) {
+      const I = invs(), P = pays().filter(p => p.status === "paid"), billed = I.reduce((s, i) => s + num(i.amt), 0), coll = P.reduce((s, p) => s + num(p.amt), 0), today = P.filter(p => dayKey(p.ts) === dayKey(now())).reduce((s, p) => s + num(p.amt), 0);
+      h += `<div class="kpis"><div class="kpi f"><span>BILLED</span><b class="num">${money(billed)}</b></div><div class="kpi f"><span>COLLECTED</span><b class="num">${money(coll)}</b></div><div class="kpi f"><span>OUTSTANDING</span><b class="num">${money(Math.max(0, billed - coll))}</b></div><div class="kpi f"><span>COLLECTED TODAY</span><b class="num">${money(today)}</b></div></div>`;
+    }
+    if (can("hr", "view")) {
+      const E = rows(C.employees).filter(e => e.status !== "inactive"), t = dayKey(now()), L = rows(C.leave);
+      const onLv = L.filter(l => l.status === "approved" && l.from <= t && l.to >= t).length, pend = L.filter(l => l.status === "pending").length, att = Object.keys(C.att || {}).length;
+      h += `<div class="kpis"><div class="kpi h"><span>ACTIVE STAFF</span><b>${E.length}</b></div><div class="kpi h"><span>ON LEAVE TODAY</span><b>${onLv}</b></div><div class="kpi h"><span>LEAVE WAITING</span><b>${pend}</b></div><div class="kpi h"><span>CLOCKED IN TODAY</span><b>${att}</b></div></div>`;
+    }
+    if (can("rec", "view")) {
+      const t = dayKey(now()), inside = rows(C.visitors).filter(v => !v.outAt).length, ap = rows(C.appts).filter(a => dayKey(a.at) === t && a.status !== "cancelled").length, mg = rows(C.msgs).filter(m => m.status === "open").length;
+      h += `<div class="kpis"><div class="kpi r"><span>VISITORS INSIDE</span><b>${inside}</b></div><div class="kpi r"><span>APPOINTMENTS TODAY</span><b>${ap}</b></div><div class="kpi r"><span>MESSAGES TO RETURN</span><b>${mg}</b></div></div>`;
+    }
+    const n = needMe().length;
+    if (ME.sup || ME.owner) h += `<div class="kpis"><div class="kpi o"><span>${ME.owner ? "WAITING FOR YOUR FINAL APPROVAL" : "REVERSALS WAITING FOR REVIEW"}</span><b>${n}</b></div></div>`;
+    $("h_k").innerHTML = h || '<div class="card"><p class="mut">Nothing to show yet.</p></div>';
+    if (ME.owner) {
+      const L = rows(C.slog).sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, 12);
+      $("h_x").innerHTML = `<div class="card"><h3>Latest activity across all modules</h3>${L.map(l => `<div class="logl"><span class="num mut">${fDT(l.t)}</span> <span class="pill">${esc(l.mod)}</span> <b>${esc(l.email)}</b> ${esc(l.action)} <span class="mut">${esc(l.detail)}</span></div>`).join("") || '<p class="mut">No activity yet.</p>'}</div>`;
+    } else $("h_x").innerHTML = "";
+  }
+};
+
+// ---------- FINANCE: invoices ----------
+V.f_inv = {
+  mount: () => gate("finance", "edit", `<div class="card"><h3>New invoice</h3><div class="frm">
+    <input id="i_adm" placeholder="Admission no." maxlength="30"><input id="i_nm" placeholder="Student name" maxlength="80" class="grow">
+    <select id="i_ty"><option>Tuition</option><option>Accommodation</option><option>Exam fees</option><option>Activity fee</option><option>Other</option></select>
+    <input id="i_term" placeholder="Term e.g. 2026 Sem 1" maxlength="30"><input id="i_amt" type="number" min="1" placeholder="Amount (KES)" style="width:150px"><label class="mut">Due <input id="i_due" type="date"></label>
+    <button class="pri" data-act="invNew">Create invoice</button><span id="i_msg" class="mut"></span></div></div>`) +
+    `<div class="card"><div class="bar"><h3>Invoices</h3><input id="q" data-live="1" placeholder="Search admission, name, invoice"></div><div id="list"></div></div>`,
+  live() {
+    const q = ($("q") && $("q").value || "").toLowerCase();
+    const r = invs().filter(i => !q || [i.adm, i.name, i.no].join(" ").toLowerCase().includes(q)).slice(0, 200).map(i => { const p = paidOf(i.id), b = balOf(i), s = b === 0 ? "cleared" : p > 0 ? "part" : "open";
+      return [`<span class="num">${esc(i.no)}</span>`, esc(i.adm), esc(i.name), esc(i.desc) + '<div class="mut">' + esc(i.term) + "</div>", `<span class="num">${money(i.amt)}</span>`, `<span class="num">${money(p)}</span>`, `<span class="num">${money(b)}</span>`, `<span class="pill ${stBadge(s)}">${s === "cleared" ? "Cleared" : s === "part" ? "Part paid" : "Open"}</span>`, esc(i.due || "-")]; });
+    $("list").innerHTML = tbl(["Invoice", "Adm", "Student", "Item", "Amount", "Paid", "Balance", "Status", "Due"], r);
+  }
+};
+const ACT = {};
+ACT.invNew = async () => {
+  if (!can("finance", "edit")) return;
+  const adm = val("i_adm").toUpperCase(), nm = val("i_nm"), amt = num($("i_amt").value);
+  if (!adm || !nm || !(amt > 0)) return msgFlash("i_msg", "Enter admission no., name and an amount above zero.");
+  const no = "INV-" + dayKey(now()).replace(/-/g, "").slice(2) + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+  await dbr.ref("fin/invoices").push({ no, adm, name: nm, desc: $("i_ty").value, term: val("i_term"), amt, due: $("i_due").value || "", ts: TS, by: ME.uid, byEmail: ME.email });
+  audit("finance", "Invoice created", no + " " + adm + " " + money(amt));
+  ["i_adm", "i_nm", "i_term", "i_amt", "i_due"].forEach(i => { $(i).value = ""; }); msgFlash("i_msg", "Invoice " + no + " created.");
+};
+
+// ---------- FINANCE: payments ----------
+V.f_pay = {
+  mount: () => gate("finance", "edit", `<div class="card"><h3>Record a payment</h3><div class="frm">
+    <input id="p_q" placeholder="Find invoice: admission or name" class="grow" data-pq="1"><select id="p_inv" class="grow"></select></div><div class="frm">
+    <input id="p_amt" type="number" min="1" placeholder="Amount (KES)" style="width:150px"><select id="p_m"><option value="MPESA">M-Pesa</option><option value="BANK">Bank</option><option value="CASH">Cash</option><option value="CHEQUE">Cheque</option></select>
+    <input id="p_ref" placeholder="Transaction code / reference" maxlength="30"><input id="p_by" placeholder="Paid by (name or phone)" maxlength="60">
+    <button class="pri" data-act="payNew">Record payment</button><span id="p_msg" class="mut"></span></div>
+    <p class="mut">A code can only be used once. The same code cannot be recorded twice.</p></div>`) +
+    `<div class="card"><div class="bar"><h3>Payments</h3><input id="q" data-live="1" placeholder="Search code, admission, receipt"></div><div id="list"></div></div>`,
+  after() { const q = $("p_q"); if (q) q.oninput = fillInvSel; fillInvSel(); },
+  live() {
+    const q = ($("q") && $("q").value || "").toLowerCase(), ed = can("finance", "edit");
+    const r = pays().filter(p => !q || [p.ref, p.adm, p.rct, p.name].join(" ").toLowerCase().includes(q)).slice(0, 200).map(p => {
+      const rv = openRev(p.id), act = `<button data-act="rcpt" data-id="${esc(p.id)}">Receipt</button>` + (ed && p.status === "paid" ? (rv ? ' <span class="pill wt">Reversal pending</span>' : ` <button class="bad" data-act="revReq" data-id="${esc(p.id)}">Request reversal</button>`) : "");
+      return [fDT(p.ts), `<span class="num">${esc(p.rct)}</span>`, esc(p.adm) + '<div class="mut">' + esc(p.name) + "</div>", esc(p.method) + '<div class="mut num">' + esc(p.ref) + "</div>", `<span class="num">${money(p.amt)}</span>`, `<span class="pill ${stBadge(p.status)}">${p.status === "paid" ? "Paid" : "Reversed"}</span>`, act]; });
+    $("list").innerHTML = tbl(["Time", "Receipt", "Student", "Method / code", "Amount", "Status", ""], r); if ($("p_inv")) fillInvSel();
+  }
+};
+function fillInvSel() {
+  const s = $("p_inv"); if (!s) return; const q = ($("p_q").value || "").toLowerCase(), keep = s.value;
+  const o = invs().filter(i => balOf(i) > 0 && (!q || [i.adm, i.name, i.no].join(" ").toLowerCase().includes(q))).slice(0, 60);
+  s.innerHTML = o.length ? o.map(i => `<option value="${esc(i.id)}">${esc(i.adm)} - ${esc(i.name)} - ${esc(i.no)} - owes ${money(balOf(i))}</option>`).join("") : '<option value="">No open invoice found</option>';
+  if (o.some(i => i.id === keep)) s.value = keep;
+}
+ACT.payNew = async () => {
+  if (!can("finance", "edit")) return;
+  const id = $("p_inv").value, inv = (C.invoices || {})[id], amt = num($("p_amt").value), m = $("p_m").value, ref = val("p_ref").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!inv) return msgFlash("p_msg", "Pick an invoice first."); if (!(amt > 0)) return msgFlash("p_msg", "Enter the amount."); if (ref.length < 4) return msgFlash("p_msg", "Enter the transaction code or reference (letters and numbers, 4 or more).");
+  const b = balOf({ id, ...inv });
+  if (amt > b && !confirm("This is more than the balance of " + money(b) + ". Record it anyway?")) return;
+  const key = m + "_" + ref, rct = "RCT-" + dayKey(now()).replace(/-/g, "").slice(2) + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+  try { await dbr.ref("fin/payments/" + key).set({ inv: id, invNo: inv.no, adm: inv.adm, name: inv.name, amt, method: m, ref, payer: val("p_by"), rct, status: "paid", ts: TS, by: ME.uid, byEmail: ME.email }); }
+  catch (e) { return msgFlash("p_msg", /permission|denied/i.test(e.message) ? "That code was already recorded, or you do not have the right to record payments." : e.message); }
+  audit("finance", "Payment recorded", rct + " " + m + " " + ref + " " + money(amt) + " for " + inv.adm);
+  ["p_amt", "p_ref", "p_by"].forEach(i => { $(i).value = ""; }); msgFlash("p_msg", "Recorded. Receipt " + rct + ".");
+  setTimeout(() => ACT.rcpt({ id: key }), 600);
+};
+ACT.rcpt = d => {
+  const p = (C.payments || {})[d.id]; if (!p) return; const st = p.status === "paid" ? "PAID" : "REVERSED";
+  modal(`<h2>${esc($("co").textContent)}</h2><div style="color:#555">Payment receipt</div><div style="margin:12px 0"><span class="stamp ${st}">${st}</span></div>
+    <table>${[["Receipt no.", p.rct], ["Date", fDT(p.ts)], ["Student", p.name + " (" + p.adm + ")"], ["Invoice", p.invNo], ["Method", p.method], ["Code", p.ref], ["Paid by", p.payer || "-"], ["Amount", money(p.amt)], ["Received by", p.byEmail || "-"]].map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</table>
+    <div style="color:#777;font-size:12px">Status as at ${fDT(now())}.</div>`);
+};
+ACT.revReq = async d => {
+  if (!can("finance", "edit")) return; const p = (C.payments || {})[d.id]; if (!p || p.status !== "paid" || openRev(d.id)) return;
+  const why = prompt("Why must " + p.rct + " (" + money(p.amt) + ") be reversed? This goes to a super admin for review, then to the owner for final approval.", ""); if (why === null) return;
+  if (why.trim().length < 5) return alert("Please give a clear reason (5+ characters).");
+  await dbr.ref("fin/reversals").push({ pid: d.id, rct: p.rct, adm: p.adm, name: p.name, amt: p.amt, reason: why.trim().slice(0, 200), status: "requested", by: ME.uid, byEmail: ME.email, ts: TS });
+  audit("finance", "Reversal requested", p.rct + " " + money(p.amt) + ": " + why.trim().slice(0, 120));
+};
+
+// ---------- FINANCE: statement ----------
+V.f_stm = {
+  mount: () => `<div class="card"><div class="frm"><input id="s_adm" placeholder="Admission no." maxlength="30"><button class="pri" data-act="stmGo">Open statement</button></div><div id="stm"></div></div>`,
+  live() { if (STM) showStm(STM); }
+};
+let STM = "";
+function showStm(adm) {
+  const I = invs().filter(i => i.adm === adm), P = pays().filter(p => p.adm === adm);
+  if (!I.length && !P.length) { $("stm").innerHTML = '<div class="empty">No records for ' + esc(adm) + ".</div>"; return; }
+  const billed = I.reduce((s, i) => s + num(i.amt), 0), paid = P.filter(p => p.status === "paid").reduce((s, p) => s + num(p.amt), 0), nm = (I[0] || P[0] || {}).name;
+  $("stm").innerHTML = `<div id="stm_p"><h3>${esc(nm)} <span class="mut">${esc(adm)}</span></h3><div class="kpis" style="margin-top:10px"><div class="kpi f"><span>BILLED</span><b class="num">${money(billed)}</b></div><div class="kpi f"><span>PAID</span><b class="num">${money(paid)}</b></div><div class="kpi f"><span>BALANCE</span><b class="num">${money(billed - paid)}</b></div></div>
+    <h3>Invoices</h3>${tbl(["Invoice", "Item", "Amount", "Date"], I.map(i => [esc(i.no), esc(i.desc) + " " + esc(i.term), money(i.amt), fD(i.ts)]))}
+    <h3 style="margin-top:12px">Payments</h3>${tbl(["Receipt", "Method", "Amount", "Status", "Date"], P.map(p => [esc(p.rct), esc(p.method), money(p.amt), p.status === "paid" ? "Paid" : "Reversed", fD(p.ts)]))}</div>
+    <p><button data-act="stmPrint" data-adm="${esc(adm)}">Print / save PDF</button></p>`;
+}
+ACT.stmGo = () => { STM = val("s_adm").toUpperCase(); if (!STM) return; showStm(STM); audit("finance", "Viewed statement", STM); };
+ACT.stmPrint = d => { modal($("stm_p").innerHTML); audit("finance", "Printed statement", d.adm); };
+
+// ---------- FINANCE: reversals ----------
+function revCard(r) {
+  const st = r.status, step = (txt, on, x) => `<span class="stg ${x ? "x" : on ? "on" : ""}">${txt}</span>`;
+  const tracker = step("1 Requested", true) + step("2 Super admin review", st === "recommended" || st === "approved", st === "declined" && !r.reviewBy) + step(st === "declined" ? "Declined" : "3 Owner approval", st === "approved", st === "declined");
+  const mine = r.by === ME.uid; let acts = "";
+  if (ME.sup && !ME.owner && st === "requested" && !mine) acts = `<button class="pri" data-act="revRec" data-id="${esc(r.id)}">Recommend</button><button class="bad" data-act="revDec" data-id="${esc(r.id)}">Decline</button>`;
+  if (ME.owner && st === "recommended") acts = `<button class="pri" data-act="revAppr" data-id="${esc(r.id)}">Approve and reverse</button><button class="bad" data-act="revDec" data-id="${esc(r.id)}">Decline</button>`;
+  if (ME.owner && st === "requested") acts = `<button class="warn" data-act="revOver" data-id="${esc(r.id)}">Override: approve now</button><button class="bad" data-act="revDec" data-id="${esc(r.id)}">Decline</button><span class="mut">Normally waits for a super admin review first.</span>`;
+  if (ME.sup && !ME.owner && st === "requested" && mine) acts = '<span class="mut">You raised this one, so another super admin or the owner must review it.</span>';
+  return `<div class="rev"><div class="bar"><b>${esc(r.rct)} &middot; ${money(r.amt)}</b><span>${tracker}</span></div>
+    <div class="mut">${esc(r.name)} (${esc(r.adm)}) &middot; requested by ${esc(r.byEmail)} on ${fDT(r.ts)}</div><div>Reason: ${esc(r.reason)}</div>
+    ${r.reviewBy ? `<div class="mut">Reviewed by ${esc(r.reviewBy)} on ${fDT(r.reviewAt)}${r.reviewNote ? ": " + esc(r.reviewNote) : ""}</div>` : ""}
+    ${r.approvedBy ? `<div class="mut">Final decision by ${esc(r.approvedBy)} on ${fDT(r.approvedAt)}${r.override ? " (override, no review)" : ""}</div>` : ""}
+    ${acts ? `<div class="acts">${acts}</div>` : ""}</div>`;
+}
+V.f_rev = { mount: () => `<div class="card"><p class="mut">A payment is only reversed after a super admin reviews the request and the owner gives final approval. Staff cannot reverse their own requests.</p><div id="list"></div></div>`,
+  live() { $("list").innerHTML = revs().map(revCard).join("") || '<div class="empty">No reversal requests.</div>'; } };
+V.x_apr = { mount: () => `<div class="card"><h3 id="ax_t"></h3><div id="list"></div></div><div class="card"><h3>Recently decided</h3><div id="done"></div></div>`,
+  live() {
+    $("ax_t").textContent = ME.owner ? "Waiting for your final approval" : "Waiting for your review";
+    const mineQ = ME.owner ? revs().filter(r => r.status === "recommended" || r.status === "requested") : revs().filter(r => r.status === "requested");
+    $("list").innerHTML = mineQ.map(revCard).join("") || '<div class="empty">Nothing is waiting.</div>';
+    $("done").innerHTML = revs().filter(r => r.status === "approved" || r.status === "declined").slice(0, 15).map(revCard).join("") || '<div class="empty">No decisions yet.</div>';
+  } };
+ACT.revRec = async d => {
+  const r = (C.reversals || {})[d.id]; if (!r || !ME.sup || ME.owner || r.status !== "requested" || r.by === ME.uid) return;
+  const note = prompt("Review note for the owner (optional):", ""); if (note === null) return;
+  await dbr.ref("fin/reversals/" + d.id).update({ status: "recommended", reviewBy: ME.email, reviewAt: TS, reviewNote: note.trim().slice(0, 150) });
+  audit("finance", "Reversal recommended", r.rct + " " + money(r.amt));
+};
+ACT.revDec = async d => {
+  const r = (C.reversals || {})[d.id]; if (!r || !ME.sup) return;
+  if (r.status !== "requested" && !(ME.owner && r.status === "recommended")) return;
+  const note = prompt("Reason for declining " + r.rct + ":", ""); if (note === null) return;
+  const u = { status: "declined", reviewNote: note.trim().slice(0, 150) };
+  if (ME.owner) { u.approvedBy = ME.email; u.approvedAt = TS; } else { u.reviewBy = ME.email; u.reviewAt = TS; }
+  await dbr.ref("fin/reversals/" + d.id).update(u);
+  audit("finance", "Reversal declined", r.rct + (note.trim() ? ": " + note.trim().slice(0, 120) : ""));
+};
+async function finalApprove(d, override) {
+  const r = (C.reversals || {})[d.id], p = r && (C.payments || {})[r.pid]; if (!ME.owner || !r || !p) return;
+  if (!(r.status === "recommended" || (override && r.status === "requested")) || p.status !== "paid") return alert("This request can no longer be approved.");
+  if (!confirm((override ? "OVERRIDE: this skips the super admin review.\n" : "") + "Reverse payment " + r.rct + " of " + money(r.amt) + " for " + r.name + "?\nThe receipt becomes REVERSED and the student's balance goes back up. This is recorded in the audit log.")) return;
+  const u = {}; u["fin/reversals/" + d.id + "/status"] = "approved"; u["fin/reversals/" + d.id + "/approvedBy"] = ME.email; u["fin/reversals/" + d.id + "/approvedAt"] = TS; if (override) u["fin/reversals/" + d.id + "/override"] = true;
+  u["fin/payments/" + r.pid + "/status"] = "reversed"; u["fin/payments/" + r.pid + "/reversedAt"] = TS; u["fin/payments/" + r.pid + "/reversalId"] = d.id;
+  await dbr.ref().update(u); audit("finance", override ? "Reversal approved (OVERRIDE)" : "Reversal approved", r.rct + " " + money(r.amt));
+}
+ACT.revAppr = d => finalApprove(d, false); ACT.revOver = d => finalApprove(d, true);
+
+// ---------- FINANCE: daybook ----------
+V.f_day = {
+  mount: () => `<div class="card"><div class="bar"><div class="frm" style="margin:0"><label class="mut">Date <input id="d_d" type="date" data-live="1" value="${dayKey(now())}"></label></div><button data-act="dayCsv">Export CSV</button></div><div id="list"></div></div>`,
+  live() {
+    const d = $("d_d").value || dayKey(now()), P = pays().filter(p => dayKey(p.ts) === d), ok = P.filter(p => p.status === "paid"), by = {};
+    ok.forEach(p => { by[p.method] = (by[p.method] || 0) + num(p.amt); });
+    const tot = ok.reduce((s, p) => s + num(p.amt), 0), rv = P.filter(p => p.status === "reversed").reduce((s, p) => s + num(p.amt), 0);
+    $("list").innerHTML = `<div class="kpis"><div class="kpi f"><span>TOTAL COLLECTED</span><b class="num">${money(tot)}</b></div>${Object.entries(by).map(([m, v]) => `<div class="kpi f"><span>${esc(m)}</span><b class="num">${money(v)}</b></div>`).join("")}<div class="kpi o"><span>REVERSED (counted out)</span><b class="num">${money(rv)}</b></div></div>` +
+      tbl(["Time", "Receipt", "Student", "Method / code", "Amount", "Status", "Cashier"], P.map(p => [fT(p.ts), esc(p.rct), esc(p.name), esc(p.method) + " " + esc(p.ref), money(p.amt), p.status, esc(p.byEmail)]));
+  }
+};
+ACT.dayCsv = () => {
+  const d = $("d_d").value, P = pays().filter(p => dayKey(p.ts) === d);
+  csv("daybook-" + d + ".csv", [["Time", "Receipt", "Admission", "Student", "Method", "Code", "Amount", "Status", "Cashier"]].concat(P.map(p => [fDT(p.ts), p.rct, p.adm, p.name, p.method, p.ref, p.amt, p.status, p.byEmail])));
+  audit("finance", "Exported daybook", d);
+};
+
+// ---------- HR: employees ----------
+V.h_emp = {
+  mount: () => gate("hr", "edit", `<div class="card"><h3 id="e_t">Add employee</h3><input type="hidden" id="e_id"><div class="frm">
+    <input id="e_no" placeholder="Staff no." maxlength="20" style="width:120px"><input id="e_nm" placeholder="Full name" maxlength="80" class="grow">
+    <input id="e_dp" placeholder="Department" maxlength="50" list="dps"><datalist id="dps"><option>Finance</option><option>Academic</option><option>Administration</option><option>ICT</option><option>Library</option><option>Reception</option><option>Security</option><option>Human Resources</option></datalist>
+    <input id="e_ti" placeholder="Job title" maxlength="60"><input id="e_ph" placeholder="Phone" maxlength="20"><input id="e_em" type="email" placeholder="Email" maxlength="100"><label class="mut">Started <input id="e_st" type="date"></label>
+    <select id="e_s"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+    <button class="pri" data-act="empSave">Save</button><button data-act="empClr">Clear</button><span id="e_msg" class="mut"></span></div></div>`) +
+    `<div class="card"><div class="bar"><h3>Employees</h3><input id="q" data-live="1" placeholder="Search name, no., department"></div><div id="list"></div></div>`,
+  live() {
+    const q = ($("q") && $("q").value || "").toLowerCase(), ed = can("hr", "edit");
+    $("list").innerHTML = tbl(["No.", "Name", "Department / title", "Contact", "Started", "Status", ""], rows(C.employees).sort((a, b) => (a.name || "").localeCompare(b.name || "")).filter(e => !q || [e.no, e.name, e.dept, e.title].join(" ").toLowerCase().includes(q))
+      .map(e => [esc(e.no), "<b>" + esc(e.name) + "</b>", esc(e.dept) + '<div class="mut">' + esc(e.title) + "</div>", esc(e.phone) + '<div class="mut">' + esc(e.email) + "</div>", esc(e.start || "-"), `<span class="pill ${e.status === "inactive" ? "no" : "ok"}">${e.status === "inactive" ? "Inactive" : "Active"}</span>`, ed ? `<button data-act="empEdit" data-id="${esc(e.id)}">Edit</button>` : ""]));
+  }
+};
+ACT.empClr = () => { ["e_id", "e_no", "e_nm", "e_dp", "e_ti", "e_ph", "e_em", "e_st"].forEach(i => { $(i).value = ""; }); $("e_s").value = "active"; $("e_t").textContent = "Add employee"; };
+ACT.empEdit = d => { const e = (C.employees || {})[d.id]; if (!e) return; $("e_id").value = d.id; $("e_no").value = e.no || ""; $("e_nm").value = e.name || ""; $("e_dp").value = e.dept || ""; $("e_ti").value = e.title || ""; $("e_ph").value = e.phone || ""; $("e_em").value = e.email || ""; $("e_st").value = e.start || ""; $("e_s").value = e.status || "active"; $("e_t").textContent = "Edit " + e.name; window.scrollTo({ top: 0, behavior: "smooth" }); };
+ACT.empSave = async () => {
+  if (!can("hr", "edit")) return; const o = { no: val("e_no"), name: val("e_nm"), dept: val("e_dp"), title: val("e_ti"), phone: val("e_ph"), email: val("e_em"), start: $("e_st").value, status: $("e_s").value };
+  if (!o.no || !o.name) return msgFlash("e_msg", "Staff number and name are required."); const id = $("e_id").value;
+  if (id) { await dbr.ref("hr/employees/" + id).update(o); audit("hr", "Employee updated", o.no + " " + o.name); }
+  else { if (rows(C.employees).some(e => e.no === o.no)) return msgFlash("e_msg", "That staff number already exists."); o.ts = TS; await dbr.ref("hr/employees").push(o); audit("hr", "Employee added", o.no + " " + o.name); }
+  ACT.empClr(); msgFlash("e_msg", "Saved.");
+};
+
+// ---------- HR: leave ----------
+const LTYPES = ["Annual", "Sick", "Maternity", "Paternity", "Compassionate", "Study", "Unpaid"];
+V.h_lv = {
+  mount: () => gate("hr", "edit", `<div class="card"><h3>Leave request</h3><div class="frm"><select id="l_e" class="grow" data-live="1"></select><select id="l_t">${LTYPES.map(t => `<option>${t}</option>`).join("")}</select>
+    <label class="mut">From <input id="l_f" type="date"></label><label class="mut">To <input id="l_to" type="date"></label><input id="l_r" placeholder="Reason (optional)" maxlength="150" class="grow">
+    <button class="pri" data-act="lvNew">Submit request</button><span id="l_msg" class="mut"></span></div><div id="l_bal" class="mut"></div></div>`) +
+    `<div class="card"><h3>Requests</h3><div id="list"></div></div>`,
+  live() {
+    const s = $("l_e"); if (s) { const keep = s.value; s.innerHTML = rows(C.employees).filter(e => e.status !== "inactive").sort((a, b) => (a.name || "").localeCompare(b.name || "")).map(e => `<option value="${esc(e.id)}">${esc(e.no)} - ${esc(e.name)}</option>`).join(""); if (keep) s.value = keep;
+      const used = rows(C.leave).filter(l => l.emp === s.value && l.type === "Annual" && l.status === "approved" && String(l.from).slice(0, 4) === dayKey(now()).slice(0, 4)).reduce((t, l) => t + num(l.days), 0); $("l_bal").textContent = s.value ? "Annual leave used this year: " + used + " of 21 working days." : ""; }
+    const mg = can("hr", "manage");
+    $("list").innerHTML = tbl(["Employee", "Type", "Dates", "Days", "Reason", "Status", ""], rows(C.leave).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 100).map(l => [esc(l.name), esc(l.type), esc(l.from) + " to " + esc(l.to), l.days, esc(l.reason || "-"),
+      `<span class="pill ${l.status === "approved" ? "ok" : l.status === "rejected" ? "no" : "wt"}">${esc(l.status)}</span>` + (l.decidedBy ? `<div class="mut">${esc(l.decidedBy)}</div>` : ""),
+      mg && l.status === "pending" ? `<button class="pri" data-act="lvOk" data-id="${esc(l.id)}">Approve</button> <button class="bad" data-act="lvNo" data-id="${esc(l.id)}">Reject</button>` : ""]));
+  }
+};
+ACT.lvNew = async () => {
+  if (!can("hr", "edit")) return; const eid = $("l_e").value, e = (C.employees || {})[eid], f = $("l_f").value, t = $("l_to").value;
+  if (!e || !f || !t || t < f) return msgFlash("l_msg", "Pick an employee and valid dates."); const days = workDays(f, t); if (!days) return msgFlash("l_msg", "Those dates have no working days.");
+  await dbr.ref("hr/leave").push({ emp: eid, name: e.name, type: $("l_t").value, from: f, to: t, days, reason: val("l_r"), status: "pending", ts: TS, by: ME.uid, byEmail: ME.email });
+  audit("hr", "Leave requested", e.name + " " + $("l_t").value + " " + f + " to " + t); ["l_f", "l_to", "l_r"].forEach(i => { $(i).value = ""; }); msgFlash("l_msg", "Request sent for approval.");
+};
+const lvDecide = async (d, s) => { if (!can("hr", "manage")) return; const l = (C.leave || {})[d.id]; if (!l || l.status !== "pending") return; await dbr.ref("hr/leave/" + d.id).update({ status: s, decidedBy: ME.email, decidedAt: TS }); audit("hr", "Leave " + s, l.name + " " + l.type + " " + l.from + " to " + l.to); };
+ACT.lvOk = d => lvDecide(d, "approved"); ACT.lvNo = d => lvDecide(d, "rejected");
+
+// ---------- HR: attendance ----------
+V.h_att = { mount: () => `<div class="card"><div class="bar"><h3>Today, ${fD(now())}</h3><span class="mut">Late means after 08:30</span></div><div id="list"></div></div>`,
+  live() {
+    const ed = can("hr", "edit"), A = C.att || {};
+    $("list").innerHTML = tbl(["Employee", "Department", "In", "Out", ""], rows(C.employees).filter(e => e.status !== "inactive").sort((a, b) => (a.name || "").localeCompare(b.name || "")).map(e => { const a = A[e.id] || {}, late = a.in && minsOfDay(a.in) > 510;
+      return [esc(e.name) + '<div class="mut">' + esc(e.no) + "</div>", esc(e.dept), a.in ? fT(a.in) + (late ? ' <span class="pill no">Late</span>' : "") : "-", a.out ? fT(a.out) : "-", ed ? (!a.in ? `<button class="pri" data-act="attIn" data-id="${esc(e.id)}">Clock in</button>` : !a.out ? `<button data-act="attOut" data-id="${esc(e.id)}">Clock out</button>` : "") : ""]; }));
+  } };
+ACT.attIn = async d => { if (!can("hr", "edit")) return; const e = (C.employees || {})[d.id]; if (!e) return; await dbr.ref("hr/attendance/" + dayKey(now()) + "/" + d.id).set({ in: TS, name: e.name, by: ME.email }); audit("hr", "Clocked in", e.name); };
+ACT.attOut = async d => { if (!can("hr", "edit")) return; const e = (C.employees || {})[d.id]; await dbr.ref("hr/attendance/" + dayKey(now()) + "/" + d.id).update({ out: TS }); audit("hr", "Clocked out", e ? e.name : d.id); };
+
+// ---------- RECEPTION ----------
+V.r_vis = {
+  mount: () => gate("rec", "edit", `<div class="card"><h3>Sign a visitor in</h3><div class="frm"><input id="v_n" placeholder="Visitor name" maxlength="80" class="grow"><input id="v_id" placeholder="ID or phone" maxlength="30"><input id="v_h" placeholder="Visiting (person or office)" maxlength="80" class="grow"><input id="v_p" placeholder="Purpose" maxlength="100"><input id="v_b" placeholder="Badge no." maxlength="10" style="width:100px">
+    <button class="pri" data-act="visIn">Sign in</button><span id="v_msg" class="mut"></span></div></div>`) + `<div class="card"><h3>Inside now</h3><div id="in"></div></div><div class="card"><h3>Today</h3><div id="list"></div></div>`,
+  live() {
+    const ed = can("rec", "edit"), all = rows(C.visitors).sort((a, b) => (b.inAt || 0) - (a.inAt || 0)), t = dayKey(now());
+    $("in").innerHTML = tbl(["Visitor", "Visiting", "Purpose", "Badge", "In", ""], all.filter(v => !v.outAt).map(v => [esc(v.name) + '<div class="mut">' + esc(v.idno) + "</div>", esc(v.host), esc(v.purpose), esc(v.badge || "-"), fT(v.inAt), ed ? `<button data-act="visOut" data-id="${esc(v.id)}">Sign out</button>` : ""]));
+    $("list").innerHTML = tbl(["Visitor", "Visiting", "In", "Out"], all.filter(v => dayKey(v.inAt) === t).map(v => [esc(v.name), esc(v.host), fT(v.inAt), v.outAt ? fT(v.outAt) : "Inside"]));
+  } };
+ACT.visIn = async () => {
+  if (!can("rec", "edit")) return; const n = val("v_n"), h = val("v_h"); if (!n || !h) return msgFlash("v_msg", "Enter the visitor name and who they are visiting."); const b = val("v_b");
+  if (b && rows(C.visitors).some(v => !v.outAt && v.badge === b)) return msgFlash("v_msg", "That badge is already in use.");
+  await dbr.ref("rec/visitors").push({ name: n, idno: val("v_id"), host: h, purpose: val("v_p"), badge: b, inAt: TS, outAt: null, by: ME.email }); audit("rec", "Visitor signed in", n + " to see " + h);
+  ["v_n", "v_id", "v_h", "v_p", "v_b"].forEach(i => { $(i).value = ""; }); msgFlash("v_msg", "Signed in.");
+};
+ACT.visOut = async d => { if (!can("rec", "edit")) return; const v = (C.visitors || {})[d.id]; await dbr.ref("rec/visitors/" + d.id).update({ outAt: TS }); audit("rec", "Visitor signed out", v ? v.name : d.id); };
+V.r_apt = {
+  mount: () => gate("rec", "edit", `<div class="card"><h3>Book an appointment</h3><div class="frm"><input id="a_v" placeholder="Visitor name" maxlength="80" class="grow"><input id="a_ph" placeholder="Phone" maxlength="20"><input id="a_w" placeholder="Meeting with" maxlength="80" class="grow"><input id="a_at" type="datetime-local"><input id="a_p" placeholder="Purpose" maxlength="100">
+    <button class="pri" data-act="aptNew">Book</button><span id="a_msg" class="mut"></span></div></div>`) + `<div class="card"><h3>Upcoming and recent</h3><div id="list"></div></div>`,
+  live() {
+    const ed = can("rec", "edit");
+    $("list").innerHTML = tbl(["When", "Visitor", "With", "Purpose", "Status", ""], rows(C.appts).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 80).map(a => [fDT(a.at), esc(a.visitor) + '<div class="mut">' + esc(a.phone) + "</div>", esc(a.with), esc(a.purpose), `<span class="pill ${a.status === "done" ? "ok" : a.status === "cancelled" ? "no" : "wt"}">${esc(a.status)}</span>`,
+      ed && (a.status === "booked" || a.status === "arrived") ? (a.status === "booked" ? `<button data-act="aptSet" data-id="${esc(a.id)}" data-s="arrived">Arrived</button> ` : "") + `<button class="pri" data-act="aptSet" data-id="${esc(a.id)}" data-s="done">Done</button> <button class="bad" data-act="aptSet" data-id="${esc(a.id)}" data-s="cancelled">Cancel</button>` : ""]));
+  } };
+ACT.aptNew = async () => { if (!can("rec", "edit")) return; const at = new Date($("a_at").value).getTime(); if (!val("a_v") || !val("a_w") || !Number.isFinite(at)) return msgFlash("a_msg", "Enter the visitor, who they meet and the date and time.");
+  await dbr.ref("rec/appointments").push({ visitor: val("a_v"), phone: val("a_ph"), with: val("a_w"), at, purpose: val("a_p"), status: "booked", ts: TS, by: ME.email }); audit("rec", "Appointment booked", val("a_v") + " with " + val("a_w") + " " + fDT(at)); ["a_v", "a_ph", "a_w", "a_at", "a_p"].forEach(i => { $(i).value = ""; }); msgFlash("a_msg", "Booked."); };
+ACT.aptSet = async d => { if (!can("rec", "edit") || !["arrived", "done", "cancelled"].includes(d.s)) return; await dbr.ref("rec/appointments/" + d.id).update({ status: d.s }); const a = (C.appts || {})[d.id]; audit("rec", "Appointment " + d.s, a ? a.visitor : d.id); };
+V.r_msg = {
+  mount: () => gate("rec", "edit", `<div class="card"><h3>Take a message</h3><div class="frm"><input id="m_c" placeholder="Caller name" maxlength="80"><input id="m_p" placeholder="Caller phone" maxlength="20"><input id="m_f" placeholder="Message for" maxlength="80"><input id="m_t" placeholder="Message" maxlength="250" class="grow"><button class="pri" data-act="msgNew">Save</button><span id="m_msg" class="mut"></span></div></div>`) + `<div class="card"><h3>Messages and calls</h3><div id="list"></div></div>`,
+  live() { const ed = can("rec", "edit"); $("list").innerHTML = tbl(["Time", "Caller", "For", "Message", "Status", ""], rows(C.msgs).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 80).map(m => [fDT(m.ts), esc(m.caller) + '<div class="mut">' + esc(m.phone) + "</div>", esc(m.forWho), esc(m.msg), `<span class="pill ${m.status === "open" ? "wt" : "ok"}">${m.status === "open" ? "To return" : "Returned"}</span>`, ed && m.status === "open" ? `<button class="pri" data-act="msgDone" data-id="${esc(m.id)}">Mark returned</button>` : ""])); } };
+ACT.msgNew = async () => { if (!can("rec", "edit")) return; if (!val("m_c") || !val("m_t")) return msgFlash("m_msg", "Enter the caller and the message.");
+  await dbr.ref("rec/messages").push({ caller: val("m_c"), phone: val("m_p"), forWho: val("m_f"), msg: val("m_t"), status: "open", ts: TS, by: ME.email }); audit("rec", "Message taken", val("m_c") + " for " + val("m_f")); ["m_c", "m_p", "m_f", "m_t"].forEach(i => { $(i).value = ""; }); msgFlash("m_msg", "Saved."); };
+ACT.msgDone = async d => { if (!can("rec", "edit")) return; await dbr.ref("rec/messages/" + d.id).update({ status: "returned" }); audit("rec", "Message returned", d.id); };
+
+// ---------- OVERSIGHT: access control ----------
+const lvSel = (id, cur) => `<select id="${id}">${LVN.map(l => `<option value="${l}" ${cur === l ? "selected" : ""}>${l === "none" ? "No access" : l[0].toUpperCase() + l.slice(1)}</option>`).join("")}</select>`;
+V.x_acc = {
+  mount: () => `<div class="card"><h3>Add a staff member</h3><p class="mut">Rights per module: <b>View</b> reads only, <b>Edit</b> adds and changes records, <b>Manage</b> also approves (for example leave). Nobody here can see the market signals.</p>
+    <div class="frm"><input id="n_em" type="email" placeholder="Work email" autocomplete="off"><input id="n_nm" placeholder="Full name" maxlength="60"><input id="n_pw" type="text" placeholder="Temporary password (8+)" autocomplete="off"><button id="n_gen">Generate</button></div>
+    <div class="lvsel"><label>Finance</label>${lvSel("n_f", "none")}<label>HR</label>${lvSel("n_h", "none")}<label>Reception</label>${lvSel("n_r", "none")}</div>
+    <div class="frm"><button class="pri" data-act="stfAdd">Create account</button><span id="n_msg" class="mut"></span></div><div id="n_share" class="frm"></div></div>
+    <div class="card"><h3>Staff and rights</h3><div id="list"></div></div>`,
+  after() { $("n_gen").onclick = () => { const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let g; do { g = Array.from(crypto.getRandomValues(new Uint32Array(12)), x => ch[x % ch.length]).join(""); } while (!pw8(g)); $("n_pw").value = g; }; },
+  live() {
+    if ($("list") && $("list").contains(document.activeElement)) return;
+    $("list").innerHTML = rows(C.staff).sort((a, b) => (a.email || "").localeCompare(b.email || "")).map(s => { const m = s.modules || {};
+      return `<div class="rev"><div class="bar"><b>${esc(s.name || s.email)}</b><span class="pill ${s.active === true ? "ok" : "no"}">${s.active === true ? "Active" : "Suspended"}</span></div><div class="mut">${esc(s.email)}</div>
+        <div class="lvsel" style="margin-top:8px"><label>Finance</label>${lvSel("sf_" + s.id, m.finance || "none")}<label>HR</label>${lvSel("sh_" + s.id, m.hr || "none")}<label>Reception</label>${lvSel("sr_" + s.id, m.rec || "none")}</div>
+        <div class="acts"><button class="pri" data-act="stfSave" data-id="${esc(s.id)}">Save rights</button><button class="${s.active === true ? "bad" : ""}" data-act="stfTog" data-id="${esc(s.id)}">${s.active === true ? "Suspend" : "Reactivate"}</button><button data-act="stfReset" data-id="${esc(s.id)}">Send password reset</button></div></div>`; }).join("") || '<div class="empty">No staff yet. Add the first one above.</div>';
+  } };
+ACT.stfAdd = async () => {
+  if (!(ME.sup || ME.owner)) return; const em = val("n_em").toLowerCase(), nm = val("n_nm"), pw = $("n_pw").value, mods = { finance: $("n_f").value, hr: $("n_h").value, rec: $("n_r").value };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) || !nm) return msgFlash("n_msg", "Enter a valid email and a name.");
+  if (em === OWNER_EMAIL) return msgFlash("n_msg", "That email belongs to the owner.");
+  let uid = null, existing = rows(C.users).find(u => (u.email || "").toLowerCase() === em);
+  if (existing) { if (!confirm(em + " already has an account. Give that account staff rights?")) return; uid = existing.id; }
+  else {
+    if (!pw8(pw)) return msgFlash("n_msg", "Temporary password needs 8+ characters with letters and numbers.");
+    try { const sec = firebase.apps.find(x => x.name === "sec") || firebase.initializeApp(firebaseConfig, "sec"); const c = await sec.auth().createUserWithEmailAndPassword(em, pw); await sec.auth().signOut(); uid = c.user.uid; }
+    catch (e) { return msgFlash("n_msg", e.code === "auth/email-already-in-use" ? "That email has an account, but it is not in the users list yet. Ask them to sign in once, then add them here." : e.message); }
+    try { await dbr.ref("users/" + uid).update({ email: em, createdAt: TS }); } catch {}
+  }
+  await dbr.ref("staff/" + uid).set({ email: em, name: nm, active: true, modules: mods, createdAt: TS, by: ME.email });
+  audit("access", "Staff added", em + " F:" + mods.finance + " H:" + mods.hr + " R:" + mods.rec);
+  if (!existing) { try { await auth.sendPasswordResetEmail(em); } catch {}
+    const url = location.origin + location.pathname, t = "Hello " + nm + ",\n\nYour staff workspace account is ready.\n\nSign in: " + url + "\nEmail: " + em + "\nTemporary password: " + pw + "\n\nPlease change your password after signing in (use Forgot password on the sign-in page).";
+    $("n_share").innerHTML = `<a class="btn" href="mailto:${encodeURIComponent(em)}?subject=${encodeURIComponent("Your staff account")}&body=${encodeURIComponent(t)}">Email login details</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}">WhatsApp login details</a>`; }
+  ["n_em", "n_nm", "n_pw"].forEach(i => { $(i).value = ""; }); msgFlash("n_msg", "Account created and rights set.");
+};
+ACT.stfSave = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const mods = { finance: $("sf_" + d.id).value, hr: $("sh_" + d.id).value, rec: $("sr_" + d.id).value };
+  await dbr.ref("staff/" + d.id + "/modules").set(mods); audit("access", "Rights changed", s.email + " F:" + (s.modules || {}).finance + ">" + mods.finance + " H:" + (s.modules || {}).hr + ">" + mods.hr + " R:" + (s.modules || {}).rec + ">" + mods.rec); alert("Rights saved for " + s.email + "."); };
+ACT.stfTog = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const on = s.active !== true; if (!confirm((on ? "Reactivate " : "Suspend ") + s.email + "?")) return; await dbr.ref("staff/" + d.id + "/active").set(on); audit("access", on ? "Staff reactivated" : "Staff suspended", s.email); };
+ACT.stfReset = async d => { const s = (C.staff || {})[d.id]; if (s && confirm("Email a password reset link to " + s.email + "?")) { await auth.sendPasswordResetEmail(s.email); audit("access", "Password reset sent", s.email); alert("Sent."); } };
+
+// ---------- OVERSIGHT: audit log (owner) ----------
+V.x_log = {
+  mount: () => `<div class="card"><div class="bar"><div class="frm" style="margin:0"><select id="g_m" data-live="1"><option value="">All modules</option><option value="finance">Finance</option><option value="hr">HR</option><option value="rec">Reception</option><option value="access">Access</option><option value="session">Sessions</option></select><input id="g_q" data-live="1" placeholder="Search person or action"></div><button data-act="logCsv">Export CSV</button></div>
+    <p class="mut">Every action by staff is recorded here with the person and the time. Only the owner can read this log, and entries cannot be changed or deleted from this page.</p><div id="list"></div></div>`,
+  live() { $("list").innerHTML = logRows().slice(0, 300).map(l => `<div class="logl"><span class="num mut">${fDT(l.t)}</span> <span class="pill">${esc(l.mod)}</span> <b>${esc(l.email)}</b> ${esc(l.action)} <span class="mut">${esc(l.detail)}</span></div>`).join("") || '<div class="empty">No entries match.</div>'; }
+};
+function logRows() { const m = $("g_m").value, q = $("g_q").value.toLowerCase(); return rows(C.slog).sort((a, b) => (b.t || 0) - (a.t || 0)).filter(l => (!m || l.mod === m) && (!q || [l.email, l.action, l.detail].join(" ").toLowerCase().includes(q))); }
+ACT.logCsv = () => { csv("audit-log.csv", [["Time", "Module", "Person", "Action", "Detail"]].concat(logRows().map(l => [fDT(l.t), l.mod, l.email, l.action, l.detail]))); audit("access", "Exported audit log", ""); };
+
+// ---------- sign in / out ----------
+
+
+async function out(why) { try { await dbr.ref("slog").push({ t: TS, uid: ME.uid, email: ME.email || "", mod: "session", action: why || "Signed out", detail: "" }); } catch {} signedLogged = false; auth.signOut(); }
+$("out").onclick = () => out("Signed out");
+["click", "keydown", "mousemove", "touchstart"].forEach(ev => addEventListener(ev, () => { lastAct = now(); }));
+setInterval(() => { if (ME && lastAct && now() - lastAct > 20 * 60000) out("Auto sign-out after 20 min idle"); }, 15000);
+function theme(t, save) { document.documentElement.setAttribute("data-theme", t); $("theme").textContent = t === "light" ? "Dark" : "Light"; if (save) try { localStorage.setItem("fr_theme", t); } catch {} }
+$("theme").onclick = () => theme(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light", true);
+theme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+
+let meRef = null;
+function applyAccess() {
+  $("who").textContent = ME.email; $("gomkt").style.display = ME.owner || ME.sup || ME.adm ? "" : "none"; $("gomkt").onclick = () => SHELL.switchTo("market"); $("role").textContent = roleText(); $("role").className = "pill " + (ME.owner ? "ow" : ME.sup ? "ok" : "");
+  if (!anyAccess()) { stopData(); $("nav").innerHTML = ""; $("title").textContent = "No access"; $("view").innerHTML = `<div class="card"><h3>You do not have staff access yet</h3><p class="mut">${ST && ST.active === false ? "Your staff account is suspended." : "Ask a super admin to give you rights to a module."} Signed in as ${esc(ME.email)}.</p></div>`; return; }
+  startData(); buildNav(); go(location.hash.slice(1) || "home");
+}
+async function staffEnter(u) {
+  theme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+    if (meRef) { meRef.off(); meRef = null; } stopData(); ME = null; ST = null;
+  ME = { uid: u.uid, email: u.email || "", owner: (u.email || "").toLowerCase() === OWNER_EMAIL, sup: false }; lastAct = now();
+  try { ME.sup = (await dbr.ref("superadmins/" + u.uid).get()).val() === true; } catch {} try { ME.adm = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch {} if (ME.owner) ME.sup = true;
+  let first = true;
+  meRef = dbr.ref("staff/" + u.uid); meRef.on("value", s => { ST = s.val(); applyAccess(); if (first) { first = false; if (!signedLogged) { signedLogged = true; audit("session", "Signed in", ""); } } }, () => { ST = null; applyAccess(); });
+}
+function staffLeave() { if (meRef) { meRef.off(); meRef = null; } stopData(); ME = null; ST = null; }
+SHELL.staff = { enter: staffEnter, leave: staffLeave };
+
+
+})();
+auth.onAuthStateChanged(async u => {
+  const my = ++RTK; SHELL.market.leave(); SHELL.staff.leave(); SHELL.ctx = null;
+  document.body.classList.remove("staffmode");
+  G("login").style.display = u ? "none" : "block"; G("app").style.display = "none"; G("sx").style.display = "none";
+  if (!u) { try { sessionStorage.removeItem("fr_mode"); } catch {} return; }
+  const rd = async p => { try { return (await dbr.ref(p).get()).val(); } catch { return null; } };
+  const [adm, sup, stf, usr] = await Promise.all([rd("admins/" + u.uid), rd("superadmins/" + u.uid), rd("staff/" + u.uid), rd("users/" + u.uid)]);
+  if (my !== RTK) return;
+  if (usr && usr.blocked === true) { G("err").textContent = "Your access has been blocked by the admin."; auth.signOut(); return; }
+  const owner = String(u.email || "").toLowerCase() === OWNER_MAIL, staffOn = !!(stf && stf.active === true), isA = adm === true, isS = sup === true || owner;
+  const canStaff = staffOn || isS, canMarket = !(staffOn && !isA && !isS);   // an employee uses the staff workspace only
+  SHELL.ctx = { canStaff, canMarket };
+  let mode = canMarket ? "market" : "staff";
+  if (canMarket && canStaff) { try { if (sessionStorage.getItem("fr_mode") === "staff") mode = "staff"; } catch {} }
+  await enterMode(u, mode);
 });
 </script>
 </body>
