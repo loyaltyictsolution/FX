@@ -2173,9 +2173,9 @@ ACT.msgDone = async d => { if (!can("rec", "edit")) return; await dbr.ref("rec/m
 // ---------- OVERSIGHT: access control ----------
 const lvSel = (id, cur) => `<select id="${id}">${LVN.map(l => `<option value="${l}" ${cur === l ? "selected" : ""}>${l === "none" ? "No access" : l[0].toUpperCase() + l.slice(1)}</option>`).join("")}</select>`;
 V.x_acc = {
-  mount: () => `<div class="card"><h3>Add a staff member</h3><p class="mut">Rights per module: <b>View</b> reads only, <b>Edit</b> adds and changes records, <b>Manage</b> also approves (for example leave). Nobody here can see the market signals.</p>
+  mount: () => `<div class="card"><h3>Add a staff member</h3><p class="mut">Rights per module: <b>View</b> reads only, <b>Edit</b> adds and changes records, <b>Manage</b> also approves (for example leave). Set <b>Trading side</b> to Member to let someone also see the market signals.</p>
     <div class="frm"><input id="n_em" type="email" placeholder="Work email" autocomplete="off"><input id="n_nm" placeholder="Full name" maxlength="60"><input id="n_pw" type="text" placeholder="Temporary password (8+)" autocomplete="off"><button id="n_gen">Generate</button></div>
-    <div class="lvsel"><label>Role</label><select id="n_role"><option value="">Choose a role...</option>${Object.keys(ROLES).map(r => `<option>${esc(r)}</option>`).join("")}</select><label>Finance</label>${lvSel("n_f", "none")}<label>HR</label>${lvSel("n_h", "none")}<label>Reception</label>${lvSel("n_r", "none")}<label>Payroll</label>${lvSel("n_p", "none")}</div>
+    <div class="lvsel"><label>Role</label><select id="n_role"><option value="">Choose a role...</option>${Object.keys(ROLES).map(r => `<option>${esc(r)}</option>`).join("")}</select><label>Finance</label>${lvSel("n_f", "none")}<label>HR</label>${lvSel("n_h", "none")}<label>Reception</label>${lvSel("n_r", "none")}<label>Payroll</label>${lvSel("n_p", "none")}<label>Trading side</label><select id="n_mk"><option value="">No trading access</option><option value="1">Member: sees signals</option></select></div>
     <div class="frm"><button class="pri" data-act="stfAdd">Create account</button><span id="n_msg" class="mut"></span></div><div id="n_share" class="frm"></div></div>
     <div class="card"><h3>Staff and rights</h3><div id="list"></div></div>`,
   after() { $("n_role").onchange = () => applyRole(["n_f", "n_h", "n_r", "n_p"], $("n_role").value); $("n_gen").onclick = () => { const ch = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let g; do { g = Array.from(crypto.getRandomValues(new Uint32Array(12)), x => ch[x % ch.length]).join(""); } while (!pw8(g)); $("n_pw").value = g; }; },
@@ -2183,7 +2183,7 @@ V.x_acc = {
     if ($("list") && $("list").contains(document.activeElement)) return;
     $("list").innerHTML = rows(C.staff).sort((a, b) => (a.email || "").localeCompare(b.email || "")).map(s => { const m = s.modules || {};
       return `<div class="rev"><div class="bar"><b>${esc(s.name || s.email)}</b><span class="pill ${s.active === true ? "ok" : "no"}">${s.active === true ? "Active" : "Suspended"}</span></div><div class="mut">${esc(s.email)}${s.role ? " &middot; " + esc(s.role) : ""}</div>
-        <div class="lvsel" style="margin-top:8px"><label>Finance</label>${lvSel("sf_" + s.id, m.finance || "none")}<label>HR</label>${lvSel("sh_" + s.id, m.hr || "none")}<label>Reception</label>${lvSel("sr_" + s.id, m.rec || "none")}<label>Payroll</label>${lvSel("sp_" + s.id, m.payroll || "none")}<label>Role</label><select id="srole_${esc(s.id)}">${Object.keys(ROLES).map(r => `<option ${s.role === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select><button data-act="stfRole" data-id="${esc(s.id)}">Apply role</button></div>
+        <div class="lvsel" style="margin-top:8px"><label>Finance</label>${lvSel("sf_" + s.id, m.finance || "none")}<label>HR</label>${lvSel("sh_" + s.id, m.hr || "none")}<label>Reception</label>${lvSel("sr_" + s.id, m.rec || "none")}<label>Payroll</label>${lvSel("sp_" + s.id, m.payroll || "none")}<label>Role</label><select id="srole_${esc(s.id)}">${Object.keys(ROLES).map(r => `<option ${s.role === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select><button data-act="stfRole" data-id="${esc(s.id)}">Apply role</button><label>Trading side</label><select id="smk_${esc(s.id)}"><option value="">No trading access</option><option value="1" ${s.market === true ? "selected" : ""}>Member: sees signals</option></select></div>
         <div class="acts"><button class="pri" data-act="stfSave" data-id="${esc(s.id)}">Save rights</button><button class="${s.active === true ? "bad" : ""}" data-act="stfTog" data-id="${esc(s.id)}">${s.active === true ? "Suspend" : "Reactivate"}</button><button data-act="stfReset" data-id="${esc(s.id)}">Send password reset</button></div></div>`; }).join("") || '<div class="empty">No staff yet. Add the first one above.</div>';
   } };
 ACT.stfAdd = async () => {
@@ -2198,7 +2198,8 @@ ACT.stfAdd = async () => {
     catch (e) { return msgFlash("n_msg", e.code === "auth/email-already-in-use" ? "That email has an account, but it is not in the users list yet. Ask them to sign in once, then add them here." : e.message); }
     try { await dbr.ref("users/" + uid).update({ email: em, createdAt: TS }); } catch {}
   }
-  await dbr.ref("staff/" + uid).set({ email: em, name: nm, active: true, modules: mods, role: $("n_role").value || "Custom", createdAt: TS, by: ME.email });
+  await dbr.ref("staff/" + uid).set({ email: em, name: nm, active: true, modules: mods, role: $("n_role").value || "Custom", market: $("n_mk").value === "1", createdAt: TS, by: ME.email });
+  if ($("n_mk").value === "1") await dbr.ref("approved/" + uid).set(true);
   audit("access", "Staff added", em + " F:" + mods.finance + " H:" + mods.hr + " R:" + mods.rec);
   if (!existing) { try { await auth.sendPasswordResetEmail(em); } catch {}
     const url = location.origin + location.pathname, t = "Hello " + nm + ",\n\nYour staff workspace account is ready.\n\nSign in: " + url + "\nEmail: " + em + "\nTemporary password: " + pw + "\n\nPlease change your password after signing in (use Forgot password on the sign-in page).";
@@ -2206,6 +2207,10 @@ ACT.stfAdd = async () => {
   ["n_em", "n_nm", "n_pw"].forEach(i => { $(i).value = ""; }); msgFlash("n_msg", "Account created and rights set.");
 };
 ACT.stfSave = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const mods = { finance: $("sf_" + d.id).value, hr: $("sh_" + d.id).value, rec: $("sr_" + d.id).value, payroll: $("sp_" + d.id).value };
+  const mk = $("smk_" + d.id).value === "1";
+  if (mk !== (s.market === true)) { if (!mk && !confirm("Remove trading access for " + s.email + "? Any membership they hold ends too.")) return;
+    const u = {}; u["staff/" + d.id + "/market"] = mk; u["approved/" + d.id] = mk ? true : null; if (!mk) u["memberships/" + d.id] = null;
+    await dbr.ref().update(u); audit("access", mk ? "Trading access granted" : "Trading access removed", s.email); }
   await dbr.ref("staff/" + d.id + "/modules").set(mods); await dbr.ref("staff/" + d.id + "/role").set($("srole_" + d.id).value || "Custom"); audit("access", "Rights changed", s.email + " F:" + (s.modules || {}).finance + ">" + mods.finance + " H:" + (s.modules || {}).hr + ">" + mods.hr + " R:" + (s.modules || {}).rec + ">" + mods.rec); alert("Rights saved for " + s.email + "."); };
 ACT.stfTog = async d => { if (!(ME.sup || ME.owner)) return; const s = (C.staff || {})[d.id]; if (!s) return; const on = s.active !== true; if (!confirm((on ? "Reactivate " : "Suspend ") + s.email + "?")) return; await dbr.ref("staff/" + d.id + "/active").set(on); audit("access", on ? "Staff reactivated" : "Staff suspended", s.email); };
 ACT.stfReset = async d => { const s = (C.staff || {})[d.id]; if (s && confirm("Email a password reset link to " + s.email + "?")) { await auth.sendPasswordResetEmail(s.email); audit("access", "Password reset sent", s.email); alert("Sent."); } };
@@ -2292,7 +2297,7 @@ theme(document.documentElement.getAttribute("data-theme") === "light" ? "light" 
 
 let meRef = null;
 function applyAccess() {
-  $("who").textContent = ME.email; $("gomkt").style.display = ME.owner || ME.sup || ME.adm ? "" : "none"; $("gomkt").onclick = () => SHELL.switchTo("market"); $("role").textContent = roleText(); $("role").className = "pill " + (ME.owner ? "ow" : ME.sup ? "ok" : "");
+  $("who").textContent = ME.email; $("gomkt").style.display = ME.owner || ME.sup || ME.adm || (ST && ST.market === true) ? "" : "none"; $("gomkt").onclick = () => SHELL.switchTo("market"); $("role").textContent = roleText(); $("role").className = "pill " + (ME.owner ? "ow" : ME.sup ? "ok" : "");
   if (!anyAccess()) { stopData(); $("nav").innerHTML = ""; $("title").textContent = "No access"; $("view").innerHTML = `<div class="card"><h3>You do not have staff access yet</h3><p class="mut">${ST && ST.active === false ? "Your staff account is suspended." : "Ask a super admin to give you rights to a module."} Signed in as ${esc(ME.email)}.</p></div>`; return; }
   startData(); buildNav(); go(location.hash.slice(1) || "home");
 }
@@ -2319,10 +2324,11 @@ auth.onAuthStateChanged(async u => {
   if (my !== RTK) return;
   if (usr && usr.blocked === true) { G("err").textContent = "Your access has been blocked by the admin."; auth.signOut(); return; }
   const owner = String(u.email || "").toLowerCase() === OWNER_MAIL, staffOn = !!(stf && stf.active === true), isA = adm === true, isS = sup === true || owner;
-  const canStaff = staffOn || isS, canMarket = !(staffOn && !isA && !isS);   // an employee uses the staff workspace only
+  const canStaff = staffOn || isS, canMarket = !(staffOn && !isA && !isS) || !!(stf && stf.market === true);   // an employee uses the staff workspace only
   SHELL.ctx = { canStaff, canMarket };
   let mode = canMarket ? "market" : "staff";
-  if (canMarket && canStaff) { try { if (sessionStorage.getItem("fr_mode") === "staff") mode = "staff"; } catch {} }
+  if (staffOn && !isA && !isS) mode = "staff";
+  if (canMarket && canStaff) { try { const m0 = sessionStorage.getItem("fr_mode"); if (m0 === "staff" || m0 === "market") mode = m0; } catch {} }
   await enterMode(u, mode);
 });
 </script>
