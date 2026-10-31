@@ -262,6 +262,7 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
   <div id="calc_out" class="mut" role="status">Select a pair that shows BUY or SELL to see its trade size.</div>
   <p class="mut">Lots = (balance x risk %) / (stop in pips x pip value). Pip values here are for USD pairs. Check the result with your broker's calculator before trading.</p>
 </details>
+<section class="panel" id="cbkpanel" style="display:none;margin-top:16px"></section>
 </div>
 <section class="panel" id="news" style="display:none;margin-top:16px"></section>
 <details class="panel" id="chat" style="margin-top:16px"><summary>Chat <span id="ch_n" class="pill apr" style="display:none"></span></summary>
@@ -1170,7 +1171,7 @@ function access() {
   if (isAdmin) showTab(ATAB); else ["users", "admin", "pay", "ann", "logs"].forEach(i => { $(i).style.display = "none"; });
   $("demo").style.display = isAdmin ? "" : "none";
   if (!isAdmin) { if (mem) { startFeed(); startResults(); } else { stopFeed(); stopResults(); } }
-  renderMember(); chOptions(); status(); renderNews();
+  renderMember(); chOptions(); status(); renderNews(); if (mem) startCbk();
 }
 setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
 
@@ -1179,7 +1180,19 @@ function startFeed() {
   if (feedOn) return; feedOn = true; feedRef = dbr.ref("feed");
   feedRef.on("value", s => applyFeed(s.val()), e => { feedOn = false; loadErr = e.message; });
 }
-function stopFeed() { if (feedRef) { feedRef.off(); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
+let cbkRef = null, CBK = null;
+function startCbk() { if (cbkRef) return; cbkRef = dbr.ref("feed/cbk"); cbkRef.on("value", s => { CBK = s.val(); renderCbk(); }, () => { CBK = null; renderCbk(); }); }
+function stopCbk() { if (cbkRef) cbkRef.off(); cbkRef = null; CBK = null; renderCbk(); }
+function renderCbk() {                               // official Central Bank of Kenya shilling rates, fetched by the server engine
+  const el = $("cbkpanel"); if (!el) return;
+  if (!CBK || !CBK.rows || !CBK.rows.length || !isMember()) { el.style.display = "none"; return; }
+  const age = Math.floor((rt() - (CBK.asOf || 0)) / 864e5), old = age > 7;
+  el.style.display = "block";
+  el.innerHTML = `<b>Kenya shilling, official CBK rates</b> <span class="mut">as of ${fmtD(CBK.asOf)}${old ? ` <span style="color:var(--sell)">(${age} days old, CBK has not updated or the engine could not read it)</span>` : ""}</span>
+    <div class="plans" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr))">${CBK.rows.map(r => `<div class="plan"><span class="mut">${esc(r.cur)}</span><div class="pp num">${esc(String(r.rate))}</div></div>`).join("")}</div>
+    <span class="mut" style="font-size:12px">Rates exactly as published by the Central Bank of Kenya (shillings per unit of the currency listed).</span>`;
+}
+function stopFeed() { stopCbk(); if (feedRef) { feedRef.off(); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
 function applyFeed(f) {
   if (!f || !f.pairs) { feedTs = 0; return; }
   feedTs = f.ts || 0; const prev = data, old = rt() - feedTs > 180000; data = {};
