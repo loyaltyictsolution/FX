@@ -47,7 +47,7 @@ canvas{width:100%;height:120px;display:block}
 #alerts div{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
 .note{margin-top:14px;font-size:12px;color:var(--mut)}
 
-#login{max-width:360px;margin:12vh auto}
+#login{max-width:400px;margin:9vh auto}
 #login input,.f input{width:100%;padding:10px 12px;margin:6px 0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
 #login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
 #err{color:var(--danger);min-height:22px;font-size:13px}
@@ -271,12 +271,58 @@ body.staffmode .note{display:none}
 #sx main{display:block;grid-template-columns:none;gap:0}
 #sx .pill{margin-left:0}
 @media print{#modal,#modal *{visibility:visible}#modal{position:absolute;inset:0;background:#fff;padding:0}.acts2{display:none}}
+/* ---- Public sign-up, member journey, new sign-ups ---- */
+.su-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--line);margin:6px 0 14px}
+.su-seg button{border:0;background:none;padding:8px 10px;border-radius:9px;cursor:pointer;color:var(--mut);font-weight:600}
+.su-seg button[aria-selected=true]{background:var(--panel);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.su-meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:-2px 0 4px}
+.su-meter i{height:4px;border-radius:3px;background:var(--line);transition:background .2s}
+.su-meter[data-s="1"] i:nth-child(1){background:var(--danger)}
+.su-meter[data-s="2"] i:nth-child(-n+2){background:var(--wait)}
+.su-meter[data-s="3"] i:nth-child(-n+3){background:#7fd6a8}
+.su-meter[data-s="4"] i{background:var(--buy)}
+.su-hint{font-size:12px;color:var(--mut);min-height:16px;margin-bottom:8px}
+.su-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.su-how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;text-align:center;font-size:12px;color:var(--mut)}
+.su-how b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;margin:0 auto 4px;background:linear-gradient(135deg,#2ec4b6,#8fb0ff);color:#06231f;font-size:13px}
+.su-jr{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 14px}
+.su-st{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.su-st i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);font-style:normal;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--mut)}
+.su-st b{display:block;font-size:13.5px}.su-st span{font-size:12px;color:var(--mut);display:block}
+.su-st.done{border-color:var(--buy)}.su-st.done i{background:var(--buy);border-color:var(--buy);color:#06231f}
+.su-st.cur{border-color:var(--wait);box-shadow:0 0 0 3px rgba(242,184,75,.16)}.su-st.cur i{border-color:var(--wait);color:var(--wait)}
+.su-st button{margin-top:8px;padding:3px 9px;font-size:12px}
+.su-lock{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0}
+.su-fake{filter:blur(5px);opacity:.8;padding:10px 14px;pointer-events:none;user-select:none}
+.su-fake div{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+.su-fake div:last-child{border-bottom:0}
+.su-ov{position:absolute;inset:0;display:grid;place-items:center;padding:14px;background:linear-gradient(rgba(10,20,30,.18),rgba(10,20,30,.5))}
+.su-ov>div{max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.su-ov ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--mut)}
+.su-new{border:1px solid var(--wait);border-radius:12px;padding:12px 14px;margin:12px 0;background:rgba(242,184,75,.07)}
+.su-newh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.su-ni{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.su-ni .uact{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 </head>
 <body>
 <section id="login" class="panel">
   <h1 id="lname">Steve FX Radar</h1>
-  <p class="mut">Members and staff sign in here. Staff are taken to the staff workspace automatically.</p>
+  <p class="mut" id="lintro">Members and staff sign in here. Staff are taken to the staff workspace automatically.</p>
+  <div class="su-seg" role="tablist" aria-label="Sign in or create an account"><button type="button" role="tab" id="tab_in" aria-selected="true">Sign in</button><button type="button" role="tab" id="tab_up" aria-selected="false">Create account</button></div>
+  <form id="sf" style="display:none" novalidate autocomplete="on">
+    <label for="su_name" class="mut">Full name</label><input id="su_name" autocomplete="name" maxlength="60">
+    <label for="su_em" class="mut">Email</label><input id="su_em" type="email" autocomplete="email" maxlength="120">
+    <label for="su_ph" class="mut">WhatsApp number</label><input id="su_ph" type="tel" autocomplete="tel" placeholder="0712 345 678 or +44 7700 900123" maxlength="22">
+    <label for="su_pw" class="mut">Password</label><input id="su_pw" type="password" autocomplete="new-password" maxlength="64">
+    <div class="su-meter" id="su_meter" data-s="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="su-hint" id="su_hint" aria-live="polite">At least 10 characters with letters and numbers.</div>
+    <label for="su_pw2" class="mut">Confirm password</label><input id="su_pw2" type="password" autocomplete="new-password" maxlength="64">
+    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 8px"><input id="su_show" type="checkbox" style="width:auto;margin:0"> Show passwords</label>
+    <label class="mut" style="display:flex;gap:8px;align-items:flex-start;margin:0 0 12px;font-size:13px"><input id="su_tc" type="checkbox" style="width:auto;margin:3px 0 0"> <span>I understand the radar opens only after my payment is confirmed and an admin approves my account. I accept the membership rules shown after sign-up.</span></label>
+    <div class="su-hp" aria-hidden="true"><label>Website <input id="su_site" tabindex="-1" autocomplete="off"></label></div>
+    <button class="go" type="submit" id="su_go">Create account</button>
+    <div class="su-how"><div><b>1</b>Create your account</div><div><b>2</b>Pay and send your code</div><div><b>3</b>Admin approves, radar opens</div></div>
+  </form>
   <form id="lf">
     <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
     <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
@@ -297,6 +343,7 @@ body.staffmode .note{display:none}
 <div id="why" class="panel OFFLINE" role="status"></div>
 <section class="panel" id="bb" style="display:none;margin-bottom:14px"></section>
 <section class="panel" id="member" style="display:none;margin-bottom:16px">
+  <div id="m_journey"></div><div id="m_lock"></div>
   <b>Membership</b>
   <p id="m_status" class="mut"></p>
   <div id="m_info"></div>
@@ -367,7 +414,7 @@ body.staffmode .note{display:none}
   </div>
 </details>
 <div id="atabs" class="tabs" style="display:none;margin-top:16px">
-  <button data-t="users">Users <span id="t_u" class="pill">0 online</span></button>
+  <button data-t="users">Users <span id="t_u" class="pill">0 online</span> <span id="t_n" class="pill apr" style="display:none"></span></button>
   <button data-t="pay">Payments <span id="t_p" class="pill apr" style="display:none"></span></button>
   <button data-t="ann">Messages</button>
   <button data-t="logs">Activity</button>
@@ -393,6 +440,7 @@ body.staffmode .note{display:none}
 </details>
 <section class="panel" id="users"><b>Team, roles &amp; access</b> <button id="goacc" style="display:none;margin-left:8px">Staff accounts &amp; roles</button>
   <div class="stats" id="ustats"></div>
+  <div id="newusers"></div>
   <div class="adduser">
     <input id="nu_em" type="text" inputmode="email" placeholder="New user email" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
     <input id="nu_pw" type="password" placeholder="Temporary password (8+)" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
@@ -581,9 +629,66 @@ $("lf").onsubmit = async e => {
   catch (er) { loginFail(er); }
   $("pw").value = ""; $("sp").checked = false; $("pw").type = "password";
 };
+// ----- public sign-up -----
+let SIGNUP = null; const signT0 = Date.now();
+const COMMON_PW = new Set(["password", "password1", "password123", "12345678", "123456789", "1234567890", "qwertyuiop", "iloveyou1", "admin12345", "welcome123", "letmein123", "kenya12345", "forex12345", "trading123", "abcd123456"]);
+function pwScore(p, em) {
+  if (!p) return 0; const low = p.toLowerCase(), local = String(em || "").split("@")[0].toLowerCase();
+  if (COMMON_PW.has(low) || (local.length >= 4 && low.includes(local))) return 1;
+  let n = 0; if (p.length >= 10) n++; if (p.length >= 14) n++; if (/[a-z]/.test(p) && /[A-Z]/.test(p)) n++; if (/\d/.test(p)) n++; if (/[^A-Za-z0-9]/.test(p)) n++;
+  return p.length < 10 ? 1 : n <= 2 ? 2 : n === 3 ? 3 : 4;
+}
+function normPhone(v) {                              // Kenyan numbers in any usual format, or +international; returns digits or ""
+  const t = String(v || "").replace(/[\s().-]/g, "");
+  if (/^\+/.test(t)) return /^\+[1-9]\d{7,14}$/.test(t) ? t.slice(1) : "";
+  const m = /^(?:254|0)?([17]\d{8})$/.exec(t); return m ? "254" + m[1] : "";
+}
+function setAuthTab(up) {
+  $("lf").style.display = up ? "none" : ""; $("sf").style.display = up ? "" : "none";
+  $("tab_in").setAttribute("aria-selected", String(!up)); $("tab_up").setAttribute("aria-selected", String(up));
+  $("lintro").textContent = up ? "Create your account. The live radar opens once your payment is confirmed and an admin approves you." : "Members and staff sign in here. Staff are taken to the staff workspace automatically.";
+  $("err").textContent = ""; $("ok").textContent = "";
+}
+$("tab_in").onclick = () => setAuthTab(false); $("tab_up").onclick = () => setAuthTab(true);
+if (location.hash === "#signup") setAuthTab(true);
+const syncPw = () => { const sc = pwScore($("su_pw").value, $("su_em").value); $("su_meter").dataset.s = sc; $("su_hint").textContent = $("su_pw").value ? ["", "Weak. Use 10+ characters, mixed case and a number.", "Fair. Add length or a symbol.", "Good.", "Strong."][sc] : "At least 10 characters with letters and numbers."; };
+$("su_pw").addEventListener("input", syncPw); $("su_em").addEventListener("input", syncPw);
+$("su_show").onchange = () => { $("su_pw").type = $("su_pw2").type = $("su_show").checked ? "text" : "password"; };
+function signMsg(er) {
+  const c = er && er.code;
+  return c === "auth/email-already-in-use" ? "That email already has an account. Sign in, or use Forgot password."
+    : c === "auth/invalid-email" ? "That email address is not valid."
+    : c === "auth/weak-password" ? "That password is too weak. Use 10 or more characters."
+    : c === "auth/operation-not-allowed" ? "Sign-ups are switched off. The admin must enable Email/Password sign-in in Firebase."
+    : c === "auth/too-many-requests" ? "Too many attempts. Please wait a few minutes and try again."
+    : c === "auth/network-request-failed" ? "No connection. Check your internet and try again." : "Could not create the account. " + ((er && er.message) || "");
+}
+$("sf").onsubmit = async e => {
+  e.preventDefault(); const err = $("err"); err.textContent = ""; $("ok").textContent = "";
+  if ($("su_site").value) { $("ok").textContent = "Check your email to continue."; return; }          // bots fill the hidden field
+  if (Date.now() - signT0 < 4000) return err.textContent = "Please review the form for a moment, then press Create account.";
+  let tries = []; try { tries = JSON.parse(localStorage.getItem("fr_su") || "[]").filter(t => Date.now() - t < 3600000); } catch {}
+  if (tries.length >= 3) return err.textContent = "Too many sign-ups from this device. Please try again in an hour.";
+  const name = $("su_name").value.trim().replace(/\s+/g, " "), em = $("su_em").value.trim().toLowerCase(), ph = normPhone($("su_ph").value), pw = $("su_pw").value;
+  if (!/^[\p{L}][\p{L} .'-]{1,58}$/u.test(name)) return err.textContent = "Enter your full name (letters only).";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return err.textContent = "Enter a valid email address.";
+  if (!ph) return err.textContent = "Enter a valid WhatsApp number, for example 0712 345 678 or +44 7700 900123.";
+  if (pw.length < 10 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return err.textContent = "The password needs 10 or more characters with letters and numbers.";
+  if (pwScore(pw, em) < 2) return err.textContent = "That password is too easy to guess. Choose another.";
+  if (pw !== $("su_pw2").value) return err.textContent = "The two passwords do not match.";
+  if (!$("su_tc").checked) return err.textContent = "Please tick the box to confirm you understand how access works.";
+  const btn = $("su_go"); btn.disabled = true; btn.textContent = "Creating your account...";
+  SIGNUP = { name, phone: ph, signup: true };
+  try {
+    const c = await auth.createUserWithEmailAndPassword(em, pw);
+    tries.push(Date.now()); try { localStorage.setItem("fr_su", JSON.stringify(tries)); } catch {}
+    try { await c.user.sendEmailVerification(); } catch {}
+  } catch (er) { SIGNUP = null; err.textContent = signMsg(er); }
+  btn.disabled = false; btn.textContent = "Create account"; $("su_pw").value = $("su_pw2").value = ""; syncPw();
+};
 async function doSignOut(why) { try { await logEvt(why || "Signed out"); sessionStorage.removeItem("fr_log"); } catch {}                       // mark offline first, then sign out
   try { if (auth.currentUser) await dbr.ref("presence/" + auth.currentUser.uid).set({ online: false, last: TS }); } catch {}
-  auth.signOut();
+  auth.signOut(); setAuthTab(false);
 }
 $("out").onclick = () => doSignOut("Signed out");
 function resetIdle() { lastActive = rt(); }
@@ -1110,9 +1215,10 @@ function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; clearInterval(hb
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
   let s; try { s = await ur.get(); } catch { s = null; }
-  if (s && !s.exists()) { try { await ur.update({ email: u.email, createdAt: TS }); } catch (e) { console.warn(e.message); } }
+  if (s && !s.exists()) { try { await ur.update({ email: u.email, createdAt: TS, ...(SIGNUP || {}) }); SIGNUP = null; } catch (e) { console.warn(e.message); } }
   else if (s && s.val().blocked === true) { $("err").textContent = "Your access has been blocked by the admin."; await logEvt("Blocked account tried to sign in"); await auth.signOut(); return false; }
   listen(dbr.ref("users/" + u.uid + "/blocked"), x => { if (x.val() === true) { $("err").textContent = "Your access has been blocked by the admin."; auth.signOut(); } });
+  listen(dbr.ref("users/" + u.uid), x => { MEM.prof = x.val() || {}; renderMember(); });
   listen(dbr.ref("users/" + u.uid + "/terminated"), x => { MEM.term = x.val(); renderMember(); });
   const pr = dbr.ref("presence/" + u.uid);
   listen(dbr.ref(".info/connected"), x => { if (x.val()) { pr.onDisconnect().set({ online: false, last: TS }); pr.set({ online: true, last: TS }); } });
@@ -1149,12 +1255,27 @@ function renderUsers() {
         if (amSuper()) acts += btn("em", id, "Fix email");
         acts += btn("rst", id, "Reset password") + btn("blk", id, blk ? "Unblock" : "Block") + btn("del", id, "Remove", "bad");
       }
-      return `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "\u25cf Online" : "\u25cb Offline"}</span><b>${esc(v.email || id)}</b>
+      return `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "\u25cf Online" : "\u25cb Offline"}</span><b>${esc(v.email || id)}</b>${v.name ? ' <span class="mut">' + esc(v.name) + "</span>" : ""}
       ${id === me ? '<span class="pill">you</span>' : ""}${t === 3 ? '<span class="pill own">Owner</span>' : t === 2 ? '<span class="pill adm">Super admin</span>' : t === 1 ? '<span class="pill adm">Admin</span>' : ""}${t === 0 && !apr ? '<span class="pill">Unpaid</span>' : ""}${t === 0 && apr ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + fmtD(MS[id].until) + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
       <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + fmtDT(PR[id].last) : "Never signed in"}</div></div>
       <div class="uact">${acts}</div></div>`;
     }).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
+  renderNewUsers(rows);
 }
+function renderNewUsers(rows) {
+  const fresh = rows.filter(r => r.t === 0 && r.v.signup === true && !r.apr && !r.blk).sort((a, b) => (b.v.createdAt || 0) - (a.v.createdAt || 0)), el = $("newusers");
+  if (seenSU === null) seenSU = new Set(fresh.map(r => r.id));
+  else fresh.forEach(r => { if (!seenSU.has(r.id)) { seenSU.add(r.id); banner((r.v.name || r.v.email) + " signed up and is waiting for payment and approval.", true); if (soundOn) beep(520, .12, 2); } });
+  const tn = $("t_n"); if (tn) { tn.textContent = fresh.length + " new"; tn.style.display = fresh.length ? "" : "none"; }
+  if (!fresh.length) { el.innerHTML = ""; return; }
+  const sup = amSuper();
+  el.innerHTML = `<div class="su-new"><div class="su-newh"><b>New sign-ups waiting</b><span class="pill apr">${fresh.length}</span></div><div class="mut" style="font-size:13px;margin-bottom:4px">They stay here until approved. Approve only after you have confirmed their payment.</div>` + fresh.map(({ id, v }) => {
+    const pays = Object.values(PAY[id] || {}), pend = pays.filter(p => p && p.status === "pending").length, wa = v.phone ? "https://wa.me/" + String(v.phone).replace(/\D/g, "") + "?text=" + encodeURIComponent("Hello " + (v.name || "") + ", thanks for signing up to " + CO + ". ") : "";
+    return `<div class="su-ni"><div><b>${esc(v.name || v.email)}</b> <span class="pill ${pend ? "apr" : ""}">${pend ? "Payment code waiting" : pays.length ? "Payment handled" : "No payment yet"}</span><div class="mut" style="font-size:13px">${esc(v.email || "")}${v.phone ? " \u00b7 +" + esc(v.phone) : ""} \u00b7 joined ${fmtDT(v.createdAt || 0)}</div></div>
+      <div class="uact">${wa ? `<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${sup ? `${pend ? '<button data-j="rv">Review payment</button>' : ""}<button class="pri" data-a="apr" data-id="${esc(id)}">Approve</button><button class="bad" data-a="del" data-id="${esc(id)}">Remove</button>` : '<span class="mut">A super admin approves</span>'}</div></div>`;
+  }).join("") + "</div>";
+}
+$("newusers").onclick = e => { if (e.target.closest("button[data-j=rv]")) return showTab("pay"); return $("ulist").onclick(e); };
 setInterval(renderUsers, 30000);                    // keeps "online" status fresh as time passes
 $("ulist").onclick = async e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
@@ -1236,7 +1357,8 @@ $("nu_go").onclick = async () => {
 };
 
 // ---------- membership, payments, logs, feed ----------
-const nm = id => (U[id] && U[id].email) || id;
+let seenSU = null;
+const nm = id => (U[id] && (U[id].name ? U[id].name + " (" + (U[id].email || "") + ")" : U[id].email)) || id;
 const isMember = () => isAdmin || (MEM.apr && (!MEM.until || MEM.until > rt()));
 function logEvt(msg) {
   const u = auth.currentUser; if (!u) return Promise.resolve();
@@ -1291,9 +1413,10 @@ let lastMem = null;
 setInterval(() => { if (auth.currentUser && !isAdmin && lastMem !== null && isMember() !== lastMem) access(); else renderMember(); }, 30000);
 function access() {
   if (!auth.currentUser) return;
-  const mem = isMember(); lastMem = mem;
+  const prevMem = lastMem, mem = isMember(); lastMem = mem;
   $("sigwrap").style.display = mem ? "block" : "none";
   $("member").style.display = isAdmin ? "none" : "block";
+  if (prevMem === false && mem && !isAdmin) { banner("Your membership is active. The radar is now unlocked.", true); try { window.scrollTo(0, 0); } catch {} }
   $("atabs").style.display = isAdmin ? "flex" : "none";
   if (isAdmin) showTab(ATAB); else ["users", "admin", "pay", "ann", "logs"].forEach(i => { $(i).style.display = "none"; });
   $("demo").style.display = isAdmin ? "" : "none";
@@ -1352,9 +1475,40 @@ function renderMember() {
   $("m_info").innerHTML = planHtml + (rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>');
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
   $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments and receipts</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span></div><div class="mut">${fmtDT(p.ts || 0)} <button data-rc="${esc(p.id)}">Receipt</button></div></div>`).join("") : "";
+  renderJourney(act);
 }
+function renderJourney(act) {
+  const J = $("m_journey"), L = $("m_lock"); if (!J || !L) return;
+  if (act || isAdmin || !auth.currentUser) { J.innerHTML = L.innerHTML = ""; return; }
+  const u = auth.currentUser, prof = MEM.prof || {}, su = prof.signup === true, ver = !su || !!u.emailVerified, pays = Object.values(MYPAY || {}), paid = pays.length > 0, pend = pays.some(p => p && p.status === "pending");
+  if (!MEM.until && !MEM.term) {
+    const steps = [{ t: "Account created", s: esc(prof.name || u.email || ""), d: true }];
+    if (su) steps.push({ t: "Verify your email", s: ver ? "Verified" : "Check your inbox and spam folder", d: ver, b: ver ? "" : '<button data-j="resend">Resend email</button> <button data-j="check">I have verified</button>' });
+    steps.push({ t: "Pay for a plan", s: paid ? "Payment code sent" : "Pick a plan below, pay, then send your code", d: paid });
+    steps.push({ t: "Admin approval", s: pend ? "Your payment is being checked" : "Starts once you send a payment code", d: false });
+    steps.push({ t: "Radar unlocked", s: "Live signals open on this page", d: false });
+    let cur = false;
+    J.innerHTML = `<div class="su-jr" role="list" aria-label="Your progress">${steps.map((x, i) => { const c = x.d ? "done" : !cur ? (cur = true, "cur") : ""; return `<div class="su-st ${c}" role="listitem"><i>${x.d ? "\u2713" : i + 1}</i><b>${x.t}</b><span>${x.s}</span>${c === "cur" && x.b ? "<div>" + x.b + "</div>" : ""}</div>`; }).join("")}</div>`;
+  } else J.innerHTML = "";
+  L.innerHTML = `<div class="su-lock"><div class="su-fake" aria-hidden="true">${[["EUR/USD", "BUY", "78%"], ["GBP/USD", "WAIT", "41%"], ["USD/JPY", "SELL", "69%"]].map(([p, g, c]) => `<div><b>${p}</b><span class="tag ${g}">${g}</span><span class="num">${c}</span></div>`).join("")}</div>
+    <div class="su-ov"><div><b>The live radar unlocks after approval</b> <span class="pill">Sample only</span><ul><li>Live BUY, SELL and WAIT signals with entry, targets and stop</li><li>Candlestick charts with indicators</li><li>Tested hit rate and a live track record</li><li>Risk calculator, alerts and official CBK rates</li></ul></div></div></div>`;
+}
+$("m_journey").onclick = async e => {
+  const b = e.target.closest("button[data-j]"), u = auth.currentUser; if (!b || !u) return; b.disabled = true;
+  try {
+    if (b.dataset.j === "resend") {
+      const t = +localStorage.getItem("fr_vr") || 0;
+      if (Date.now() - t < 60000) banner("Please wait a minute before asking for another email.");
+      else { await u.sendEmailVerification(); localStorage.setItem("fr_vr", String(Date.now())); banner("Verification email sent to " + u.email + ". Check spam too.", true); }
+    }
+    if (b.dataset.j === "check") { await u.reload(); if (u.emailVerified) await u.getIdToken(true); renderMember(); banner(u.emailVerified ? "Email verified. Thank you." : "Not verified yet. Open the link in the email first.", u.emailVerified); }
+  } catch (er) { banner(er.code === "auth/too-many-requests" ? "Too many requests. Try again later." : er.message); }
+  b.disabled = false;
+};
+addEventListener("focus", () => { const u = auth.currentUser; if (u && !isAdmin && MEM.prof && MEM.prof.signup === true && !u.emailVerified) u.reload().then(() => u.emailVerified ? u.getIdToken(true) : null).then(renderMember).catch(() => {}); });
 $("m_go").onclick = async () => {
   const u = auth.currentUser, m = $("m_msg"); m.textContent = ""; if (!u) return;
+  if (MEM.prof && MEM.prof.signup === true && !u.emailVerified) return m.textContent = "Please verify your email first. Check your inbox and spam folder, then press I have verified.";
   const code = $("m_code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""), amt = parseFloat($("m_amt").value), payer = $("m_payer").value.trim().slice(0, 60);
   if (code.length < 6 || code.length > 20) return m.textContent = "Enter the payment code exactly as in your payment message (6 to 20 letters and numbers).";
   const pid = dbr.ref("payments/" + u.uid).push().key, rec = { method: $("m_method").value, code, status: "pending", ts: TS, email: u.email || "", payer };
