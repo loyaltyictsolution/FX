@@ -1538,7 +1538,7 @@ function renderMember() {
     : MEM.term ? `Your subscription was terminated on <b>${fmtD(MEM.term.t)}</b>${MEM.term.reason ? ": " + esc(MEM.term.reason) : ""}. Contact the admin if you think this is a mistake.` : MEM.until && MEM.until <= now ? `Your membership expired on <b>${fmtD(MEM.until)}</b>. Pay below to renew.` : "You do not have an active membership yet.");
   const rows = [["Price", SITE.price], ["Access period", !(SITE.plans || []).length && SITE.days ? SITE.days + " days" : ""], ["M-Pesa", SITE.mpesa], ["Bank", SITE.bank], ["Other", SITE.other]].filter(r => r[1]);
   const hasT = !!SITE.terms; $("m_terms").style.display = hasT ? "block" : "none"; $("m_terms_t").textContent = SITE.terms || ""; $("m_agree_l").style.display = hasT ? "block" : "none";
-  const PL = SITE.plans || [], mine = MEM.level ? tierKey(MEM.level) : "", shown = TIERS.filter(t => !PL.length || PL.some(q => tierKey(q.level || "normal") === t.k)).reverse();
+  const PL = PLX(), mine = MEM.level ? tierKey(MEM.level) : "", shown = TIERS.filter(t => !PL.length || PL.some(q => tierKey(q.level || "normal") === t.k)).reverse();
   const planHtml = '<div class="tiers">' + shown.map(t => { const ps = PL.filter(q => tierKey(q.level || "normal") === t.k);
     return `<div class="tier ${t.k}${mine === t.k ? " mine" : ""}"><div class="th">${medal(t.k)}<div><h4>${t.n}${mine === t.k ? ' <span class="lv ' + t.k + '">Your plan</span>' : ""}</h4><div class="tg">${t.tag}</div></div></div><ul>${t.f.map(f => "<li>" + esc(f) + "</li>").join("")}</ul>${ps.map(q => `<button type="button" class="optb" data-pick="${PL.indexOf(q)}"><span><b>${esc(q.name)}</b>${String(q.name).toLowerCase().includes(durText(q.days)) ? "" : ' <span class="mut">' + durText(q.days) + "</span>"}<br><span class="num" style="font-size:16px;font-weight:700">${esc(q.price || "")}</span></span><span class="go">${mine === t.k ? "Renew" : "Pay now"} &rarr;</span></button>`).join("")}</div>`; }).join("") + "</div>";
   $("m_info").innerHTML = planHtml + (rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>');
@@ -1576,9 +1576,10 @@ $("m_journey").onclick = async e => {
   b.disabled = false;
 };
 addEventListener("focus", () => { const u = auth.currentUser; if (u && !isAdmin && MEM.prof && MEM.prof.signup === true && !u.emailVerified) u.reload().then(() => u.emailVerified ? u.getIdToken(true) : null).then(renderMember).catch(() => {}); });
+const PLX = () => (SITE.plans || []).length ? SITE.plans : TIERS.map(t => ({ name: t.n, price: SITE.price || "", days: +SITE.days || 30, level: t.k }));   // no plans saved yet: one button per tier
 let PICK = -1;                                       // plan the member chose to pay for
 function renderPick() {
-  const el = $("m_pick"), q = (SITE.plans || [])[PICK]; if (!el) return; if (!q) { el.innerHTML = ""; return; }
+  const el = $("m_pick"), q = PLX()[PICK]; if (!el) return; if (!q) { el.innerHTML = ""; return; }
   const t = TIERS.find(x => x.k === tierKey(q.level || "normal")) || TIERS[0], cur = $("m_method").value;
   const ways = [["mpesa", "M-Pesa", SITE.mpesa], ["bank", "Bank", SITE.bank], ["other", "Other", SITE.other]].filter(w => w[2]), w = ways.find(x => x[0] === cur) || ways[0];
   el.innerHTML = `<div class="pick ${t.k}">${medal(t.k)}<div><b>${t.n}: ${esc(q.name)}</b><div class="mut">${durText(q.days)} of access</div></div><div class="pp num">${esc(q.price || "")}</div></div>
@@ -1589,7 +1590,7 @@ function renderPick() {
   if (w && $("m_method").value !== w[0]) $("m_method").value = w[0];
 }
 $("m_info").addEventListener("click", e => {
-  const b = e.target.closest("button[data-pick]"); if (!b) return; PICK = +b.dataset.pick; const q = (SITE.plans || [])[PICK]; if (!q) return;
+  const b = e.target.closest("button[data-pick]"); if (!b) return; PICK = +b.dataset.pick; const q = PLX()[PICK]; if (!q) return;
   const n = +String(q.price || "").replace(/[^0-9.]/g, ""); $("m_amt").value = n > 0 ? n : "";
   if (!$("m_method").value || ![SITE.mpesa, SITE.bank, SITE.other].some(Boolean)) $("m_method").value = "mpesa";
   const first = [["mpesa", SITE.mpesa], ["bank", SITE.bank], ["other", SITE.other]].find(x => x[1]); if (first) $("m_method").value = first[0];
