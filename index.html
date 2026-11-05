@@ -513,7 +513,8 @@ body.staffmode .note{display:none}
   (async () => {
     try { await lib("app"); await lib("auth"); await lib("database"); }
     catch (e) { document.getElementById("err").textContent = e.message + " Check your internet connection, turn off ad blockers for this site, or try another browser."; return; }
-    const m = document.createElement("script"); m.textContent = document.getElementById("mainjs").textContent; document.body.appendChild(m);
+    const txt = document.getElementById("mainjs").textContent; if (!/END-OF-APP\*\/\s*$/.test(txt)) { document.getElementById("err").textContent = "This page file is incomplete: the upload was cut off. Upload index.html again (it should be about 235 KB) and make sure the last line is </html>."; return; }
+    const m = document.createElement("script"); m.textContent = txt; document.body.appendChild(m);
   })();
 })();
 </script>
@@ -2485,6 +2486,7 @@ auth.onAuthStateChanged(async u => {
   if (canMarket && canStaff) { try { const m0 = sessionStorage.getItem("fr_mode"); if (m0 === "staff" || m0 === "market") mode = m0; } catch {} }
   await enterMode(u, mode);
 });
+/*END-OF-APP*/
 </script>
 </body>
 </html>
