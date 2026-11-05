@@ -172,7 +172,20 @@ header h1,#login h1{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-ba
 .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
 .plan{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
 .plan b{display:block}.plan .pp{font-size:18px;font-weight:700;margin:4px 0}
-.plan.vip{border-color:#f2b84b}.plan.pro{border-color:var(--buy)}
+.plan.vip,.plan.gold{border-color:#f2b84b}.plan.pro,.plan.silver{border-color:#9aa6b8}.plan.bronze{border-color:#b9733a}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0}
+.tier{position:relative;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg);overflow:hidden}
+.tier::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--tc,#8b98aa)}
+.tier.normal{--tc:#8b98aa}.tier.bronze{--tc:#cd7f32}.tier.silver{--tc:#b4bfce}.tier.gold{--tc:#f2b84b}
+.tier.gold{box-shadow:0 0 0 1px #f2b84b55,0 6px 20px #f2b84b22}
+.tier .th{display:flex;align-items:center;gap:10px}.tier h4{margin:0;font-size:17px}.tier .tg{font-size:12px;color:var(--mut)}
+.tier ul{list-style:none;margin:10px 0;padding:0;font-size:13px}.tier li{padding:3px 0 3px 18px;position:relative}
+.tier li::before{content:"\2713";position:absolute;left:0;color:var(--tc)}
+.tier .opt{border-top:1px dashed var(--line);padding-top:8px;margin-top:6px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.tier.mine{outline:2px solid var(--tc)}
+.lv.normal{color:#8b98aa;border-color:#8b98aa}.lv.bronze{color:#cd7f32;border-color:#cd7f32}.lv.silver{color:#b4bfce;border-color:#b4bfce}.lv.gold{color:#f2b84b;border-color:#f2b84b}
+.lockbox{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px;color:var(--mut)}
+.ctb button.lk{opacity:.55}.ctb button.lk::after{content:attr(data-t);font-size:9px;margin-left:5px;padding:0 5px;border:1px solid currentColor;border-radius:99px}
 .lv{font-size:10px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);margin-left:6px;vertical-align:middle}
 .lv.vip{color:#f2b84b;border-color:#f2b84b}.lv.pro{color:var(--buy);border-color:var(--buy)}
 /* ---- Chart panel ---- */
@@ -464,7 +477,7 @@ body.staffmode .note{display:none}
       <input id="s_mail" type="email" placeholder="Contact email" maxlength="120">
       <input id="s_price" placeholder="Price e.g. KES 1,500" maxlength="90">
       <input id="s_days" type="number" min="1" max="3650" placeholder="Days per payment (used when no plans below)">
-      <textarea id="s_plans" rows="6" maxlength="1500" style="flex:1 1 100%;font-family:inherit" placeholder="Plans, one per line:  Name | Price | Length | Level&#10;1 Hour | KES 50 | 1h | Basic&#10;1 Day | KES 150 | 1d | Basic&#10;1 Week | KES 800 | 1w | Pro&#10;Yearly VIP | KES 25,000 | 1y | VIP&#10;Lengths: 30min, 2h, 1d, 1w, 1mo, 1y. Levels: Basic, Pro, VIP."></textarea>
+      <textarea id="s_plans" rows="6" maxlength="1500" style="flex:1 1 100%;font-family:inherit" placeholder="Plans, one per line:  Name | Price | Length | Level&#10;3 Days | KES 100 | 3d | Normal&#10;1 Week | KES 500 | 1w | Bronze&#10;1 Month | KES 1,500 | 1mo | Silver&#10;1 Year | KES 25,000 | 1y | Gold&#10;Lengths: 30min, 2h, 1d, 1w, 1mo, 1y. Levels: Normal, Bronze, Silver, Gold."></textarea>
       <textarea id="s_terms" rows="6" maxlength="3000" style="flex:1 1 100%;font-family:inherit" placeholder="Membership rules shown to every member and accepted when they send a payment code. Example: one account per person, no sharing logins, signals are not financial advice, what happens on refunds, and that sharing or abuse ends the subscription without refund."></textarea>
       <input id="s_idle" type="number" min="5" max="1440" placeholder="Idle logout (minutes)">
       <input id="s_mpesa" placeholder="M-Pesa: Paybill / Till / number" maxlength="390" style="flex:1 1 260px">
@@ -811,9 +824,11 @@ function status() {
   else if (!PAIRS.some(isOpen)) { st = "STALE"; why = "All tracked markets are closed right now. Forex reopens Sunday about 22:00 UTC, US stocks trade Mon to Fri 9:30 to 16:00 New York time, and crypto never closes."; }
   else if (wsLive()) { st = vals.some(d => d.stale) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
-  const el = $("status"); el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
-  $("why").className = "panel " + st;
-  $("why").innerHTML = `<b>${esc(why)}</b><div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>${esc(sessChip())}</span><span>Pairs loaded ${isAdmin && !asViewer ? loaded : vals.length}/${isAdmin && !asViewer ? PAIRS.length : vals.length}</span></div>`;
+  const el = $("status"), mem = isMember() && !isAdmin && !demo;      // members never see feed or stream health, only admins do
+  el.style.display = mem ? "none" : ""; el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
+  $("why").className = mem ? "panel" : "panel " + st;
+  if (mem) why = vals.length && !vals.some(d => d.open !== false) ? "All tracked markets are closed right now." : "";
+  $("why").innerHTML = `${mem && !why ? "" : "<b>" + esc(why) + "</b>"}<div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>${esc(sessChip())}</span><span>Pairs loaded ${isAdmin && !asViewer ? loaded : vals.length}/${isAdmin && !asViewer ? PAIRS.length : vals.length}</span></div>`;
   if (isAdmin) $("health").innerHTML = [["Engine", asViewer ? "Server (24/7)" : "This page"], ["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", PAIRS.some(isOpen) ? "Open" : "Closed"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
     .map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
   return st;
@@ -833,15 +848,15 @@ function renderMain() {
   const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
   const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~24 hours, spread ignored)` : "not enough past signals to measure";
   $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div><canvas id="cv" width="600" height="120"></canvas>
-    <div class="tfs">${["M5", "M15", "M30", "H1"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
+    ${allow("mtf") ? "" : lockBox("mtf", "The multi time frame view")}<div class="tfs" style="${allow("mtf") ? "" : "display:none"}">${["M5", "M15", "M30", "H1"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
     <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
-    ${lvBlock(sel, d)}
-    ${dayBlock(sel, d)}
+    ${allow("lv") ? lvBlock(sel, d) : lockBox("lv", "Entry, target and stop levels")}
+    ${allow("day") ? dayBlock(sel, d) : lockBox("day", "Day range analysis")}
     <div id="live_line">${liveLine(sel)}</div>
-    <p class="mut">Bars show signal strength, not a probability. Tested: ${bt}. Last tick ${d.age ?? 0}s ago.</p>`;
+    <p class="mut">Bars show signal strength, not a probability. ${allow("tested") ? "Tested: " + bt + "." : ""} Last tick ${d.age ?? 0}s ago.</p>`;
   const c = $("cv"), a = d.spark; if (!c || a.length < 2) return;
-  const L = (d.signal === "BUY" || d.signal === "SELL") && d.lv ? d.lv : null, all = L ? [...a, L.t2, L.stop, L.entry] : a;
+  const L = allow("lv") && (d.signal === "BUY" || d.signal === "SELL") && d.lv ? d.lv : null, all = L ? [...a, L.t2, L.stop, L.entry] : a;
   const x = c.getContext("2d"), w = c.width, h = c.height, lo = Math.min(...all), r = Math.max(...all) - lo || 1, py = v => h - 6 - (v - lo) / r * (h - 12);
   if (L) {                                           // dashed lines: entry, targets, stop
     x.lineWidth = 1; x.setLineDash([6, 4]);
@@ -892,12 +907,15 @@ function resStats(pair) {
     open: all.filter(r => r.status === "open").length, first: a.reduce((m, r) => Math.min(m, r.ts || m), Infinity) };
 }
 function liveLine(pair) {
+  if (!allow("track")) return "";
   const s = pair ? resStats(pair) : null;
   if (!s || !(s.w + s.l)) return '<p class="mut">Live record on this pair: no decided signals yet.</p>';
   return `<p class="mut">Live record on this pair: ${pct(s.rate)} of ${s.w + s.l} decided signals moved the right way${s.w + s.l < 30 ? " (too few to trust yet)" : ""}.</p>`;
 }
 function renderResults() {
   const box = $("track_body"); if (!box) return;
+  $("track").style.display = allow("track") ? "" : "none";
+  if (!allow("track")) { box.innerHTML = ""; return; }
   $("res_csv").style.display = isAdmin ? "" : "none";
   const o = resStats(), done = o.w + o.l, pairs = [...new Set(Object.values(RES).map(r => r && r.pair).filter(Boolean))].sort();
   let h = o.n ? `<p><b class="num">${done ? pct(o.rate) : "-"}</b> of ${done} decided signals moved the right way since ${fmtD(o.first)}.</p>
@@ -921,8 +939,40 @@ $("res_csv").onclick = () => {
 
 // ---------- charts: candles, bars, Heikin Ashi, line, area, with indicators ----------
 const CHTF = [["m1", 1, 150], ["m5", 5, 150], ["m15", 15, 96], ["h1", 60, 24]];   // time frame, minutes per candle, candles kept
+const TIERS = [
+  { k: "normal", n: "Normal", tag: "A few days to try it", f: ["Live BUY, SELL, WAIT and DANGER signals", "Candles, line and area charts", "1m and 5m time frames", "EMA trend lines"] },
+  { k: "bronze", n: "Bronze", tag: "Start trading with levels", f: ["Everything in Normal", "Entry, target and stop levels", "Bars chart, 15m, Bollinger bands", "Tested hit rate and live track record"] },
+  { k: "silver", n: "Silver", tag: "Deeper analysis", f: ["Everything in Bronze", "Multi time frame view (M5 to H1)", "Day range analysis", "Heikin Ashi, 1h, RSI and MACD"] },
+  { k: "gold", n: "Gold", tag: "Full analysis", f: ["Everything in Silver", "Stochastic and ADX", "Plain-language indicator readout", "Official CBK Kenya shilling rates"] }
+];
+const LEVELS = ["normal", "bronze", "silver", "gold", "basic", "pro", "vip"];
+const tierKey = l => { l = String(l || "").toLowerCase(); return ({ basic: "normal", pro: "silver", vip: "gold" })[l] || l; };   // older plans keep working
+const lvName = l => { const t = TIERS.find(x => x.k === tierKey(l)); return t ? t.n : ""; };
+const NEED = { ohlc: 1, ha: 2, m15: 1, h1: 2, bb: 1, lv: 1, rsi: 2, macd: 2, sto: 3, adx: 3, read: 3, cbk: 3, tested: 1, track: 1, mtf: 2, day: 2 };
+function mRank() {
+  try {                                   // admins see everything; a paid member without a tier (older plans) also gets everything
+  if (isAdmin) return 3; if (!MEM.level) return 3;
+  const i = TIERS.findIndex(t => t.k === tierKey(MEM.level)); return i < 0 ? 0 : i;
+  } catch { return 3; }                              // before sign-in the page is still starting up
+}
+const allow = k => mRank() >= (NEED[k] || 0);
+const needName = k => TIERS[NEED[k] || 0].n;
+const lockBox = (k, what) => `<div class="lockbox"><b>${what}</b> comes with ${needName(k)} and above. Ask the admin to upgrade your plan.</div>`;
+function medal(k) {                                  // drawn medal for each tier
+  const C = { normal: ["#e6ecf3", "#8b98aa"], bronze: ["#f0b27a", "#9a5b24"], silver: ["#ffffff", "#8f9bab"], gold: ["#ffe08a", "#c98a0a"] }[k] || ["#ddd", "#888"], i = TIERS.findIndex(t => t.k === k), id = "g" + k;
+  return `<svg class="medal" viewBox="0 0 64 74" width="52" height="60" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${C[0]}"/><stop offset="1" stop-color="${C[1]}"/></linearGradient></defs>
+    <path d="M18 2h12l6 22H22z" fill="${C[1]}" opacity=".75"/><path d="M46 2H34l-6 22h14z" fill="${C[1]}" opacity=".5"/>
+    <circle cx="32" cy="46" r="23" fill="url(#${id})" stroke="${C[1]}" stroke-width="2"/><circle cx="32" cy="46" r="17" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.5"/>
+    <text x="32" y="53" text-anchor="middle" font-size="20" font-weight="700" font-family="sans-serif" fill="${C[1]}">${i === 0 ? "N" : i}</text></svg>`;
+}
 let CH = { type: "candles", tf: "m1", ind: { ema: true, bb: false, lv: true, rsi: false, macd: false, sto: false, adx: false }, hover: -1, n: 0 }, CHD = {}, chRefC = null, chKeyC = "", chErrAt = 0;
 try { const s0 = JSON.parse(localStorage.getItem("fr_chart") || "null"); if (s0) { CH.type = s0.type || CH.type; CH.tf = s0.tf || CH.tf; CH.ind = { ...CH.ind, ...(s0.ind || {}) }; } } catch {}
+const CHNEED = { type: { ohlc: "ohlc", ha: "ha" }, tf: { m15: "m15", h1: "h1" } };
+function clampCH() {                                 // quietly drop saved chart choices the plan does not include
+  const t = CHNEED.type[CH.type]; if (t && !allow(t)) CH.type = "candles";
+  const f = CHNEED.tf[CH.tf]; if (f && !allow(f)) CH.tf = "m1";
+  Object.keys(CH.ind).forEach(k => { if (CH.ind[k] && NEED[k] && !allow(k)) CH.ind[k] = false; });
+}
 const saveCH = () => { try { localStorage.setItem("fr_chart", JSON.stringify({ type: CH.type, tf: CH.tf, ind: CH.ind })); } catch {} };
 function aggCandles(cd, m, n) {                      // 1-minute candles into m-minute candles, newest n
   const step = m * 60, out = []; let cur = null;
@@ -1010,6 +1060,7 @@ function prep(cv) {
 }
 function drawChart() {
   const cv = $("cc"), sw = $("sigwrap"); if (!cv || !sw || sw.style.display === "none") return;
+  clampCH();
   ["rsi", "macd", "sto", "adx"].forEach(k => { $("c_" + k).style.display = CH.ind[k] ? "block" : "none"; });
   const pair = sel, d = pair && data[pair]; $("c_pair").textContent = pair || "";
   const g = prep(cv); if (!g) return; const { x, w, h } = g, mut = cssv("--mut"), lineC = cssv("--line"), upc = cssv("--buy"), dnc = cssv("--sell"), txc = cssv("--tx");
@@ -1073,15 +1124,18 @@ function drawChart() {
   }
   if (CH.ind.sto) { const st = stochS(full.map(c => c.h), full.map(c => c.l), cl), f3 = frame("sto", "Stochastic 14/3/3", 0, 100, [20, 80]); if (f3) { path(f3, st.k, "#8fb0ff"); path(f3, st.d, "#f2b84b"); } }
   if (CH.ind.adx) { const ax = adxS(full.map(c => c.h), full.map(c => c.l), cl), f4 = frame("adx", "ADX 14" + (ax.adx[full.length - 1] != null ? "  " + ax.adx[full.length - 1].toFixed(0) : ""), 0, 60, [20, 25]); if (f4) { path(f4, ax.adx, "#f2b84b"); path(f4, ax.pdi, upc); path(f4, ax.mdi, dnc); } }
-  $("c_read").innerHTML = readout(full, d);
+  $("c_read").innerHTML = allow("read") ? readout(full, d) : lockBox("read", "The plain-language indicator readout");
 }
 function syncToolbar() {
+  clampCH();
+  document.querySelectorAll("#chartpanel button").forEach(b => { const k = b.dataset.ct || b.dataset.ctf || b.dataset.ci, lk = !!NEED[k] && !allow(k); b.classList.toggle("lk", lk); if (lk) b.dataset.t = needName(k); else delete b.dataset.t; });
   document.querySelectorAll("#chartpanel button[data-ct]").forEach(b => b.classList.toggle("on", b.dataset.ct === CH.type));
   document.querySelectorAll("#chartpanel button[data-ctf]").forEach(b => b.classList.toggle("on", b.dataset.ctf === CH.tf));
   document.querySelectorAll("#chartpanel button[data-ci]").forEach(b => b.classList.toggle("on", !!CH.ind[b.dataset.ci]));
 }
 $("chartpanel").onclick = e => {
   const b = e.target.closest("button[data-ct],button[data-ctf],button[data-ci]"); if (!b) return;
+  { const k = b.dataset.ct || b.dataset.ctf || b.dataset.ci; if (NEED[k] && !allow(k)) return banner(b.textContent.trim() + " comes with " + needName(k) + " and above. Ask the admin to upgrade your plan."); }
   if (b.dataset.ct) CH.type = b.dataset.ct; if (b.dataset.ctf) CH.tf = b.dataset.ctf; if (b.dataset.ci) CH.ind[b.dataset.ci] = !CH.ind[b.dataset.ci];
   saveCH(); syncToolbar(); syncChartListener(); drawChart();
 };
@@ -1289,7 +1343,7 @@ $("ulist").onclick = async e => {
       if (!amSuper()) return alert("Only a super admin can approve or revoke paid access.");
       if (AP[id] === true) { await dbr.ref().update({ ["approved/" + id]: null, ["memberships/" + id]: null }); logEvt("Revoked membership for " + nm(id)); }
       else { const PL = SITE.plans || [], d = prompt("Access for " + nm(id) + " (blank = no expiry).\n" + (PL.length ? "Type a plan number:\n" + PL.map((q, i) => (i + 1) + ". " + q.name + " (" + durText(q.days) + ", " + lvName(q.level) + ")").join("\n") + "\nor a length like 3h, 10d, 1w." : "Days, or a length like 3h, 10d, 1w."), ""); if (d === null) return;
-        const k = Math.floor(+d); let days = 0, plan = "", level = ""; if (PL.length && k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "basic"; } else if (d.trim()) { days = /^\d+$/.test(d.trim()) ? +d.trim() : parseDur(d); if (!days) return alert("Use a plan number or a length like 3h, 10d, 1w."); }
+        const k = Math.floor(+d); let days = 0, plan = "", level = ""; if (PL.length && k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "normal"; } else if (d.trim()) { days = /^\d+$/.test(d.trim()) ? +d.trim() : parseDur(d); if (!days) return alert("Use a plan number or a length like 3h, 10d, 1w."); }
         await grant(id, days, plan, level); logEvt("Approved " + nm(id) + (days ? " for " + durText(days) + (plan ? " (" + plan + ")" : "") : " with no expiry")); }
     }
     if (a === "term") {
@@ -1377,14 +1431,13 @@ function durText(days) {                             // days -> "45 min", "3 hou
   return (Math.round(d * 10) / 10) + (d === 1 ? " day" : " days");
 }
 function leftText(ms) { const m = Math.max(0, Math.ceil(ms / 60000)); return m < 60 ? m + " min" : m < 1440 ? Math.floor(m / 60) + " h " + (m % 60) + " min" : Math.ceil(m / 1440) + " days"; }
-const LEVELS = ["basic", "pro", "vip"], lvName = l => ({ basic: "Basic", pro: "Pro", vip: "VIP" })[String(l || "").toLowerCase()] || "";
 function parsePlans(text) {                          // returns { plans, error }
   const out = []; let n = 0;
   for (const line of String(text || "").split("\n")) {
     const raw = line.trim(); if (!raw) continue; n++;
     const [name, price, len, lvl] = raw.split("|").map(x => (x || "").trim()), d = parseDur(len);
     if (!name || !d) return { plans: [], error: "Line " + n + ": use  Name | Price | Length | Level  with a length like 30min, 2h, 1d, 1w, 1mo or 1y." };
-    const lv = (lvl || "basic").toLowerCase(); if (!LEVELS.includes(lv)) return { plans: [], error: "Line " + n + ": level must be Basic, Pro or VIP." };
+    const lv = tierKey(lvl || "normal"); if (!LEVELS.includes(lv)) return { plans: [], error: "Line " + n + ": level must be Normal, Bronze, Silver or Gold." };
     out.push({ name: name.slice(0, 40), price: price.slice(0, 40), days: d, level: lv });
   }
   return { plans: out.slice(0, 12), error: "" };
@@ -1405,7 +1458,7 @@ function startCommon(u) {
   if (isAdmin) startAdminExtras();
   else {
     listen(dbr.ref("approved/" + u.uid), s => { MEM.apr = s.val() === true; access(); });
-    listen(dbr.ref("memberships/" + u.uid), s => { MEM.until = (s.val() && s.val().until) || 0; MEM.level = (s.val() && s.val().level) || ""; MEM.plan = (s.val() && s.val().plan) || ""; access(); });
+    listen(dbr.ref("memberships/" + u.uid), s => { MEM.until = (s.val() && s.val().until) || 0; MEM.level = (s.val() && s.val().level) || ""; MEM.plan = (s.val() && s.val().plan) || ""; access(); try { syncToolbar(); renderCbk(); renderResults(); render(); } catch {} });
     listen(dbr.ref("payments/" + u.uid), s => { MYPAY = s.val() || {}; renderMember(); });
   }
   access();
@@ -1436,7 +1489,7 @@ function startCbk() { if (cbkRef) return; cbkRef = dbr.ref("feed/cbk"); cbkRef.o
 function stopCbk() { if (cbkRef) cbkRef.off(); cbkRef = null; CBK = null; renderCbk(); }
 function renderCbk() {                               // official Central Bank of Kenya shilling rates, fetched by the server engine
   const el = $("cbkpanel"); if (!el) return;
-  if (!CBK || !CBK.rows || !CBK.rows.length || !isMember()) { el.style.display = "none"; return; }
+  if (!CBK || !CBK.rows || !CBK.rows.length || !isMember() || !allow("cbk")) { el.style.display = "none"; return; }
   const age = Math.floor((rt() - (CBK.asOf || 0)) / 864e5), old = age > 7;
   el.style.display = "block";
   el.innerHTML = `<b>Kenya shilling, official CBK rates</b> <span class="mut">as of ${fmtD(CBK.asOf)}${old ? ` <span style="color:var(--sell)">(${age} days old, CBK has not updated or the engine could not read it)</span>` : ""}</span>
@@ -1472,7 +1525,9 @@ function renderMember() {
     : MEM.term ? `Your subscription was terminated on <b>${fmtD(MEM.term.t)}</b>${MEM.term.reason ? ": " + esc(MEM.term.reason) : ""}. Contact the admin if you think this is a mistake.` : MEM.until && MEM.until <= now ? `Your membership expired on <b>${fmtD(MEM.until)}</b>. Pay below to renew.` : "You do not have an active membership yet.");
   const rows = [["Price", SITE.price], ["Access period", !(SITE.plans || []).length && SITE.days ? SITE.days + " days" : ""], ["M-Pesa", SITE.mpesa], ["Bank", SITE.bank], ["Other", SITE.other]].filter(r => r[1]);
   const hasT = !!SITE.terms; $("m_terms").style.display = hasT ? "block" : "none"; $("m_terms_t").textContent = SITE.terms || ""; $("m_agree_l").style.display = hasT ? "block" : "none";
-  const PL = SITE.plans || [], planHtml = PL.length ? '<div class="plans">' + PL.map(q => `<div class="plan ${esc(q.level || "")}"><b>${esc(q.name)}${q.level && q.level !== "basic" ? '<span class="lv ' + esc(q.level) + '">' + lvName(q.level) + "</span>" : ""}</b><div class="pp">${esc(q.price || "")}</div><span class="mut">${durText(q.days)} of access</span></div>`).join("") + "</div>" : "";
+  const PL = SITE.plans || [], mine = MEM.level ? tierKey(MEM.level) : "", shown = TIERS.filter(t => !PL.length || PL.some(q => tierKey(q.level || "normal") === t.k)).reverse();
+  const planHtml = '<div class="tiers">' + shown.map(t => { const ps = PL.filter(q => tierKey(q.level || "normal") === t.k);
+    return `<div class="tier ${t.k}${mine === t.k ? " mine" : ""}"><div class="th">${medal(t.k)}<div><h4>${t.n}${mine === t.k ? ' <span class="lv ' + t.k + '">Your plan</span>' : ""}</h4><div class="tg">${t.tag}</div></div></div><ul>${t.f.map(f => "<li>" + esc(f) + "</li>").join("")}</ul>${ps.map(q => `<div class="opt"><span>${esc(q.name)}${String(q.name).toLowerCase().includes(durText(q.days)) ? "" : ' <span class="mut">' + durText(q.days) + "</span>"}</span><b>${esc(q.price || "")}</b></div>`).join("")}</div>`; }).join("") + "</div>";
   $("m_info").innerHTML = planHtml + (rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>');
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
   $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments and receipts</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span></div><div class="mut">${fmtDT(p.ts || 0)} <button data-rc="${esc(p.id)}">Receipt</button></div></div>`).join("") : "";
@@ -1572,7 +1627,7 @@ $("pend").onclick = async e => {
         const amtN = x => +String(x || "").replace(/[^0-9.]/g, ""), hit = PL.findIndex(q => p.amount > 0 && amtN(q.price) === +p.amount);
         const d = prompt("Confirm code " + p.code + " from " + nm(uid) + (p.amount != null ? " (paid " + p.amount + ")" : "") + ".\nChoose a plan number, or type a custom length like 3h or 10d:\n\n" + PL.map((q, i) => (i + 1) + ". " + q.name + "  " + q.price + "  " + durText(q.days) + "  " + lvName(q.level)).join("\n"), hit >= 0 ? String(hit + 1) : "1"); if (d === null) return;
         const k = Math.floor(+d);
-        if (k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "basic"; }
+        if (k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "normal"; }
         else { days = parseDur(d); plan = durText(days); if (!days) return alert("Type a plan number or a length like 3h, 10d, 2w."); }
       } else {
         const d = prompt("Confirm code " + p.code + " from " + nm(uid) + ".\nLength of membership? (number of days, or 3h, 2w, 1mo)", SITE.days || 30); if (d === null) return;
