@@ -1027,7 +1027,7 @@ function priceFor(plan, days) {                              // the admin's save
   const sp = (SITE.plans || []).find(q => tierOf(q) === plan && Math.abs(q.days - days) < .01), n = sp ? +String(sp.price || "").replace(/[^0-9.]/g, "") : 0;
   if (n > 0) return n; const t = PRICES[plan]; return t ? (t[days] || (days >= 20 ? t[30] : days >= 3 ? t[7] : 0)) || 0 : 0;
 }
-let openPay = () => {};
+let openPay = () => {}, openGrant = () => {};
 (function () {                                              // the pay sheet: opened by every plan button
   const sh = document.createElement("div"); sh.id = "psheet"; document.body.appendChild(sh);
   let stkRef = null, meth = "mpesa", ctx = null, gen = 0;
@@ -1084,7 +1084,48 @@ let openPay = () => {};
       setTimeout(() => { const r = $("m_msg").textContent; m.textContent = r || "Sent."; if (/^sent/i.test(r)) setTimeout(() => { if (my === gen) close(); }, 2500); }, 1200);
     };
   }
-  openPay = open;
+  const LENS = [["1 day", 1], ["1 week", 7], ["2 weeks", 14], ["1 month", 30], ["3 months", 90], ["1 year", 365]];
+  function grantDlg(id, o) {                                  // super admin: give or change a member's tier and length
+    o = o || {}; const my = ++gen, cur = MS[id] || {}, who = nm(id), em = (U[id] && U[id].email) || "", p = o.pay;
+    let tier = TIERS.find(t => t.k === tierKey(cur.level)) ? tierKey(cur.level) : "bronze", days = 7, hit = false;
+    if (p && +p.amount > 0) TIERS.forEach(t => [7, 30].forEach(d => { if (!hit && priceFor(t.n, d) === +p.amount) { tier = t.k; days = d; hit = true; } }));
+    const act = AP[id] === true && cur.until > rt();
+    sh.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-label="Give access"><h3>${p ? "Confirm payment and give access" : "Give access"}</h3>
+      <div class="mut">${esc(who)}${em && em !== who ? " &middot; " + esc(em) : ""}<br>${act ? "Now: " + esc(cur.plan || "") + " " + (cur.level ? "(" + lvName(cur.level) + ") " : "") + "until " + fmtDT(cur.until) : "Not active now"}${p ? "<br>Payment: code <b>" + esc(p.code) + "</b>" + (p.amount ? ", " + esc(p.amount) : "") : ""}</div>
+      <div class="ways gt" role="group" aria-label="Tier">${TIERS.slice().reverse().map(t => `<button type="button" data-t="${t.k}">${t.n}</button>`).join("")}</div>
+      <div class="ways gl" role="group" aria-label="Length">${LENS.map(l => `<button type="button" data-d="${l[1]}">${l[0]}</button>`).join("")}</div>
+      <input type="text" id="gd_c" placeholder="Or a custom length: 3h, 10d, 2w" maxlength="12" autocomplete="off">
+      ${act ? '<label class="mut chk"><input type="checkbox" id="gd_r"> Start from now (replace the time they have left)</label>' : ""}
+      ${p ? "" : '<details style="margin-top:8px"><summary class="mut">Record the money received (optional)</summary><div style="display:flex;flex-direction:column;gap:6px;margin-top:6px"><input type="number" id="gd_a" min="0" placeholder="Amount in KES"><select id="gd_m"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="bank">Bank</option><option value="other">Other</option></select><input type="text" id="gd_f" placeholder="Reference or code" maxlength="20"></div></details>'}
+      <div class="stk" id="gd_pv" style="margin-top:10px"></div><div class="pm" id="gd_msg" role="status"></div>
+      <div class="row2"><button type="button" class="btn-p" id="gd_go">${p ? "Confirm and give access" : "Give access"}</button><button type="button" id="gd_x">Cancel</button></div></div>`;
+    sh.style.display = "block";
+    const tn = () => TIERS.find(t => t.k === tier).n, getDays = () => { const c = $("gd_c").value.trim(); return c ? parseDur(c) : days; };
+    const draw = () => { sh.querySelectorAll(".gt button").forEach(b => b.classList.toggle("on", b.dataset.t === tier)); sh.querySelectorAll(".gl button").forEach(b => b.classList.toggle("on", !$("gd_c").value.trim() && +b.dataset.d === days));
+      const d = getDays(), base = $("gd_r") && $("gd_r").checked ? rt() : Math.max(rt(), cur.until || 0);
+      $("gd_pv").innerHTML = d > 0 ? `<b>${tn()}</b> for ${esc(durText(d))}<div class="mut">Access runs until <b>${fmtDT(base + d * 864e5)}</b>${(!$("gd_r") || !$("gd_r").checked) && cur.until > rt() ? " (added to their remaining time)" : ""}. Price list: ${priceFor(tn(), d) ? kes(priceFor(tn(), d)) : "custom length"}</div>` : '<span class="mut">Choose a length.</span>'; };
+    sh.querySelector(".gt").onclick = e => { const b = e.target.closest("button[data-t]"); if (b) { tier = b.dataset.t; draw(); } };
+    sh.querySelector(".gl").onclick = e => { const b = e.target.closest("button[data-d]"); if (b) { days = +b.dataset.d; $("gd_c").value = ""; draw(); } };
+    $("gd_c").oninput = draw; if ($("gd_r")) $("gd_r").onchange = draw; $("gd_x").onclick = close; draw();
+    $("gd_go").onclick = async () => {
+      const d = getDays(), m = $("gd_msg"); if (!(d > 0)) return m.textContent = "Choose a length, like 1 week or 3h.";
+      if (!amSuper()) return m.textContent = "Only a super admin can give access.";
+      $("gd_go").disabled = true; m.textContent = "Saving...";
+      try {
+        const plan = tn() + " " + durText(d), level = tier, rep = !!($("gd_r") && $("gd_r").checked);
+        const receipt = "RC" + new Date(rt()).toISOString().slice(2, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+        await grant(id, d, plan, level, rep);
+        if (p) { await dbr.ref(o.base).update({ status: "confirmed", by: auth.currentUser.email || "", decidedAt: TS, days: d, receipt }); logEvt("Confirmed payment " + p.code + " for " + who + " (" + plan + ", " + receipt + ")"); }
+        else {
+          const amt = +($("gd_a") && $("gd_a").value) || 0;
+          if (amt > 0) { const pid = dbr.ref("payments/" + id).push().key; await dbr.ref("payments/" + id + "/" + pid).set({ method: $("gd_m").value, code: ($("gd_f").value.trim() || "MANUAL").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20) || "MANUAL", amount: amt, status: "confirmed", ts: TS, days: d, receipt, by: auth.currentUser.email || "", decidedAt: TS, email: em, manual: true }); }
+          logEvt("Gave " + who + " " + plan + (amt > 0 ? " (recorded " + amt + ")" : ""));
+        }
+        m.textContent = "Done. " + who + " now has " + plan + "."; setTimeout(() => { if (my === gen) close(); }, 1200);
+      } catch (err) { m.textContent = "Could not save: " + err.message; $("gd_go").disabled = false; }
+    };
+  }
+  openPay = open; openGrant = grantDlg;
 })();
 
 async function doSignOut(why) { try { await logEvt(why || "Signed out"); sessionStorage.removeItem("fr_log"); } catch {}                       // mark offline first, then sign out
@@ -1690,7 +1731,7 @@ function renderUsers() {
       if (id === me) acts = '<span class="mut">Your account</span>';
       else if (!canAct(id, v)) acts = '<span class="mut">' + (t === 3 ? "Owner (protected)" : "Protected") + "</span>";
       else {
-        if (t === 0) acts += (amSuper() ? btn("apr", id, apr ? "Unapprove" : "Approve") + (apr ? btn("term", id, "Terminate", "bad") : "") : "") + btn("kick", id, "Sign out");
+        if (t === 0) acts += (amSuper() ? (apr ? btn("plan", id, "Change plan") + btn("apr", id, "Unapprove") + btn("term", id, "Terminate", "bad") : btn("plan", id, "Approve with plan", "pri")) : "") + btn("kick", id, "Sign out");
         if (mt >= 2 && t <= 1) acts += btn("adm", id, t === 1 ? "Remove admin" : "Make admin");
         if (mt === 3 && t === 1) acts += btn("sup", id, "Make super admin");
         if (mt === 3 && t === 2) acts += btn("unsup", id, "Remove super admin");
@@ -1698,7 +1739,7 @@ function renderUsers() {
         acts += btn("rst", id, "Reset password") + btn("blk", id, blk ? "Unblock" : "Block") + btn("del", id, "Remove", "bad");
       }
       return `<div class="urow"><div class="udata"><span class="stt ${live ? "on" : ""}">${live ? "\u25cf Online" : "\u25cb Offline"}</span><b>${esc(v.email || id)}</b>${v.name ? ' <span class="mut">' + esc(v.name) + "</span>" : ""}
-      ${id === me ? '<span class="pill">you</span>' : ""}${t === 3 ? '<span class="pill own">Owner</span>' : t === 2 ? '<span class="pill adm">Super admin</span>' : t === 1 ? '<span class="pill adm">Admin</span>' : ""}${t === 0 && !apr ? '<span class="pill">Unpaid</span>' : ""}${t === 0 && apr ? '<span class="pill apr">Approved</span>' : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + fmtD(MS[id].until) + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
+      ${id === me ? '<span class="pill">you</span>' : ""}${t === 3 ? '<span class="pill own">Owner</span>' : t === 2 ? '<span class="pill adm">Super admin</span>' : t === 1 ? '<span class="pill adm">Admin</span>' : ""}${t === 0 && !apr ? '<span class="pill">Unpaid</span>' : ""}${t === 0 && apr ? '<span class="pill apr">Approved</span>' + (MS[id] && MS[id].level ? '<span class="pill lv ' + tierKey(MS[id].level) + '">' + lvName(MS[id].level) + "</span>" : "") : ""}${MS[id] && MS[id].until ? '<span class="pill">' + (MS[id].until > now ? "Until " : "Expired ") + fmtD(MS[id].until) + "</span>" : ""}${blk ? '<span class="pill blk">Blocked</span>' : ""}
       <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + fmtDT(PR[id].last) : "Never signed in"}</div></div>
       <div class="uact">${acts}</div></div>`;
     }).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
@@ -1726,12 +1767,12 @@ $("ulist").onclick = async e => {
   try {
     if (a === "blk") { await dbr.ref("users/" + id + "/blocked").set(!blk); logEvt((blk ? "Unblocked " : "Blocked ") + nm(id)); }
     if (a === "adm") { await dbr.ref("admins/" + id).set(AD[id] === true ? null : true); logEvt((AD[id] === true ? "Removed admin rights from " : "Made admin: ") + nm(id)); }
+    if (a === "plan") { if (!amSuper()) return alert("Only a super admin can give or change paid access."); return openGrant(id); }
     if (a === "apr") {
       if (!amSuper()) return alert("Only a super admin can approve or revoke paid access.");
       if (AP[id] === true) { await dbr.ref().update({ ["approved/" + id]: null, ["memberships/" + id]: null }); logEvt("Revoked membership for " + nm(id)); }
-      else { const PL = SITE.plans || [], d = prompt("Access for " + nm(id) + " (blank = no expiry).\n" + (PL.length ? "Type a plan number:\n" + PL.map((q, i) => (i + 1) + ". " + q.name + " (" + durText(q.days) + ", " + lvName(q.level) + ")").join("\n") + "\nor a length like 3h, 10d, 1w." : "Days, or a length like 3h, 10d, 1w."), ""); if (d === null) return;
-        const k = Math.floor(+d); let days = 0, plan = "", level = ""; if (PL.length && k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "normal"; } else if (d.trim()) { days = /^\d+$/.test(d.trim()) ? +d.trim() : parseDur(d); if (!days) return alert("Use a plan number or a length like 3h, 10d, 1w."); }
-        await grant(id, days, plan, level); logEvt("Approved " + nm(id) + (days ? " for " + durText(days) + (plan ? " (" + plan + ")" : "") : " with no expiry")); }
+      else return openGrant(id);
+
     }
     if (a === "term") {
       if (!amSuper()) return alert("Only a super admin can terminate a subscription.");
@@ -1830,10 +1871,10 @@ function parsePlans(text) {                          // returns { plans, error }
   return { plans: out.slice(0, 12), error: "" };
 }
 const plansText = a => (a || []).map(p => [p.name, p.price, durText(p.days).replace(" hours", "h").replace(" hour", "h").replace(/ min/, "min").replace(/ days?/, "d").replace(/ weeks?/, "w").replace(/ months?/, "mo").replace(/ years?/, "y"), lvName(p.level)].join(" | ")).join("\n");
-async function grant(id, days, plan, level) {        // approve a user; days = 0 means no expiry; days may be a fraction (hours)
+async function grant(id, days, plan, level, replace) {        // approve a user; days = 0 means no expiry; days may be a fraction (hours)
   const now = rt(), cur = (MS[id] && MS[id].until) || 0, u = {};
   u["approved/" + id] = true; u["users/" + id + "/terminated"] = null;
-  u["memberships/" + id] = days ? Object.assign({ until: Math.max(now, cur) + Math.round(days * 86400000), plan: plan || durText(days) }, level ? { level } : {}) : null;
+  u["memberships/" + id] = days ? Object.assign({ until: (replace ? now : Math.max(now, cur)) + Math.round(days * 86400000), plan: plan || durText(days) }, level ? { level } : {}) : null;
   await dbr.ref().update(u);
 }
 function startCommon(u) {
@@ -2034,22 +2075,7 @@ $("pend").onclick = async e => {
   if (!amSuper()) return alert("Only a super admin can confirm, reject or reverse payments.");
   const base = "payments/" + uid + "/" + pid;
   try {
-    if (act === "ok") {
-      const PL = SITE.plans || []; let days, plan = "", level = "";
-      if (PL.length) {
-        const amtN = x => +String(x || "").replace(/[^0-9.]/g, ""), hit = PL.findIndex(q => p.amount > 0 && amtN(q.price) === +p.amount);
-        const d = prompt("Confirm code " + p.code + " from " + nm(uid) + (p.amount != null ? " (paid " + p.amount + ")" : "") + ".\nChoose a plan number, or type a custom length like 3h or 10d:\n\n" + PL.map((q, i) => (i + 1) + ". " + q.name + "  " + q.price + "  " + durText(q.days) + "  " + lvName(q.level)).join("\n"), hit >= 0 ? String(hit + 1) : "1"); if (d === null) return;
-        const k = Math.floor(+d);
-        if (k >= 1 && k <= PL.length && String(k) === d.trim()) { days = PL[k - 1].days; plan = PL[k - 1].name; level = PL[k - 1].level || "normal"; }
-        else { days = parseDur(d); plan = durText(days); if (!days) return alert("Type a plan number or a length like 3h, 10d, 2w."); }
-      } else {
-        const d = prompt("Confirm code " + p.code + " from " + nm(uid) + ".\nLength of membership? (number of days, or 3h, 2w, 1mo)", SITE.days || 30); if (d === null) return;
-        days = /^\d+$/.test(d.trim()) ? +d.trim() : parseDur(d); if (!(days > 0)) return alert("Enter a length like 7, 3h or 1w.");
-      }
-      const receipt = "RC" + new Date(rt()).toISOString().slice(2, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
-      await grant(uid, days, plan, level);
-      await dbr.ref(base).update({ status: "confirmed", by: auth.currentUser.email || "", decidedAt: TS, days, receipt });
-      logEvt("Confirmed payment " + p.code + " for " + nm(uid) + " (" + (plan ? plan + ", " : "") + durText(days) + ", " + receipt + ")");
+    if (act === "ok") { return openGrant(uid, { pay: p, base });
     } else if (act === "rev") {
       const why = prompt("Reverse payment " + p.code + " from " + nm(uid) + "?\nThis takes back the " + durText(p.days || 0) + " it granted.\nReason (optional):", ""); if (why === null) return;
       const cur = (MS[uid] && MS[uid].until) || 0, nu = cur - (p.days || 0) * 864e5, u = {};
@@ -2449,14 +2475,14 @@ function startData() {
   if (can("hr", "view")) { sub("leave", dbr.ref("hr/leave").limitToLast(500)); sub("att", dbr.ref("hr/attendance/" + day)); }
   if (can("payroll", "view")) { sub("scales", dbr.ref("pay/scales")); sub("runs", dbr.ref("pay/runs")); }
   if (can("rec", "view")) { sub("visitors", dbr.ref("rec/visitors").limitToLast(500)); sub("appts", dbr.ref("rec/appointments").limitToLast(500)); sub("msgs", dbr.ref("rec/messages").limitToLast(500)); }
-  if (ME.sup || ME.owner) { sub("staff", dbr.ref("staff")); sub("users", dbr.ref("users")); }
+  if (ME.sup || ME.owner) { sub("staff", dbr.ref("staff")); sub("users", dbr.ref("users")); sub("appr", dbr.ref("approved")); sub("mships", dbr.ref("memberships")); sub("adm", dbr.ref("admins")); sub("site", dbr.ref("site")); }
   if (ME.owner) sub("slog", dbr.ref("slog").limitToLast(400));
 }
 
 // ---------- shell ----------
 const NAV = [
   { sec: "MAIN", c: "var(--buy)" }, { id: "home", t: "Dashboard" },
-  { sec: "FINANCE", c: "var(--fin)", m: "finance" }, { id: "f_inv", t: "Invoices", m: "finance" }, { id: "f_pay", t: "Payments & receipts", m: "finance" }, { id: "f_stm", t: "Member statement", m: "finance" }, { id: "f_rev", t: "Reversal requests", m: "finance" }, { id: "f_day", t: "Daybook", m: "finance" },
+  { sec: "FINANCE", c: "var(--fin)", m: "finance" }, { id: "f_inv", t: "Invoices", m: "finance" }, { id: "f_pay", t: "Payments & receipts", m: "finance" }, { id: "f_sub", t: "Subscriptions", m: "finance" }, { id: "f_stm", t: "Member statement", m: "finance" }, { id: "f_rev", t: "Reversal requests", m: "finance" }, { id: "f_day", t: "Daybook", m: "finance" },
   { sec: "HUMAN RESOURCES", c: "var(--hr)", m: "hr" }, { id: "h_emp", t: "Employees", m: "hr" }, { id: "h_lv", t: "Leave", m: "hr" }, { id: "h_att", t: "Attendance", m: "hr" },
   { sec: "RECEPTION", c: "var(--rec)", m: "rec" }, { id: "r_vis", t: "Visitors", m: "rec" }, { id: "r_apt", t: "Appointments", m: "rec" }, { id: "r_msg", t: "Messages & calls", m: "rec" },
   { sec: "PAYROLL", c: "var(--hr)", m: "payroll" }, { id: "p_grp", t: "Job groups", m: "payroll" }, { id: "p_run", t: "Payroll", m: "payroll" },
@@ -2553,6 +2579,27 @@ V.home = {
   }
 };
 
+// ---------- FINANCE: member subscriptions (allocate Normal, Bronze, Silver or Gold) ----------
+const STIERS = [["normal", "Normal", "#8b98aa"], ["bronze", "Bronze", "#cd7f32"], ["silver", "Silver", "#b4bfce"], ["gold", "Gold", "#f2b84b"]], SLENS = [["1 day", 1], ["1 week", 7], ["2 weeks", 14], ["1 month", 30], ["3 months", 90], ["1 year", 365]];
+const sTier = l => { l = String(l || "").toLowerCase(); l = ({ basic: "normal", pro: "silver", vip: "gold" })[l] || l; return STIERS.find(t => t[0] === l); };
+const tierPill = l => { const t = sTier(l); return t ? `<span class="pill" style="color:${t[2]};border-color:${t[2]}">${t[1]}</span>` : '<span class="pill">No tier</span>'; };
+const canAlloc = () => ME && (ME.sup || ME.owner);
+const dLen = d => { const h = d * 24; return d >= 365 && d % 365 === 0 ? d / 365 + (d === 365 ? " year" : " years") : d >= 30 && d % 30 === 0 ? d / 30 + (d === 30 ? " month" : " months") : d >= 7 && d % 7 === 0 ? d / 7 + (d === 7 ? " week" : " weeks") : d >= 1 && Number.isInteger(d) ? d + (d === 1 ? " day" : " days") : Math.round(h) + " hours"; };
+const pLen = t => { const m = /^\s*(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours|d|day|days|w|wk|week|weeks|mo|month|months|y|yr|year|years)?\s*$/i.exec(t || ""); if (!m) return 0; const n = +m[1], u = (m[2] || "d").toLowerCase(); return u[0] === "h" ? n / 24 : u === "w" || u === "wk" || u.startsWith("week") ? n * 7 : u === "mo" || u.startsWith("month") ? n * 30 : u[0] === "y" ? n * 365 : n; };
+const memRows = () => rows(C.users).filter(u => u && !u.removed && !(C.staff || {})[u.id] && !(C.adm || {})[u.id] && (u.email || "").toLowerCase() !== "wanjohisteve85@gmail.com");
+V.f_sub = {
+  mount: () => `<div class="card"><h3>Member subscriptions</h3>${canAlloc() ? "" : '<p class="mut">You can see the finance records here. A super admin allocates subscriptions. Record the payment, then ask them to allocate the plan.</p>'}
+    <div class="kpis" id="sb_st"></div><div class="frm" style="margin-top:10px"><input id="sb_q" data-live="1" placeholder="Search name or email" class="grow"></div><div id="list"></div></div>`,
+  live() {
+    if (!canAlloc()) { $("sb_st").innerHTML = ""; $("list").innerHTML = '<div class="empty">Subscriptions are managed by super admins.</div>'; return; }
+    const n = now(), q = ($("sb_q").value || "").toLowerCase(), all = memRows().map(u => ({ u, m: (C.mships || {})[u.id] || {}, ap: (C.appr || {})[u.id] === true })),
+      act = all.filter(r => r.ap && r.m.until > n), soon = act.filter(r => r.m.until - n < 7 * 864e5).length;
+    $("sb_st").innerHTML = `<div class="kpi"><span>ACTIVE MEMBERS</span><b>${act.length}</b></div><div class="kpi"><span>EXPIRING IN 7 DAYS</span><b>${soon}</b></div>` + STIERS.slice().reverse().map(t => `<div class="kpi"><span>${t[1].toUpperCase()}</span><b>${act.filter(r => (sTier(r.m.level) || [])[0] === t[0]).length}</b></div>`).join("");
+    const list = all.filter(r => !q || [r.u.email, r.u.name, r.u.phone].join(" ").toLowerCase().includes(q)).sort((a, b) => (b.ap - a.ap) || ((b.m.until || 0) - (a.m.until || 0))).slice(0, 200);
+    $("list").innerHTML = list.length ? tbl(["Member", "Tier", "Access", ""], list.map(r => [`<b>${esc(r.u.name || r.u.email || r.u.id)}</b><div class="mut">${esc(r.u.email || "")}${r.u.phone ? " &middot; +" + esc(r.u.phone) : ""}</div>`, r.ap && r.m.until ? tierPill(r.m.level) + `<div class="mut">${esc(r.m.plan || "")}</div>` : '<span class="mut">None</span>',
+      r.ap && r.m.until > n ? `<span class="pill ok">Active</span><div class="mut">until ${fDT(r.m.until)}</div>` : r.m.until ? `<span class="pill bad">Expired</span><div class="mut">${fDT(r.m.until)}</div>` : r.ap ? '<span class="pill ok">Approved</span><div class="mut">no expiry</div>' : '<span class="pill">Not approved</span>',
+      `<button class="pri" data-act="subOpen" data-id="${esc(r.u.id)}">${r.ap ? "Change plan" : "Allocate plan"}</button>`])) : '<div class="empty">No members found.</div>';
+  } };
 // ---------- FINANCE: invoices ----------
 V.f_inv = {
   mount: () => gate("finance", "edit", `<div class="card"><h3>New invoice</h3><div class="frm">
@@ -2569,6 +2616,37 @@ V.f_inv = {
   }
 };
 const ACT = {};
+ACT.subOpen = d => {
+  if (!canAlloc()) return; const u = (C.users || {})[d.id] || {}, cur = (C.mships || {})[d.id] || {}, act = (C.appr || {})[d.id] === true && cur.until > now(); let tier = (sTier(cur.level) || STIERS[1])[0], days = 7;
+  $("modal").innerHTML = `<div class="sheet"><h3>${act ? "Change plan" : "Allocate a plan"}</h3><p class="mut">${esc(u.name || u.email || d.id)}${u.email && u.name ? " &middot; " + esc(u.email) : ""}<br>${act ? "Now: " + esc(cur.plan || "") + " until " + fDT(cur.until) : "Not active now"}</p>
+    <div class="frm" id="sd_t">${STIERS.slice().reverse().map(t => `<button type="button" data-t="${t[0]}">${t[1]}</button>`).join("")}</div>
+    <div class="frm" id="sd_l">${SLENS.map(l => `<button type="button" data-d="${l[1]}">${l[0]}</button>`).join("")}</div>
+    <div class="frm"><input id="sd_c" placeholder="Or a custom length: 3h, 10d, 2w" maxlength="12"></div>
+    ${act ? '<label class="mut"><input type="checkbox" id="sd_r"> Start from now (replace the time left)</label>' : ""}
+    <div class="frm"><input type="number" id="sd_a" min="0" placeholder="Amount received, KES (optional)"><select id="sd_m"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="bank">Bank</option><option value="other">Other</option></select><input id="sd_f" placeholder="Reference (optional)" maxlength="20"></div>
+    <div class="empty" id="sd_pv" style="text-align:left"></div><div class="mut" id="sd_msg" role="status"></div></div><div class="acts2"><button class="pri" id="sd_go">Give access</button><button id="mx">Cancel</button></div>`;
+  $("modal").style.display = "block"; $("mx").onclick = () => { $("modal").style.display = "none"; };
+  const tn = () => sTier(tier)[1], gd = () => { const c = $("sd_c").value.trim(); return c ? pLen(c) : days; };
+  const draw = () => { document.querySelectorAll("#sd_t button").forEach(b => b.style.outline = b.dataset.t === tier ? "2px solid var(--buy)" : ""); document.querySelectorAll("#sd_l button").forEach(b => b.style.outline = !$("sd_c").value.trim() && +b.dataset.d === days ? "2px solid var(--buy)" : "");
+    const x = gd(), base = $("sd_r") && $("sd_r").checked ? now() : Math.max(now(), cur.until || 0); $("sd_pv").innerHTML = x > 0 ? `<b>${tn()}</b> for ${dLen(x)}. Access runs until <b>${fDT(base + x * 864e5)}</b>${cur.until > now() && !($("sd_r") && $("sd_r").checked) ? " (added to the time they have left)" : ""}.` : "Choose a length."; };
+  $("sd_t").onclick = e => { const b = e.target.closest("button[data-t]"); if (b) { tier = b.dataset.t; draw(); } };
+  $("sd_l").onclick = e => { const b = e.target.closest("button[data-d]"); if (b) { days = +b.dataset.d; $("sd_c").value = ""; draw(); } };
+  $("sd_c").oninput = draw; if ($("sd_r")) $("sd_r").onchange = draw; draw();
+  $("sd_go").onclick = async () => {
+    const x = gd(), m = $("sd_msg"); if (!(x > 0)) return m.textContent = "Choose a length.";
+    $("sd_go").disabled = true; m.textContent = "Saving...";
+    try {
+      const n = now(), base = $("sd_r") && $("sd_r").checked ? n : Math.max(n, cur.until || 0), plan = tn() + " " + dLen(x), upd = {};
+      upd["approved/" + d.id] = true; upd["users/" + d.id + "/terminated"] = null; upd["memberships/" + d.id] = { until: base + Math.round(x * 864e5), plan, level: tier };
+      const amt = +$("sd_a").value || 0;
+      if (amt > 0) { const pid = dbr.ref("payments/" + d.id).push().key, rc = "RC" + new Date(n).toISOString().slice(2, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+        upd["payments/" + d.id + "/" + pid] = { method: $("sd_m").value, code: ($("sd_f").value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20) || "MANUAL"), amount: amt, status: "confirmed", ts: TS, days: x, receipt: rc, by: ME.email || "", decidedAt: TS, email: u.email || "", manual: true }; }
+      await dbr.ref().update(upd); audit("finance", "Subscription allocated", (u.email || d.id) + " " + plan + (amt > 0 ? " " + money(amt) : ""));
+      m.textContent = "Done. " + (u.name || u.email || "The member") + " now has " + plan + "."; setTimeout(() => { $("modal").style.display = "none"; }, 1200);
+    } catch (er) { m.textContent = "Could not save: " + er.message; $("sd_go").disabled = false; }
+  };
+};
+
 ACT.invNew = async () => {
   if (!can("finance", "edit")) return;
   const adm = val("i_adm").toUpperCase(), nm = val("i_nm"), amt = num($("i_amt").value);
