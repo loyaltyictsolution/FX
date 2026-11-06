@@ -326,38 +326,267 @@ body.staffmode .note{display:none}
 .su-newh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
 .su-ni{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
 .su-ni .uact{display:flex;flex-wrap:wrap;gap:6px}
+/* ===== Steve FX Radar landing page ===== */
+:root{--cta:#2ec4b6;--cta-tx:#06231f}            /* want a red button like Deriv? set --cta:#ff444f and --cta-tx:#ffffff */
+body.landing{max-width:none;padding:0}
+body.landing>.note{display:none}
+#login{max-width:none;margin:0;background:none;border:0;box-shadow:none;padding:0}
+#login input[type=checkbox]{width:auto;margin:0}
+.ld-wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.btn-o{background:transparent;border:1px solid var(--line);color:var(--tx);padding:9px 16px;border-radius:10px;font-weight:600;cursor:pointer;font:inherit;font-weight:600}
+.btn-p{background:var(--cta);color:var(--cta-tx);border:0;padding:10px 18px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
+.btn-p:hover{filter:brightness(1.08)}
+/* top bar */
+.ld-nav{position:sticky;top:0;z-index:30;background:rgba(11,22,34,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+[data-theme=light] .ld-nav{background:rgba(255,255,255,.88)}
+.ld-nav .ld-wrap{display:flex;align-items:center;gap:16px;height:64px}
+.ld-brand{font-weight:700;font-size:20px;letter-spacing:-.01em;background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.ld-links{display:flex;gap:2px;margin-left:12px}
+.ld-links button,.ld-foot button{background:transparent;border:0;color:var(--tx);padding:8px 12px;border-radius:8px;font-size:14px;cursor:pointer}
+.ld-links button:hover,.ld-foot button:hover{background:rgba(143,176,255,.14)}
+.ld-act{display:flex;gap:8px;align-items:center;margin-left:auto}
+/* hero */
+.ld-hero{padding:56px 0 44px}
+.ld-hero .ld-wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}
+.ld-eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--buy);border:1px solid var(--buy);border-radius:999px;padding:4px 12px;margin-bottom:18px}
+#login .ld-hero h1{font-size:clamp(34px,5.4vw,60px);line-height:1.04;letter-spacing:-.03em;font-weight:700;margin:0 0 16px;background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--tx)}
+.ld-grad{background:linear-gradient(90deg,#2ec4b6,#8fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ld-lead{font-size:18px;color:var(--mut);max-width:560px;margin:0 0 26px}
+.ld-cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.ld-cta .btn-p,.ld-cta .btn-o{padding:13px 26px;font-size:16px}
+.ld-trust{display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--mut);font-size:13px}
+.ld-trust span::before{content:"\2713";color:var(--buy);margin-right:6px;font-weight:700}
+.ld-card{padding:22px}
+.ld-card h2{margin:0 0 4px;font-size:22px}
+/* sign in / create account tabs */
+.atabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 16px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.atabs button{border:0;background:transparent;padding:9px;border-radius:9px;font-weight:600}
+.atabs button.on{background:var(--cta);color:var(--cta-tx)}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 14px}
+.how div{border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center;font-size:11px;line-height:1.3;color:var(--mut)}
+.how b{display:grid;place-items:center;width:22px;height:22px;margin:0 auto 4px;border-radius:50%;background:linear-gradient(135deg,#2ec4b6,#8fb0ff);color:#06231f;font-size:12px}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:0 0 10px;font-size:12px}
+.chk input{margin-top:3px}
+.meter{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:-4px 0 6px}
+.meter i{display:block;height:100%;width:0;border-radius:99px;transition:width .2s,background .2s}
+/* sections */
+.ld-stats{border-block:1px solid var(--line);background:rgba(20,36,54,.5)}
+[data-theme=light] .ld-stats{background:#fff}
+.ld-stats .ld-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding-block:28px}
+.ld-stat b{display:block;font-size:clamp(26px,3.4vw,40px);letter-spacing:-.02em}
+.ld-stat span{color:var(--mut);font-size:13px}
+.ld-sec{padding:60px 0}
+.ld-sec h2{font-size:clamp(26px,3.6vw,38px);letter-spacing:-.02em;margin:0 0 8px;font-weight:700}
+.ld-sub{color:var(--mut);margin:0 0 28px;max-width:640px;font-size:16px}
+.ld-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.ld-c{border:1px solid var(--line);border-radius:16px;padding:22px;background:rgba(20,36,54,.6);transition:transform .2s,border-color .2s}
+[data-theme=light] .ld-c{background:#fff}
+.ld-c:hover{transform:translateY(-3px);border-color:var(--buy)}
+.ld-c h3{margin:0 0 6px;font-size:19px}
+.ld-c p{margin:0;color:var(--mut)}
+.ld-n{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 8px;border-radius:10px;background:linear-gradient(135deg,#2ec4b6,#8fb0ff);color:#06231f;font-weight:700;margin-bottom:12px}
+.ld-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.ld-chips span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--mut)}
+.ld-split{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
+.ld-band{border:1px solid var(--line);border-radius:20px;padding:40px 24px;text-align:center;background:linear-gradient(135deg,rgba(46,196,182,.16),rgba(143,176,255,.14))}
+.ld-band h2{margin-bottom:16px}
+.ld-foot{border-top:1px solid var(--line);padding:28px 0 44px;color:var(--mut);font-size:12.5px}
+.ld-foot .ld-fl{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ld-risk{max-width:900px;line-height:1.6}
+/* membership steps inside the member panel */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stp{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;color:var(--mut)}
+.stp b{display:block;color:var(--tx);font-size:13px}
+.stp.done{border-color:var(--buy)}.stp.done b::before{content:"\2713  ";color:var(--buy)}
+.stp.cur{border-color:var(--wait);background:rgba(242,184,75,.08)}
+@media(max-width:860px){.ld-hero .ld-wrap,.ld-split{grid-template-columns:1fr}.ld-links{display:none}.ld-stats .ld-wrap{grid-template-columns:repeat(2,1fr)}.ld-hero{padding-top:32px}}
+@media(max-width:600px){.ld-theme{display:none}.steps{grid-template-columns:1fr}.ld-sec{padding:44px 0}}
+@media(prefers-reduced-motion:reduce){.ld-c{transition:none}.meter i{transition:none}}
+
+/* hero scene, plans, pay sheet */
+.ld-hero{position:relative;overflow:hidden}
+.ld-orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none}
+.ld-orb.a{width:380px;height:380px;background:#2ec4b6;left:-120px;top:-80px}
+.ld-orb.b{width:320px;height:320px;background:#8fb0ff;right:-80px;bottom:-60px;opacity:.35}
+.ld-hero .ld-wrap{position:relative;z-index:1}
+.ld-scene{position:relative;margin-top:26px;border:1px solid var(--line);border-radius:18px;background:rgba(11,22,34,.55);overflow:hidden;max-width:560px}
+[data-theme=light] .ld-scene{background:rgba(255,255,255,.8)}
+.ld-scene svg{display:block;width:100%;height:auto}
+.ld-scene small{position:absolute;left:12px;bottom:8px;font-size:11px;color:var(--mut)}
+.ld-chip{position:absolute;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.3);animation:ldfloat 6s ease-in-out infinite}
+.ld-chip.buy{background:var(--buy);color:#06231f;left:8%;top:10%}
+.ld-chip.sell{background:var(--sell);color:#2b0904;right:6%;top:26%;animation-delay:-2s}
+.ld-chip.wait{background:var(--wait);color:#2b1d03;left:44%;bottom:16%;animation-delay:-4s}
+@keyframes ldfloat{50%{transform:translateY(-8px)}}
+.ld-seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;padding:4px;margin:0 0 20px;background:var(--bg)}
+.ld-seg button{border:0;background:transparent;padding:8px 18px;border-radius:9px;font-weight:600;color:var(--tx);cursor:pointer}
+.ld-seg button.on{background:var(--cta);color:var(--cta-tx)}
+.ld-plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.ld-plan{border:1px solid var(--line);border-radius:18px;padding:22px;background:rgba(20,36,54,.6);display:flex;flex-direction:column}
+[data-theme=light] .ld-plan{background:#fff}
+.ld-plan .med{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#1b1204;margin-bottom:10px}
+.ld-plan.gold{border-color:#f2b84b}.ld-plan.gold .med{background:linear-gradient(135deg,#ffe29a,#e0a31f)}
+.ld-plan.silver .med{background:linear-gradient(135deg,#f1f4f8,#aab6c4)}
+.ld-plan.bronze .med{background:linear-gradient(135deg,#f0c39a,#b9722f)}
+.ld-plan.normal .med{background:linear-gradient(135deg,#dfe7f1,#8fa5ba)}
+.ld-plan h3{margin:0;font-size:20px}
+.ld-plan .tg{color:var(--mut);font-size:13px;margin-bottom:6px}
+.ld-plan .price{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:4px 0}
+.ld-plan .price small{font-size:13px;color:var(--mut);font-weight:500}
+.ld-plan .save{font-size:12px;color:var(--buy);min-height:18px}
+.ld-plan ul{list-style:none;margin:12px 0 18px;padding:0;color:var(--mut);font-size:13.5px;flex:1}
+.ld-plan li{padding:4px 0 4px 20px;position:relative}
+.ld-plan li::before{content:"\2713";position:absolute;left:0;color:var(--buy);font-weight:700}
+.ld-plan .btn-p,.ld-plan .btn-o{width:100%}
+#psheet{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.65);display:none;overflow:auto;padding:20px}
+#psheet .box{max-width:460px;margin:4vh auto;background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:16px;padding:22px}
+#psheet h3{margin:0 0 2px;font-size:20px}
+#psheet .amt{font-size:38px;font-weight:700;letter-spacing:-.02em;margin:8px 0}
+#psheet .row2{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#psheet ol{margin:8px 0 12px;padding-left:20px;color:var(--mut);font-size:13.5px}
+#psheet input[type=text]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;margin:6px 0;text-transform:uppercase}
+#psheet .pick{display:flex;align-items:center;gap:10px}#psheet .pick .medal{width:40px;height:46px}
+#psheet .ways{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}#psheet .ways button.on{background:var(--buy);color:#04251f;border-color:var(--buy);font-weight:700}
+#psheet .stk{border:1px solid var(--line);border-radius:12px;padding:12px;margin:6px 0;display:flex;flex-direction:column;gap:8px}#psheet .stk.soon{flex-direction:row;flex-wrap:wrap;gap:4px;font-size:13px}
+#psheet input[type=tel]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+#psheet .pm{font-size:13px;margin:6px 0;min-height:18px}
+.px{font-weight:700;margin-right:10px;color:var(--tx);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){.ld-chip{animation:none}}
+
 </style>
 </head>
 <body>
-<section id="login" class="panel">
-  <h1 id="lname">Steve FX Radar</h1>
-  <p class="mut" id="lintro">Members and staff sign in here. Staff are taken to the staff workspace automatically.</p>
-  <div class="su-seg" role="tablist" aria-label="Sign in or create an account"><button type="button" role="tab" id="tab_in" aria-selected="true">Sign in</button><button type="button" role="tab" id="tab_up" aria-selected="false">Create account</button></div>
-  <form id="sf" style="display:none" novalidate autocomplete="on">
-    <label for="su_name" class="mut">Full name</label><input id="su_name" autocomplete="name" maxlength="60">
-    <label for="su_em" class="mut">Email</label><input id="su_em" type="email" autocomplete="email" maxlength="120">
-    <label for="su_ph" class="mut">WhatsApp number</label><input id="su_ph" type="tel" autocomplete="tel" placeholder="0712 345 678 or +44 7700 900123" maxlength="22">
-    <label for="su_pw" class="mut">Password</label><input id="su_pw" type="password" autocomplete="new-password" maxlength="64">
-    <div class="su-meter" id="su_meter" data-s="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="su-hint" id="su_hint" aria-live="polite">At least 10 characters with letters and numbers.</div>
-    <label for="su_pw2" class="mut">Confirm password</label><input id="su_pw2" type="password" autocomplete="new-password" maxlength="64">
-    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 8px"><input id="su_show" type="checkbox" style="width:auto;margin:0"> Show passwords</label>
-    <label class="mut" style="display:flex;gap:8px;align-items:flex-start;margin:0 0 12px;font-size:13px"><input id="su_tc" type="checkbox" style="width:auto;margin:3px 0 0"> <span>I understand the radar opens only after my payment is confirmed and an admin approves my account. I accept the membership rules shown after sign-up.</span></label>
-    <div class="su-hp" aria-hidden="true"><label>Website <input id="su_site" tabindex="-1" autocomplete="off"></label></div>
-    <button class="go" type="submit" id="su_go">Create account</button>
-    <div class="su-how"><div><b>1</b>Create your account</div><div><b>2</b>Pay and send your code</div><div><b>3</b>Admin approves, radar opens</div></div>
-  </form>
-  <form id="lf">
-    <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
-    <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
-    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 6px"><input id="sp" type="checkbox" style="width:auto;margin:0"> Show password</label>
-    <label class="mut" style="display:flex;gap:8px;align-items:center;margin:0 0 12px"><input id="rm" type="checkbox" style="width:auto;margin:0"> Remember my email on this device</label>
-    <button class="go" type="submit">Sign in</button>
-    <button type="button" id="forgot" style="width:100%;margin-top:8px">Forgot password?</button>
-    <button type="button" id="theme2" style="width:100%;margin-top:8px">Switch to light</button>
-  </form>
-  <div id="err" role="alert"></div>
-  <div id="ok" role="status"></div>
-</section>
+<div id="login">
+  <div class="ld-nav"><div class="ld-wrap">
+    <span class="ld-brand" id="lname">Steve FX Radar</span>
+    <nav class="ld-links" aria-label="Sections">
+      <button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_plans">Pricing</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_pay">Payments</button><button type="button" data-to="ld_help">Support</button>
+    </nav>
+    <div class="ld-act">
+      <button type="button" id="theme2" class="btn-o ld-theme" style="padding:8px 12px">Switch to light</button>
+      <button type="button" class="btn-o" id="ld_in">Log in</button>
+      <button type="button" class="btn-p" id="ld_up">Open account</button>
+    </div>
+  </div></div>
+
+  <section class="ld-hero"><i class="ld-orb a"></i><i class="ld-orb b"></i><div class="ld-wrap">
+    <div>
+      <span class="ld-eyebrow">Market signals</span>
+      <h1>Trade with <span class="ld-grad">clarity</span>. Anywhere, anytime.</h1>
+      <p class="ld-lead">Live BUY, SELL and WAIT signals with entry, target and stop levels for forex, crypto and stocks. Open an account, pay, and your signals unlock as soon as the admin approves you.</p>
+      <div class="ld-cta"><button type="button" class="btn-p" id="ld_up2">Open account</button><button type="button" class="btn-o" id="ld_in2">Log in</button></div>
+      <div class="ld-trust"><span>Alerts only. We never place trades</span><span>Results scored in public</span><span>Support on WhatsApp</span></div>
+      <div class="ld-scene"><svg viewBox="0 0 560 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a rising candlestick chart with entry, target and stop lines" style="color:var(--tx)">
+<defs><linearGradient id="ldg" x1="0" x2="1"><stop offset="0" stop-color="#2ec4b6"/><stop offset="1" stop-color="#8fb0ff"/></linearGradient>
+<linearGradient id="lda" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2ec4b6" stop-opacity=".28"/><stop offset="1" stop-color="#2ec4b6" stop-opacity="0"/></linearGradient></defs>
+<line x1="0" x2="560" y1="70" y2="70" stroke="currentColor" stroke-opacity=".08"/><line x1="0" x2="560" y1="110" y2="110" stroke="currentColor" stroke-opacity=".08"/><line x1="0" x2="560" y1="150" y2="150" stroke="currentColor" stroke-opacity=".08"/><line x1="0" x2="560" y1="190" y2="190" stroke="currentColor" stroke-opacity=".08"/>
+<polygon points="30,235 30,189.6 62,174.4 94,182.0 126,159.2 158,166.8 190,144.0 222,151.6 254,132.6 286,140.2 318,113.6 350,121.2 382,98.4 414,109.8 446,83.2 478,90.8 510,64.2 510,235" fill="url(#lda)"/>
+<line x1="30" x2="30" y1="178.2" y2="202.5" style="stroke:var(--buy)" stroke-width="2"/><rect x="23" y="189.6" width="14" height="3.8" rx="3" style="fill:var(--buy)"/><line x1="62" x2="62" y1="159.2" y2="201.8" style="stroke:var(--buy)" stroke-width="2"/><rect x="55" y="174.4" width="14" height="15.2" rx="3" style="fill:var(--buy)"/><line x1="94" x2="94" y1="163.0" y2="191.1" style="stroke:var(--sell)" stroke-width="2"/><rect x="87" y="174.4" width="14" height="7.6" rx="3" style="fill:var(--sell)"/><line x1="126" x2="126" y1="140.2" y2="197.2" style="stroke:var(--buy)" stroke-width="2"/><rect x="119" y="159.2" width="14" height="22.8" rx="3" style="fill:var(--buy)"/><line x1="158" x2="158" y1="147.8" y2="175.9" style="stroke:var(--sell)" stroke-width="2"/><rect x="151" y="159.2" width="14" height="7.6" rx="3" style="fill:var(--sell)"/><line x1="190" x2="190" y1="128.8" y2="179.0" style="stroke:var(--buy)" stroke-width="2"/><rect x="183" y="144.0" width="14" height="22.8" rx="3" style="fill:var(--buy)"/><line x1="222" x2="222" y1="125.0" y2="166.8" style="stroke:var(--sell)" stroke-width="2"/><rect x="215" y="144.0" width="14" height="7.6" rx="3" style="fill:var(--sell)"/><line x1="254" x2="254" y1="121.2" y2="160.7" style="stroke:var(--buy)" stroke-width="2"/><rect x="247" y="132.6" width="14" height="19.0" rx="3" style="fill:var(--buy)"/><line x1="286" x2="286" y1="117.4" y2="152.4" style="stroke:var(--sell)" stroke-width="2"/><rect x="279" y="132.6" width="14" height="7.6" rx="3" style="fill:var(--sell)"/><line x1="318" x2="318" y1="94.6" y2="155.4" style="stroke:var(--buy)" stroke-width="2"/><rect x="311" y="113.6" width="14" height="26.6" rx="3" style="fill:var(--buy)"/><line x1="350" x2="350" y1="102.2" y2="130.3" style="stroke:var(--sell)" stroke-width="2"/><rect x="343" y="113.6" width="14" height="7.6" rx="3" style="fill:var(--sell)"/><line x1="382" x2="382" y1="83.2" y2="133.4" style="stroke:var(--buy)" stroke-width="2"/><rect x="375" y="98.4" width="14" height="22.8" rx="3" style="fill:var(--buy)"/><line x1="414" x2="414" y1="75.6" y2="128.0" style="stroke:var(--sell)" stroke-width="2"/><rect x="407" y="98.4" width="14" height="11.4" rx="3" style="fill:var(--sell)"/><line x1="446" x2="446" y1="71.8" y2="118.9" style="stroke:var(--buy)" stroke-width="2"/><rect x="439" y="83.2" width="14" height="26.6" rx="3" style="fill:var(--buy)"/><line x1="478" x2="478" y1="68.0" y2="103.0" style="stroke:var(--sell)" stroke-width="2"/><rect x="471" y="83.2" width="14" height="7.6" rx="3" style="fill:var(--sell)"/><line x1="510" x2="510" y1="45.2" y2="106.0" style="stroke:var(--buy)" stroke-width="2"/><rect x="503" y="64.2" width="14" height="26.6" rx="3" style="fill:var(--buy)"/>
+<polyline points="30,189.6 62,174.4 94,182.0 126,159.2 158,166.8 190,144.0 222,151.6 254,132.6 286,140.2 318,113.6 350,121.2 382,98.4 414,109.8 446,83.2 478,90.8 510,64.2" fill="none" stroke="url(#ldg)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<g font-family="IBM Plex Mono,monospace" font-size="11"><line x1="30" x2="470" y1="37.6" y2="37.6" stroke="#2ec4b6" stroke-dasharray="6 5"/><text x="474" y="41.6" fill="#2ec4b6">Target</text>
+<line x1="30" x2="470" y1="64.2" y2="64.2" stroke="#8fa5ba" stroke-dasharray="6 5"/><text x="474" y="68.2" fill="#8fa5ba">Entry</text>
+<line x1="30" x2="470" y1="87.0" y2="87.0" stroke="#ff3b5c" stroke-dasharray="6 5"/><text x="474" y="91.0" fill="#ff3b5c">Stop</text></g>
+</svg><span class="ld-chip buy">EUR/USD &middot; BUY</span><span class="ld-chip sell">BTC/USD &middot; SELL</span><span class="ld-chip wait">AAPL &middot; WAIT</span><small>Illustration only, not live data</small></div>
+    </div>
+
+    <div id="authcard" class="panel ld-card">
+      <div class="atabs" role="tablist"><button type="button" id="tab_in" class="on">Sign in</button><button type="button" id="tab_up">Create account</button></div>
+
+      <form id="lf">
+        <label for="em" class="mut">Email</label><input id="em" type="email" autocomplete="username" required>
+        <label for="pw" class="mut">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+        <label class="mut chk"><input id="sp" type="checkbox"> Show password</label>
+        <label class="mut chk"><input id="rm" type="checkbox"> Remember my email on this device</label>
+        <button class="go" type="submit">Sign in</button>
+        <button type="button" id="forgot" style="width:100%;margin-top:8px">Forgot password?</button>
+        <p class="mut" style="margin:12px 0 0;font-size:12px">Staff sign in here too. You are taken to the staff workspace automatically.</p>
+      </form>
+
+      <form id="sf" style="display:none" autocomplete="off" novalidate>
+        <div class="how"><div><b>1</b>Create account</div><div><b>2</b>Pay and send code</div><div><b>3</b>Admin approves</div></div>
+        <label for="su_nm" class="mut">Full name</label><input id="su_nm" type="text" maxlength="60" autocomplete="name" required>
+        <label for="su_em" class="mut">Email</label><input id="su_em" type="email" autocomplete="email" required>
+        <label for="su_ph" class="mut">WhatsApp number (optional)</label><input id="su_ph" type="tel" inputmode="tel" placeholder="07XX XXX XXX" maxlength="18" autocomplete="tel">
+        <label for="su_pw" class="mut">Password</label><input id="su_pw" type="password" autocomplete="new-password" required>
+        <div class="meter"><i id="su_bar"></i></div><div id="su_str" class="mut" style="margin:-2px 0 8px;min-height:18px"></div>
+        <label for="su_pw2" class="mut">Confirm password</label><input id="su_pw2" type="password" autocomplete="new-password" required>
+        <label class="mut chk"><input id="su_sh" type="checkbox"> Show passwords</label>
+        <label class="mut chk"><input id="su_ok" type="checkbox"> I understand signals are not financial advice, access starts only after my payment is confirmed, and I will not share my login.</label>
+        <input id="su_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;opacity:0">
+        <button class="go" id="su_go" type="submit">Create my account</button>
+      </form>
+
+      <div id="err" role="alert"></div>
+      <div id="ok" role="status"></div>
+    </div>
+  </div></section>
+
+  <section class="ld-stats"><div class="ld-wrap">
+    <div class="ld-stat"><b>3</b><span>Markets: forex, crypto, stocks</span></div>
+    <div class="ld-stat"><b>24/7</b><span>Crypto coverage, every day</span></div>
+    <div class="ld-stat"><b>6</b><span>Built-in chart indicators</span></div>
+    <div class="ld-stat"><b>10 min</b><span>Each signal is scored</span></div>
+  </div></section>
+
+  <section class="ld-sec" id="ld_markets"><div class="ld-wrap">
+    <h2>All your markets in one place</h2>
+    <p class="ld-sub">Every market you follow shows a live signal, its trend and how volatile it is right now.</p>
+    <div class="ld-grid">
+      <div class="ld-c"><span class="ld-n">FX</span><h3>Forex</h3><p>Major currency pairs with session and spread checks, so you know when conditions are thin.</p><div class="ld-chips"><span>EUR/USD</span><span>GBP/USD</span><span>USD/JPY</span><span>AUD/USD</span><span>USD/CAD</span></div></div>
+      <div class="ld-c"><span class="ld-n">BTC</span><h3>Crypto</h3><p>Round-the-clock coverage of the biggest coins, including weekends.</p><div class="ld-chips"><span>BTC/USD</span><span>ETH/USD</span><span>SOL/USD</span><span>XRP/USD</span></div></div>
+      <div class="ld-c"><span class="ld-n">$</span><h3>Stocks</h3><p>Well-known US stocks, tracked while New York is open.</p><div class="ld-chips"><span>AAPL</span><span>MSFT</span><span>TSLA</span><span>NVDA</span></div></div>
+    </div>
+  </div></section>
+
+  <section class="ld-sec" id="ld_features" style="padding-top:0"><div class="ld-wrap">
+    <h2>Everything you need to decide, in one view</h2>
+    <p class="ld-sub">Clear signals, honest numbers and the tools to size your risk.</p>
+    <div class="ld-grid">
+      <div class="ld-c"><span class="ld-n">01</span><h3>Live signals</h3><p>BUY, SELL, WAIT or DANGER on every market, with the reason written in plain words.</p></div>
+      <div class="ld-c"><span class="ld-n">02</span><h3>Entry, targets and stop</h3><p>Levels based on how far past signals on that market actually moved. Estimates, not promises.</p></div>
+      <div class="ld-c"><span class="ld-n">03</span><h3>Pro charts</h3><p>Candles, Heikin Ashi, bars, line and area from 1 minute to 1 hour, with EMA, Bollinger, RSI, MACD, Stochastic and ADX.</p></div>
+      <div class="ld-c"><span class="ld-n">04</span><h3>A public track record</h3><p>Each BUY and SELL is logged and scored 10 minutes later. You see the real hit rate, wins and losses.</p></div>
+      <div class="ld-c"><span class="ld-n">05</span><h3>Risk calculator</h3><p>Enter your balance and the percent you accept to lose, and get a trade size before you act.</p></div>
+      <div class="ld-c"><span class="ld-n">06</span><h3>Alerts</h3><p>Sound and browser notifications when a signal changes or danger appears.</p></div>
+    </div>
+  </div></section>
+
+  <section class="ld-sec" id="ld_plans" style="padding-top:0"><div class="ld-wrap">
+    <h2>Simple, fixed prices</h2>
+    <p class="ld-sub">Pick a plan, pay with M-Pesa and send your code. Pay for a week, or save 25% with a full month.</p>
+    <div class="ld-seg" role="group" aria-label="Plan length"><button type="button" id="ld_p5" class="on">1 week</button><button type="button" id="ld_p30">1 month</button></div>
+    <div class="ld-plans" id="ld_plans_box"></div>
+    <p class="mut" style="margin-top:14px;font-size:12.5px">Prices are in Kenya shillings. Access starts once the admin confirms your payment.</p>
+  </div></section>
+
+  <section class="ld-sec" id="ld_steps" style="padding-top:0"><div class="ld-wrap">
+    <h2>Get started in 3 simple steps</h2>
+    <p class="ld-sub">No broker account needed. We only show signals and never touch your money.</p>
+    <div class="ld-grid">
+      <div class="ld-c"><span class="ld-n">1</span><h3>Create your account</h3><p>Sign up in a minute with your name, email and a strong password.</p></div>
+      <div class="ld-c"><span class="ld-n">2</span><h3>Pay and send your code</h3><p>Pay with M-Pesa, bank or another listed method, then send the payment code inside the app.</p></div>
+      <div class="ld-c"><span class="ld-n">3</span><h3>Get approved</h3><p>The admin confirms your payment and your signals open. Every payment comes with a receipt.</p></div>
+    </div>
+  </div></section>
+
+  <section class="ld-sec" id="ld_pay" style="padding-top:0"><div class="ld-wrap ld-split">
+    <div><h2>Your money, your way</h2><p class="ld-sub" style="margin:0">Plans, prices and payment details are shown inside your account once you sign up. Pay the way that suits you and send the code. Access starts when it is confirmed.</p></div>
+    <div class="ld-c"><h3>Payment options</h3><p>The team lists the options that are open right now.</p><div class="ld-chips"><span>M-Pesa</span><span>Bank transfer</span><span>Other options</span><span>Receipt for every payment</span></div></div>
+  </div></section>
+
+  <section class="ld-sec" id="ld_help" style="padding-top:0"><div class="ld-wrap ld-split">
+    <div><h2>Real people, quick answers</h2><p class="ld-sub" style="margin:0">Questions before you join? Message the team on WhatsApp or send an email.</p></div>
+    <div class="ld-cta" style="margin:0"><a class="btn wa" href="https://wa.me/254713474115" target="_blank" rel="noopener" style="padding:13px 22px;font-size:15px">WhatsApp us</a><a class="btn" href="mailto:wanjohisteve85@gmail.com" style="padding:13px 22px;font-size:15px">Email us</a></div>
+  </div></section>
+
+  <section class="ld-sec" style="padding-top:0"><div class="ld-wrap"><div class="ld-band"><h2>Ready to see the market clearly?</h2><button type="button" class="btn-p" id="ld_up3" style="padding:13px 28px;font-size:16px">Open account</button></div></div></section>
+
+  <footer class="ld-foot"><div class="ld-wrap">
+    <div class="ld-fl"><span class="ld-brand">Steve FX Radar</span><span><button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_help">Support</button></span></div>
+    <p class="ld-risk">Steve FX Radar provides market information and alerts only. It is not a broker, does not hold your money and does not place trades. Signals are rule-based estimates built from public price data. They are not financial advice and are not guaranteed, and prices can differ from your broker's quotes. Trading forex, crypto and stocks carries a high risk of losing money. Only use money you can afford to lose.</p>
+  </div></footer>
+</div>
+
 <div id="app">
 <header><h1 id="hname">Steve FX Radar</h1>
   <div class="bar"><button id="gostaff" style="display:none">Staff workspace</button><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
@@ -494,6 +723,7 @@ body.staffmode .note{display:none}
       <textarea id="s_terms" rows="6" maxlength="3000" style="flex:1 1 100%;font-family:inherit" placeholder="Membership rules shown to every member and accepted when they send a payment code. Example: one account per person, no sharing logins, signals are not financial advice, what happens on refunds, and that sharing or abuse ends the subscription without refund."></textarea>
       <input id="s_idle" type="number" min="5" max="1440" placeholder="Idle logout (minutes)">
       <input id="s_mpesa" placeholder="M-Pesa: Paybill / Till / number" maxlength="390" style="flex:1 1 260px">
+      <label class="mut" style="flex:1 1 100%"><input type="checkbox" id="s_stk"> M-Pesa prompt is live. Turn this on only after your M-Pesa API is connected to the engine. Until then members see "coming soon".</label>
       <input id="s_bank" placeholder="Bank: name, account number, account name" maxlength="390" style="flex:1 1 260px">
       <input id="s_other" placeholder="Other (PayPal, crypto, etc.)" maxlength="390" style="flex:1 1 260px">
       <button class="pri" id="s_save">Save settings</button><span id="s_msg" class="mut" role="status"></span>
@@ -670,17 +900,8 @@ function normPhone(v) {                              // Kenyan numbers in any us
   if (/^\+/.test(t)) return /^\+[1-9]\d{7,14}$/.test(t) ? t.slice(1) : "";
   const m = /^(?:254|0)?([17]\d{8})$/.exec(t); return m ? "254" + m[1] : "";
 }
-function setAuthTab(up) {
-  $("lf").style.display = up ? "none" : ""; $("sf").style.display = up ? "" : "none";
-  $("tab_in").setAttribute("aria-selected", String(!up)); $("tab_up").setAttribute("aria-selected", String(up));
-  $("lintro").textContent = up ? "Create your account. The live radar opens once your payment is confirmed and an admin approves you." : "Members and staff sign in here. Staff are taken to the staff workspace automatically.";
-  $("err").textContent = ""; $("ok").textContent = "";
-}
-$("tab_in").onclick = () => setAuthTab(false); $("tab_up").onclick = () => setAuthTab(true);
+function setAuthTab(up) { authTab(up); }                // the landing page replaced the old tab switcher
 if (location.hash === "#signup") setAuthTab(true);
-const syncPw = () => { const sc = pwScore($("su_pw").value, $("su_em").value); $("su_meter").dataset.s = sc; $("su_hint").textContent = $("su_pw").value ? ["", "Weak. Use 10+ characters, mixed case and a number.", "Fair. Add length or a symbol.", "Good.", "Strong."][sc] : "At least 10 characters with letters and numbers."; };
-$("su_pw").addEventListener("input", syncPw); $("su_em").addEventListener("input", syncPw);
-$("su_show").onchange = () => { $("su_pw").type = $("su_pw2").type = $("su_show").checked ? "text" : "password"; };
 function signMsg(er) {
   const c = er && er.code;
   return c === "auth/email-already-in-use" ? "That email already has an account. Sign in, or use Forgot password."
@@ -713,6 +934,159 @@ $("sf").onsubmit = async e => {
   } catch (er) { SIGNUP = null; err.textContent = signMsg(er); }
   btn.disabled = false; btn.textContent = "Create account"; $("su_pw").value = $("su_pw2").value = ""; syncPw();
 };
+// ---------- landing page + self sign-up ----------
+document.body.classList.add("landing");
+auth.onAuthStateChanged(u => document.body.classList.toggle("landing", !u));
+document.querySelectorAll("[data-to]").forEach(b => { b.onclick = () => { const t = document.getElementById(b.dataset.to); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }; });
+function authTab(up, go) {
+  $("lf").style.display = up ? "none" : ""; $("sf").style.display = up ? "" : "none";
+  $("tab_in").classList.toggle("on", !up); $("tab_up").classList.toggle("on", up);
+  $("err").textContent = ""; $("ok").textContent = "";
+  if (go) { $("authcard").scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => { try { $(up ? "su_nm" : "em").focus({ preventScroll: true }); } catch {} }, 350); }
+}
+$("tab_in").onclick = () => authTab(false); $("tab_up").onclick = () => authTab(true);
+["ld_up", "ld_up2", "ld_up3"].forEach(id => { $(id).onclick = () => authTab(true, true); });
+["ld_in", "ld_in2"].forEach(id => { $(id).onclick = () => authTab(false, true); });
+function pwScore(p) { let s = 0; if (p.length >= 8) s++; if (p.length >= 12) s++; if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++; if (/\d/.test(p) && /[^A-Za-z0-9]/.test(p)) s++; return p ? Math.max(1, s) : 0; }
+$("su_pw").oninput = () => {
+  const s = pwScore($("su_pw").value);
+  $("su_bar").style.width = s * 25 + "%"; $("su_bar").style.background = ["", "#ff3b5c", "#f2b84b", "#2ec4b6", "#2ec4b6"][s];
+  $("su_str").textContent = ["", "Weak", "Fair", "Good", "Strong"][s];
+};
+$("su_sh").onchange = () => { $("su_pw").type = $("su_pw2").type = $("su_sh").checked ? "text" : "password"; };
+$("sf").onsubmit = async e => {
+  e.preventDefault(); const er = $("err"); er.textContent = ""; $("ok").textContent = "";
+  if ($("su_hp").value) return;                                        // bots fill the hidden field
+  const name = $("su_nm").value.trim().replace(/\s+/g, " "), em = $("su_em").value.trim().toLowerCase(), pw = $("su_pw").value;
+  let ph = $("su_ph").value.replace(/[^\d+]/g, ""); if (/^0[17]\d{8}$/.test(ph)) ph = "254" + ph.slice(1);
+  if (!/^[\p{L}][\p{L} .'\-]{2,59}$/u.test(name)) return er.textContent = "Enter your full name (letters only).";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return er.textContent = "Enter a valid email address.";
+  if (em === OWNER_MAIL) return er.textContent = "That email is reserved. Please use another.";
+  if (ph && !/^\+?\d{9,15}$/.test(ph)) return er.textContent = "Enter a valid phone number, or leave it empty.";
+  if (!pwOk(pw)) return er.textContent = "Password needs 8+ characters with letters and numbers.";
+  if (pwScore(pw) < 2) return er.textContent = "That password is too weak. Make it longer or add capital letters.";
+  if (pw !== $("su_pw2").value) return er.textContent = "The two passwords do not match.";
+  if (!$("su_ok").checked) return er.textContent = "Please tick the box to accept the terms.";
+  let log = []; try { log = JSON.parse(localStorage.getItem("fr_su") || "[]").filter(t => Date.now() - t < 864e5); } catch {}
+  if (log.length >= 3) return er.textContent = "Too many accounts were created from this device today. Try again tomorrow or contact support.";
+  if (log.length && Date.now() - log[log.length - 1] < 60000) return er.textContent = "Please wait a minute before creating another account.";
+  $("su_go").disabled = true;
+  try {
+    const c = await auth.createUserWithEmailAndPassword(em, pw);
+    try { localStorage.setItem("fr_su", JSON.stringify([...log, Date.now()])); } catch {}
+    try { await c.user.updateProfile({ displayName: name }); } catch {}
+    try { await dbr.ref("users/" + c.user.uid).update({ email: em, name, phone: ph || null, createdAt: TS }); } catch {}
+    try { await c.user.sendEmailVerification(); } catch {}
+    logEvt("Created an account"); $("sf").reset(); $("su_bar").style.width = "0"; $("su_str").textContent = "";
+    setTimeout(() => banner("Welcome! Your account is ready. Choose a plan below, pay, and send your payment code. Your signals open once the admin approves you.", true), 2500);
+  } catch (x) {
+    er.textContent = x.code === "auth/email-already-in-use" ? "That email already has an account. Sign in, or tap Forgot password."
+      : x.code === "auth/operation-not-allowed" ? "Sign-ups are switched off right now. Please contact support."
+      : x.code === "auth/weak-password" ? "That password is too weak. Try a longer one."
+      : x.code === "auth/invalid-email" ? "That email address is not valid."
+      : x.code === "auth/too-many-requests" ? "Too many attempts. Please wait a few minutes." : "Could not create the account. " + (x.message || "");
+  } finally { $("su_go").disabled = false; }
+};
+function stepper() {                                                   // shows the member where they are: account, payment, approval
+  const mem = $("member"); if (!mem || mem.style.display === "none" || isAdmin) return;
+  let el = $("m_steps"); if (!el) { el = document.createElement("div"); el.id = "m_steps"; mem.insertBefore(el, mem.children[1] || null); }
+  const act = isMember(), pend = Object.values(MYPAY || {}).some(p => p && p.status === "pending"), d = [true, act || pend, act], cur = d.findIndex(x => !x);
+  const t = ["Account created", "Pay and send your code", act ? "Approved" : pend ? "Waiting for approval" : "Admin approves"];
+  const s = ["Done", act || pend ? "Done" : "Choose a plan, pay, then send the code", act ? "Your signals are open" : "Signals open after approval"];
+  el.innerHTML = '<div class="steps">' + t.map((n, i) => `<div class="stp ${d[i] ? "done" : i === cur ? "cur" : ""}"><b>${esc(n)}</b>${esc(s[i])}</div>`).join("") + "</div>";
+}
+setInterval(stepper, 1500);
+
+
+// ---------- fixed prices, landing plans, M-Pesa pay sheet ----------
+// PRICES is the one place to change a price (KES). If your Membership settings > Plans box lists a price for the same plan and length, that price is used instead.
+const PRICES = { Normal: { 7: 100, 30: 300 }, Bronze: { 7: 300, 30: 900 }, Silver: { 7: 600, 30: 1800 }, Gold: { 7: 1000, 30: 3000 } };   // weekly and monthly, KES
+const PLAN_INFO = {
+  Normal: ["N", "A few days to try it", ["Live BUY, SELL, WAIT and DANGER signals", "Candles, line and area charts", "1m and 5m time frames", "EMA trend lines"]],
+  Bronze: ["3", "Start trading with levels", ["Everything in Normal", "Entry, target and stop levels", "Bars chart, 15m, Bollinger bands", "Tested hit rate and live track record"]],
+  Silver: ["2", "Deeper analysis", ["Everything in Bronze", "Multi time frame view (M5 to H1)", "Day range analysis", "Heikin Ashi, 1h, RSI and MACD"]],
+  Gold: ["1", "Full analysis", ["Everything in Silver", "Stochastic and ADX", "Plain-language indicator readout", "Official CBK Kenya shilling rates"]]
+};
+const kes = n => "KES " + Math.round(n).toLocaleString("en-KE");
+function landPlans(days) {
+  const box = $("ld_plans_box"); if (!box) return; $("ld_p5").classList.toggle("on", days === 7); $("ld_p30").classList.toggle("on", days === 30);
+  box.innerHTML = Object.keys(PLAN_INFO).map(n => {
+    const [m, tg, feats] = PLAN_INFO[n], p = PRICES[n][days], four = PRICES[n][7] * 4, save = days === 30 ? Math.round((1 - p / four) * 100) : 0;
+    return `<div class="ld-plan ${n.toLowerCase()}"><span class="med">${m}</span><h3>${n}</h3><div class="tg">${tg}</div>
+      <div class="price">${kes(p)} <small>/ ${days === 7 ? "week" : "month"}</small></div>
+      <div class="save">${days === 30 ? "Save " + save + "% compared with four weekly passes" : "About " + kes(p / 7) + " per day"}</div>
+      <ul>${feats.map(f => "<li>" + f + "</li>").join("")}</ul><button type="button" class="${n === "Gold" ? "btn-p" : "btn-o"}" data-open="1">Open account</button></div>`;
+  }).join("");
+}
+$("ld_p5").onclick = () => landPlans(7); $("ld_p30").onclick = () => landPlans(30);
+$("ld_plans_box").onclick = e => { if (e.target.closest("[data-open]")) authTab(true, true); };
+landPlans(7);
+
+const tierOf = q => (TIERS.find(t => t.k === tierKey(q.level || q.name)) || {}).n || "";
+function priceFor(plan, days) {                              // the admin's saved plan wins, otherwise the PRICES table above
+  const sp = (SITE.plans || []).find(q => tierOf(q) === plan && Math.abs(q.days - days) < .01), n = sp ? +String(sp.price || "").replace(/[^0-9.]/g, "") : 0;
+  if (n > 0) return n; const t = PRICES[plan]; return t ? (t[days] || (days >= 20 ? t[30] : days >= 3 ? t[7] : 0)) || 0 : 0;
+}
+let openPay = () => {};
+(function () {                                              // the pay sheet: opened by every plan button
+  const sh = document.createElement("div"); sh.id = "psheet"; document.body.appendChild(sh);
+  let stkRef = null, meth = "mpesa", ctx = null, gen = 0;
+  const close = () => { sh.style.display = "none"; sh.innerHTML = ""; if (stkRef) { try { stkRef.off(); } catch {} stkRef = null; } };
+  sh.onclick = e => { if (e.target === sh) close(); };
+  const copy = async (txt, el) => { try { await navigator.clipboard.writeText(txt); el.textContent = "Copied"; } catch { prompt("Copy this:", txt); } setTimeout(() => { el.textContent = el.dataset.l; }, 1500); };
+  const WAYS = () => [["mpesa", "M-Pesa", (SITE.mpesa || "").trim()], ["bank", "Bank", (SITE.bank || "").trim()], ["other", "Other", (SITE.other || "").trim()]].filter(w => w[2] || w[0] === "mpesa");
+  function body() {
+    const c = ctx, amt = c.amt, w = WAYS().find(x => x[0] === meth) || WAYS()[0], det = w[2], num = (det.match(/\d{5,}/) || [""])[0], el = $("ps_body");
+    const stk = meth === "mpesa" ? (SITE.stk === true ? `<div class="stk"><b>Get the M-Pesa prompt on your phone</b><div class="mut" style="font-size:12.5px">We send a payment request for ${amt ? kes(amt) : "the amount"} to your Safaricom number. Enter your M-Pesa PIN to pay.</div>
+        <input type="tel" id="ps_ph" placeholder="0712 345 678" maxlength="16" autocomplete="tel" value="${esc((MEM.prof && MEM.prof.phone) || "")}"><button type="button" class="btn-p" id="ps_stk" ${amt ? "" : "disabled"}>Send M-Pesa prompt</button><div class="pm" id="ps_sm" role="status"></div></div><div class="mut" style="text-align:center;margin:8px 0">or pay manually</div>`
+      : '<div class="stk soon"><b>Instant M-Pesa prompt</b><span class="mut"> coming soon. For now, pay manually below.</span></div>') : "";
+    el.innerHTML = stk + `<div class="row2">${amt ? '<button type="button" id="ps_ca" data-l="Copy amount">Copy amount</button>' : ""}${num ? '<button type="button" id="ps_cn" data-l="Copy number">Copy number</button>' : det ? '<button type="button" id="ps_cd" data-l="Copy details">Copy details</button>' : ""}${meth === "mpesa" ? '<a class="btn" href="tel:*334%23">Open M-Pesa on my phone</a>' : ""}</div>
+      <p class="mut" style="margin:6px 0">${det ? "<b>Pay to:</b> " + esc(det) : "These payment details have not been added yet. Please contact the admin."}</p>
+      <ol><li>${meth === "mpesa" ? "Open M-Pesa" : "Make the payment"} and pay the exact amount shown above.</li><li>Wait for the confirmation message.</li><li>Type the transaction code from that message below and send it.</li></ol>`;
+    if ($("ps_ca")) $("ps_ca").onclick = e => copy(String(amt), e.target); if ($("ps_cn")) $("ps_cn").onclick = e => copy(num, e.target); if ($("ps_cd")) $("ps_cd").onclick = e => copy(det, e.target);
+    if ($("ps_stk")) $("ps_stk").onclick = sendStk;
+  }
+  async function sendStk() {
+    const u = auth.currentUser, m = $("ps_sm"), ph = normPhone($("ps_ph").value), c = ctx; if (!u) return;
+    if (!/^254[17]\d{8}$/.test(ph)) return m.textContent = "Enter your Safaricom number, like 0712345678.";
+    if (SITE.terms && $("ps_ag") && !$("ps_ag").checked) return m.textContent = "Please accept the membership rules first.";
+    $("ps_stk").disabled = true; m.textContent = "Sending the prompt...";
+    try {
+      const ref = dbr.ref("stkreq/" + u.uid + "/" + dbr.ref("stkreq/" + u.uid).push().key); await ref.set({ phone: ph, amount: c.amt, plan: c.plan, days: c.days, status: "queued", ts: TS, email: u.email || "" });
+      logEvt("Asked for an M-Pesa prompt: " + c.plan + " " + durText(c.days)); stkRef = ref;
+      ref.on("value", v => { const r = v.val() || {}, st = r.status;
+        if (st === "sent") m.textContent = "Check your phone and enter your M-Pesa PIN.";
+        else if (st === "paid") { m.textContent = "Payment received. The admin will confirm and your access will start."; $("ps_stk").disabled = false; }
+        else if (st === "failed") { m.textContent = (r.msg || "The prompt could not be sent.") + " You can pay manually below."; $("ps_stk").disabled = false; }
+        else if (st === "queued") m.textContent = "Sending the prompt..."; });
+      setTimeout(() => { if (m.textContent === "Sending the prompt...") { m.textContent = "The prompt is taking long. You can pay manually below."; $("ps_stk").disabled = false; } }, 25000);
+    } catch (err) { m.textContent = /permission|denied/i.test(err.code + err.message) ? "The prompt was refused. Please pay manually below." : err.message; $("ps_stk").disabled = false; }
+  }
+  function open(c) {
+    ctx = c; const my = ++gen, amt = c.amt, wa = (SITE.wa || "254713474115").replace(/\D/g, ""), needAgree = !!SITE.terms, ways = WAYS(); meth = (ways.find(w => w[0] === "mpesa") || ways[0])[0];
+    sh.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-label="Pay for ${esc(c.plan)}"><div class="pick ${esc(c.plan.toLowerCase())}">${medal(c.plan.toLowerCase())}<div><h3>${esc(c.plan)}, ${esc(durText(c.days))}</h3><div class="mut">Choose how to pay</div></div></div>
+      <div class="amt num">${amt ? kes(amt) : "Ask the admin"}</div>
+      <div class="ways" role="group" aria-label="How to pay">${ways.map(w => `<button type="button" data-way="${w[0]}" class="${w[0] === meth ? "on" : ""}">${w[1]}</button>`).join("")}</div>
+      <div id="ps_body"></div>
+      <input type="text" id="ps_code" placeholder="Transaction code from the message" maxlength="20" autocomplete="off">
+      ${needAgree ? '<label class="mut chk"><input type="checkbox" id="ps_ag"> I have read and accept the membership rules</label>' : ""}
+      <div class="pm" id="ps_msg" role="status"></div>
+      <div class="row2"><button type="button" class="btn-p" id="ps_go">Send payment code</button><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent("Hello, I want the " + c.plan + " plan (" + durText(c.days) + ") for " + (amt ? kes(amt) : "the listed price") + ".")}">WhatsApp</a><button type="button" id="ps_x">Close</button></div></div>`;
+    sh.style.display = "block"; $("ps_x").onclick = close; body();
+    sh.querySelector(".ways").onclick = e => { const b = e.target.closest("button[data-way]"); if (!b) return; meth = b.dataset.way; sh.querySelectorAll(".ways button").forEach(x => x.classList.toggle("on", x === b)); body(); };
+    $("ps_go").onclick = async () => {
+      const code = $("ps_code").value.toUpperCase().replace(/[^A-Z0-9]/g, ""), m = $("ps_msg");
+      if (code.length < 6) return m.textContent = "Enter the transaction code exactly as in the confirmation message.";
+      if (!$("m_go")) return m.textContent = "Please use the payment box on the page, or tap WhatsApp.";
+      if (needAgree && !$("ps_ag").checked) return m.textContent = "Please accept the membership rules first.";
+      $("m_method").value = meth; $("m_code").value = code; $("m_amt").value = amt || ""; if ($("m_agree")) $("m_agree").checked = needAgree;
+      $("m_msg").textContent = ""; $("m_go").click(); m.textContent = "Sending...";
+      setTimeout(() => { const r = $("m_msg").textContent; m.textContent = r || "Sent."; if (/^sent/i.test(r)) setTimeout(() => { if (my === gen) close(); }, 2500); }, 1200);
+    };
+  }
+  openPay = open;
+})();
+
 async function doSignOut(why) { try { await logEvt(why || "Signed out"); sessionStorage.removeItem("fr_log"); } catch {}                       // mark offline first, then sign out
   try { if (auth.currentUser) await dbr.ref("presence/" + auth.currentUser.uid).set({ online: false, last: TS }); } catch {}
   auth.signOut(); setAuthTab(false);
@@ -1576,7 +1950,7 @@ $("m_journey").onclick = async e => {
   b.disabled = false;
 };
 addEventListener("focus", () => { const u = auth.currentUser; if (u && !isAdmin && MEM.prof && MEM.prof.signup === true && !u.emailVerified) u.reload().then(() => u.emailVerified ? u.getIdToken(true) : null).then(renderMember).catch(() => {}); });
-const PLX = () => (SITE.plans || []).length ? SITE.plans : TIERS.map(t => ({ name: t.n, price: SITE.price || "", days: +SITE.days || 30, level: t.k }));   // no plans saved yet: one button per tier
+const PLX = () => (SITE.plans || []).length ? SITE.plans : TIERS.flatMap(t => [7, 30].map(d => ({ name: d === 7 ? "1 Week" : "1 Month", price: "KES " + (PRICES[t.n] || {})[d], days: d, level: t.k })));   // no plans saved yet: weekly and monthly from PRICES
 let PICK = -1;                                       // plan the member chose to pay for
 function renderPick() {
   const el = $("m_pick"), q = PLX()[PICK]; if (!el) return; if (!q) { el.innerHTML = ""; return; }
@@ -1590,11 +1964,9 @@ function renderPick() {
   if (w && $("m_method").value !== w[0]) $("m_method").value = w[0];
 }
 $("m_info").addEventListener("click", e => {
-  const b = e.target.closest("button[data-pick]"); if (!b) return; PICK = +b.dataset.pick; const q = PLX()[PICK]; if (!q) return;
-  const n = +String(q.price || "").replace(/[^0-9.]/g, ""); $("m_amt").value = n > 0 ? n : "";
-  if (!$("m_method").value || ![SITE.mpesa, SITE.bank, SITE.other].some(Boolean)) $("m_method").value = "mpesa";
-  const first = [["mpesa", SITE.mpesa], ["bank", SITE.bank], ["other", SITE.other]].find(x => x[1]); if (first) $("m_method").value = first[0];
-  renderPick(); $("m_pick").scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => $("m_code").focus({ preventScroll: true }), 400);
+  const b = e.target.closest("button[data-pick]"); if (!b) return; const q = PLX()[+b.dataset.pick]; if (!q) return;
+  const plan = tierOf(q) || "Normal", n = priceFor(plan, q.days) || +String(q.price || "").replace(/[^0-9.]/g, "");
+  openPay({ plan, days: q.days, amt: n > 0 ? n : 0 });
 });
 $("m_pick").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
@@ -1703,8 +2075,8 @@ function fillSite() {
   if (!isAdmin) return;
   if (!$("pay_form").contains(document.activeElement)) {
     $("s_company").value = SITE.company || ""; $("s_wa").value = SITE.wa || ""; $("s_mail").value = SITE.mail || "";
-    $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; if (!$("pe").contains(document.activeElement)) { $("s_plans").value = plansText(SITE.plans); peLoad(); } if (!$("s_terms").matches(":focus")) $("s_terms").value = SITE.terms || ""; $("s_idle").value = SITE.idleMinutes || "";
-    $("s_mpesa").value = SITE.mpesa || ""; $("s_bank").value = SITE.bank || ""; $("s_other").value = SITE.other || "";
+    $("s_price").value = SITE.price || ""; $("s_days").value = SITE.days || ""; if (!$("pe").contains(document.activeElement)) { $("s_plans").value = plansText(PLX()); peLoad(); } if (!$("s_terms").matches(":focus")) $("s_terms").value = SITE.terms || ""; $("s_idle").value = SITE.idleMinutes || "";
+    $("s_mpesa").value = SITE.mpesa || ""; $("s_stk").checked = SITE.stk === true; $("s_bank").value = SITE.bank || ""; $("s_other").value = SITE.other || "";
   }
   if (!$("ann").contains(document.activeElement)) $("bb_txt").value = SITE.billboard || "";
 }
@@ -1730,8 +2102,8 @@ $("s_save").onclick = async () => {
   if (idle && (idle < 5 || idle > 1440)) return m.textContent = "Idle logout must be 5 to 1440 minutes.";
   const pl = parsePlans($("s_plans").value); if (pl.error) return m.textContent = pl.error;
   const o = { terms: $("s_terms").value.trim().slice(0, 3000) || null, plans: pl.plans.length ? pl.plans : null, company: $("s_company").value.trim(), wa: $("s_wa").value.replace(/\D/g, ""), mail: $("s_mail").value.trim(), price: $("s_price").value.trim(),
-    mpesa: $("s_mpesa").value.trim(), bank: $("s_bank").value.trim(), other: $("s_other").value.trim(), days: days || null, idleMinutes: idle || null };
-  if (!amSuper()) { delete o.plans; delete o.days; delete o.terms; }   // only a super admin sets prices and plan lengths
+    mpesa: $("s_mpesa").value.trim(), bank: $("s_bank").value.trim(), other: $("s_other").value.trim(), days: days || null, idleMinutes: idle || null, stk: $("s_stk").checked };
+  if (!amSuper()) { delete o.plans; delete o.days; delete o.terms; delete o.stk; }   // only a super admin sets prices and plan lengths
   try { await dbr.ref("site").update(o); m.textContent = "Saved."; logEvt("Updated settings (company, contact, membership)"); }
   catch (err) { m.textContent = "Save failed: " + err.message; }
   setTimeout(() => m.textContent = "", 5000);
