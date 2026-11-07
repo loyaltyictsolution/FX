@@ -704,6 +704,7 @@ body.landing>.note{display:none}
 <div id="banner" role="alert"></div>
 <div id="why" class="panel OFFLINE" role="status"></div>
 <section class="panel" id="bb" style="display:none;margin-bottom:14px"></section>
+<section class="panel" id="renew" style="display:none;margin-bottom:14px" role="status"></section>
 <section class="panel" id="member" style="display:none;margin-bottom:16px">
   <div id="m_journey"></div><div id="m_lock"></div>
   <b>Membership</b>
@@ -724,7 +725,7 @@ body.landing>.note{display:none}
   </div>
   <div id="m_hist"></div>
 </section>
-<div id="sigwrap"><main>
+<div id="sigwrap"><section class="panel" id="evw" style="display:none;margin-bottom:14px" role="status"></section><main>
   <section class="panel" id="list" aria-label="Currency pairs"></section>
   <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
 </main>
@@ -773,6 +774,14 @@ body.landing>.note{display:none}
 <section class="panel" id="ins" style="margin-top:16px" aria-label="Market insights"><div class="pa-h"><b>Insights</b><span class="mut" style="font-size:12px" id="ins_t"></span></div><div id="ins_b" class="ins-g"></div>
   <p class="mut" style="font-size:12px;margin:10px 0 0">Insights describe what the tracked markets are doing right now. They are not forecasts or financial advice.</p></section>
 <section class="panel" id="mnews" style="display:none;margin-top:16px" aria-label="Market news"></section>
+<details class="panel" id="nsp" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Notification settings</summary><div id="ns_b"></div></details>
+<section class="panel" id="tj" style="margin-top:16px" aria-label="My trade journal"><div class="pa-h"><b>My trade journal</b><button type="button" id="tj_csv" style="font-size:12px;padding:4px 10px">Export CSV</button></div>
+  <div class="stats" id="tj_stats"></div>
+  <div class="pa-form"><select id="tj_pair" aria-label="Pair"><option value="">Pair</option></select><select id="tj_side" aria-label="Side"><option>BUY</option><option>SELL</option></select>
+    <input id="tj_in" type="number" step="any" min="0" placeholder="Entry" aria-label="Entry price"><input id="tj_out" type="number" step="any" min="0" placeholder="Exit (optional)" aria-label="Exit price"><input id="tj_pl" type="number" step="any" placeholder="P/L amount (optional)" aria-label="Profit or loss amount">
+    <input id="tj_note" class="pa-note" maxlength="80" placeholder="Note (optional)" aria-label="Note"><button type="button" class="pa-btn pri" id="tj_add">Log trade</button><span class="mut" id="tj_msg" role="status"></span></div>
+  <div id="tj_list"></div>
+  <p class="mut" style="font-size:12px;margin:8px 0 0">Your journal is private and saved on this device. Export it now and then to keep a backup.</p></section>
 <section class="panel" style="margin-top:16px"><b>Signal alerts</b> <span class="mut" style="font-size:12px">BUY, SELL and DANGER changes this session</span><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
 <section class="panel" id="track" style="margin-top:16px"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
   <div id="track_body"><p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.</p></div></section>
@@ -826,6 +835,8 @@ body.landing>.note{display:none}
       <button class="pri" id="nk_go" type="button">Activate</button><button id="nk_off" type="button">Deactivate</button><button id="nk_now" type="button">Refresh now</button>
       <span id="nk_msg" class="mut" role="status"></span>
     </div></div>
+  <div style="margin-top:14px"><b>Phone push key</b> <span class="mut">Needed once so members can get alerts when the app is closed. In Firebase: Project settings, Cloud Messaging, Web Push certificates, then paste the public key here. See the server README.</span>
+    <div class="ctl" style="margin-top:6px"><input id="vp_key" type="password" style="width:260px" autocomplete="off" placeholder="paste public key"><button class="pri" id="vp_go" type="button">Save push key</button><span id="vp_msg" class="mut" role="status"></span></div></div>
   <div class="grid" id="health"></div>
   <div style="margin-top:14px"><b>Markets to track</b>
     <p class="mut">Forex, crypto and stocks from Twelve Data. The free plan works best with 8 symbols or fewer (maximum 12).</p>
@@ -838,8 +849,10 @@ body.landing>.note{display:none}
   </div>
 </details>
 <section class="panel" id="users"><b>Team, roles &amp; access</b> <button id="goacc" style="display:none;margin-left:8px">Staff accounts &amp; roles</button>
+  <details id="an" class="panel" open style="margin:10px 0"><summary style="cursor:pointer;font-weight:600">Business analytics</summary><div id="an_b"></div></details>
   <div class="stats" id="ustats"></div>
   <div id="newusers"></div>
+  <div id="expiring"></div>
   <div class="adduser">
     <input id="nu_em" type="text" inputmode="email" placeholder="New user email" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')">
     <input id="nu_pw" type="password" placeholder="Temporary password (8+)" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
@@ -887,6 +900,14 @@ body.landing>.note{display:none}
     <label class="mut" style="flex:1 1 100%"><input type="checkbox" id="nw_m"> Post as market news (shows under Market news instead of News &amp; updates)</label>
     <button class="pri" id="nw_go">Publish newsletter</button><button id="nw_copy">Copy member emails</button><span id="nw_msg" class="mut" role="status"></span>
   </div>
+  <div style="margin-top:14px"><b>News calendar</b> <span class="mut">Add big releases so members get warned before they happen. Times use your local time.</span>
+    <div class="adduser" style="margin-top:8px">
+      <select id="ev_ccy" style="padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option><option>AUD</option><option>CAD</option><option>NZD</option><option>CHF</option></select>
+      <input id="ev_title" placeholder="e.g. Non-Farm Payrolls" maxlength="80" style="flex:1 1 200px">
+      <input id="ev_t" type="datetime-local" aria-label="Event date and time">
+      <select id="ev_imp" style="padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option>High</option><option>Medium</option></select>
+      <button class="pri" id="ev_add" type="button">Add event</button><span id="ev_msg" class="mut" role="status"></span>
+    </div><div id="ev_list"></div></div>
 </section>
 <section class="panel" id="logs" style="display:none;margin-top:16px"><b>Live activity log</b> <span class="mut">(last 100)</span>
   <div style="margin:8px 0"><button id="lg_clr">Clear log</button></div>
@@ -929,7 +950,7 @@ window.addEventListener("error", e => { const x = document.getElementById("err")
   <div id="lc_body" class="lcb"></div>
   <div id="lc_foot" class="lcf"><input id="lc_in" maxlength="400" placeholder="Type a message" autocomplete="off" aria-label="Message"><button type="button" class="btn-p" id="lc_go">Send</button></div></div>
   <button type="button" id="lc_btn" class="lcbtn" aria-label="Open live chat" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg><span>Live chat</span><i id="lc_n" class="lcn" hidden></i></button></div>
-<script type="text/plain" id="mainjs">const firebaseConfig = { apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf" };
+<script type="text/plain" id="mainjs">const firebaseConfig = { apiKey: "AIzaSyCKACM1fsSOqTiRfCc10Lr0f2oaLEv2k-Q", authDomain: "loyalty-fx.firebaseapp.com", databaseURL: "https://loyalty-fx-default-rtdb.firebaseio.com", projectId: "loyalty-fx", appId: "1:754089568350:web:6258778a93f4c941c16ccf", messagingSenderId: "754089568350" };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(), dbr = firebase.database(), TS = firebase.database.ServerValue.TIMESTAMP;
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
@@ -1322,7 +1343,7 @@ function raise(pair, from, to, reason, strength) {
   const msg = to === "DANGER" ? `${pair}: DANGER. ${reason}. Do not enter.` : `${pair}: ${to} conditions (${pct(strength)})`;
   alerts.unshift({ t: rt(), msg }); alerts = alerts.slice(0, 15);
   $("alerts").innerHTML = alerts.map(a => `<div><span class="num mut">${fmtT(a.t)}</span> ${esc(a.msg)}</div>`).join("");
-  if (!soundOn) return;
+  if (!soundOn || !nsAllow(pair, to)) return;
   banner(msg); to === "DANGER" ? beep(300, .25, 3) : beep(880, .15);
   if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: msg }); } catch {}
 }
@@ -1428,7 +1449,7 @@ function status() {
 }
 setInterval(() => auth.currentUser && status(), 2000);
 
-function render() { renderMain(); syncChartListener(); drawChart(); }
+function render() { renderMain(); syncChartListener(); drawChart(); try { evMark(); } catch {} }
 const SYM = { USD: "$", EUR: "\u20ac", GBP: "\u00a3", JPY: "\u00a5", AUD: "A$", CAD: "C$", NZD: "N$", CHF: "Fr", BTC: "\u20bf", ETH: "\u039e", XAU: "Au", XAG: "Ag" };
 const symOf = p => SYM[String(p).slice(0, 3).toUpperCase()] || String(p).slice(0, 3).toUpperCase();
 function renderMain() {
@@ -1913,7 +1934,7 @@ function renderUsers() {
       <div class="mut">${live ? "Online now" : PR[id] && PR[id].last ? "Last seen " + fmtDT(PR[id].last) : "Never signed in"}</div></div>
       <div class="uact">${acts}</div></div>`;
     }).join("") || '<p class="mut">No users yet. People appear here after their first sign-in.</p>');
-  renderNewUsers(rows);
+  renderNewUsers(rows); renderExpiring(rows); try { anRender(rows); } catch (er) { console.warn("analytics:", er.message); }
 }
 function renderNewUsers(rows) {
   const fresh = rows.filter(r => r.t === 0 && r.v.signup === true && !r.apr && !r.blk).sort((a, b) => (b.v.createdAt || 0) - (a.v.createdAt || 0)), el = $("newusers");
@@ -2133,7 +2154,7 @@ function renderMember() {
   if (PICK >= PL.length) PICK = -1; renderPick();
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
   $("m_hist").innerHTML = h.length ? '<div class="mut" style="margin-top:10px">Your payments and receipts</div>' + h.map(p => `<div class="urow"><div>${esc(p.method)} <span class="pill num">${esc(p.code)}</span> <span class="pill ${stCls(p.status)}">${esc(stLabel(p.status))}</span></div><div class="mut">${fmtDT(p.ts || 0)} <button data-rc="${esc(p.id)}">Receipt</button></div></div>`).join("") : "";
-  renderJourney(act);
+  renderJourney(act); renewRender();
 }
 function renderJourney(act) {
   const J = $("m_journey"), L = $("m_lock"); if (!J || !L) return;
@@ -2392,7 +2413,7 @@ function paLoad() {
   try { const x = JSON.parse(localStorage.getItem(MO_K(u.uid)) || "null"); if (x && typeof x === "object") m = x; } catch {}
   PA = { uid: u.uid, act: Array.isArray(o.act) ? o.act : [], hist: Array.isArray(o.hist) ? o.hist : [], mo: m }; MOS = {}; paSel = ""; return true;
 }
-function paSave() { try { localStorage.setItem(PA_K(PA.uid), JSON.stringify({ act: PA.act, hist: PA.hist.slice(0, 100) })); localStorage.setItem(MO_K(PA.uid), JSON.stringify(PA.mo)); } catch {} }
+function paSave() { try { localStorage.setItem(PA_K(PA.uid), JSON.stringify({ act: PA.act, hist: PA.hist.slice(0, 100) })); localStorage.setItem(MO_K(PA.uid), JSON.stringify(PA.mo)); } catch {} try { paMirror(); } catch {} }
 function paNotify(m) { banner(m, true); if (soundOn) beep(880, .15, 2); if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: m }); } catch {} }
 const paId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const paWhen = ms => new Date(ms).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
@@ -2416,7 +2437,7 @@ function moCheck() {
     if (was === false && o && PA.mo[k.k]) {
       const wait = PA.act.filter(a => { const t = (data[a.pair] && data[a.pair].type) || typeOf(a.pair); return k.k === "fx" ? t === "forex" : k.k === "us" ? t === "stocks" : false; });
       PA.hist.unshift({ k: "open", n: k.n, done: now }); ch = true;
-      paNotify(`${k.n} is now open.` + (wait.length ? ` ${wait.length} price alert${wait.length > 1 ? "s are" : " is"} watching: ${wait.slice(0, 3).map(a => a.pair).join(", ")}.` : ""));
+      if (!nsQuiet()) paNotify(`${k.n} is now open.` + (wait.length ? ` ${wait.length} price alert${wait.length > 1 ? "s are" : " is"} watching: ${wait.slice(0, 3).map(a => a.pair).join(", ")}.` : ""));
     }
   }
   if (ch) { paSave(); paRender(); }
@@ -2504,7 +2525,8 @@ function insRender() {
     `<div class="ins-c"><h4>Biggest movers (24h)</h4>${mv.length ? mv.map(([p, d]) => line(esc(p), (d.day.chg >= 0 ? "+" : "") + d.day.chg.toFixed(2) + "%", d.day.chg >= 0 ? "up" : "dn")).join("") : '<p class="mut">Not enough data yet.</p>'}</div>`,
     `<div class="ins-c"><h4>Watch out</h4>${dng || hot.length || edge.length ? [...E.filter(([, d]) => d.signal === "DANGER").map(([p, d]) => line(esc(p), "DANGER", "dn")), ...hot.map(([p]) => line(esc(p), "High volatility")), ...edge.map(([p, d]) => line(esc(p), d.day.pos >= .85 ? "Near day high" : "Near day low"))].slice(0, 5).join("") : '<p class="mut">Nothing unusual on the tracked pairs.</p>'}</div>`,
     `<div class="ins-c"><h4>Next market opens</h4>${closed.length ? closed.map(([k, n]) => line(esc(k.n), paWhen(n))).join("") + '<p class="mut">Turn on open alerts under Price alerts, Market open.</p>' : '<p class="mut">Forex and US stocks are open now.</p>'}</div>`,
-    near ? `<div class="ins-c"><h4>Closest price alert</h4>${line(esc(near.a.pair), fmt(near.a.pair, near.a.price))}<p class="mut">${near.dist.toFixed(2)}% away from the current price.</p></div>` : ""
+    near ? `<div class="ins-c"><h4>Closest price alert</h4>${line(esc(near.a.pair), fmt(near.a.pair, near.a.price))}<p class="mut">${near.dist.toFixed(2)}% away from the current price.</p></div>` : "",
+    insOverlap(open), insEvents(now)
   ].join("");
   $("ins_t").textContent = "Updated " + fmtT(now);
 }
@@ -2571,6 +2593,216 @@ function nfTick() {
   if (isAdmin && NK.on && rt() - nfTimer > 600000) { nfTimer = rt(); nfRefresh(false); }
 }
 setInterval(nfTick, 5000);
+
+// ----- renewal reminders (member banner + admin "ending soon" list) -----
+const RN_DAY = 86400000;
+const waDigits = p => { let d = String(p || "").replace(/\D/g, ""); if (/^0\d{9}$/.test(d)) d = "254" + d.slice(1); return d; };
+const rnStage = left => left <= 0 ? "exp" : left <= RN_DAY ? "1" : left <= 3 * RN_DAY ? "3" : "7";
+function renewRender() {
+  const el = $("renew"); if (!el) return; const u = auth.currentUser;
+  if (!u || isAdmin || !MEM.until || MEM.term) { el.style.display = "none"; return; }
+  const now = rt(), left = MEM.until - now;
+  if (left > 7 * RN_DAY || left < -30 * RN_DAY) { el.style.display = "none"; return; }
+  const st = rnStage(left), key = u.uid + "_" + MEM.until + "_" + st, exp = left <= 0;
+  try { if (sessionStorage.getItem("fr_rnx") === key) { el.style.display = "none"; return; } } catch {}
+  const col = exp || st === "1" ? "--danger" : st === "3" ? "--wait" : "--buy", plan = MEM.plan ? esc(MEM.plan) + " " : "";
+  const wa = (SITE.wa || "254713474115").replace(/\D/g, ""), msg = `Hello, I would like to renew my ${MEM.plan ? MEM.plan + " " : ""}membership ${exp ? "which expired" : "ending"} on ${fmtD(MEM.until)}.\nAccount: ${u.email}`;
+  el.dataset.k = key; el.style.display = "block"; el.style.borderLeft = "4px solid var(" + col + ")";
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div><b>${exp ? "Membership expired" : "Renew soon"}</b>
+    <div>${exp ? `Your ${plan}membership expired on <b>${fmtD(MEM.until)}</b>. Renew to unlock the radar again.` : `Your ${plan}membership ends on <b>${fmtDT(MEM.until)}</b> (${leftText(left)} left). Renew early so you do not lose access.`}</div></div>
+    <div class="ctl"><button class="pri" id="rn_go" type="button">Renew now</button><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}">Renew on WhatsApp</a>${exp ? "" : '<button id="rn_x" type="button">Remind me later</button>'}</div></div>`;
+  try { if (!localStorage.getItem("fr_rn_" + key)) { localStorage.setItem("fr_rn_" + key, "1"); paNotify(exp ? "Your membership has expired. Renew to unlock the radar." : "Your membership ends in " + leftText(left) + ". Renew to keep access."); } } catch {}
+}
+$("renew").addEventListener("click", e => {
+  if (e.target.closest("#rn_go")) { const m = $("member"); m.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  if (e.target.closest("#rn_x")) { try { sessionStorage.setItem("fr_rnx", $("renew").dataset.k); } catch {} $("renew").style.display = "none"; }
+});
+setInterval(() => { if (MON && auth.currentUser) renewRender(); }, 30000);
+function renderExpiring(rows) {
+  const el = $("expiring"); if (!el) return; const now = rt();
+  const list = rows.filter(r => r.t === 0 && r.apr && !r.blk && MS[r.id] && MS[r.id].until && MS[r.id].until - now <= 7 * RN_DAY && MS[r.id].until - now >= -14 * RN_DAY).sort((a, b) => MS[a.id].until - MS[b.id].until);
+  if (!list.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="su-new"><div class="su-newh"><b>Memberships ending soon</b><span class="pill apr">${list.length}</span></div><div class="mut" style="font-size:13px;margin-bottom:4px">Send a WhatsApp reminder before they lose access. Includes memberships that expired in the last 14 days.</div>` + list.map(({ id, v }) => {
+    const m = MS[id], left = m.until - now, ph = waDigits(v.phone);
+    const txt = `Hello ${v.name || ""}, your ${m.plan ? m.plan + " " : ""}membership at ${CO} ${left <= 0 ? "expired on " : "ends on "}${fmtD(m.until)}. To renew, sign in at ${location.origin}${location.pathname} and pay under Membership.${SITE.mpesa ? " M-Pesa: " + SITE.mpesa + "." : ""} Thank you!`;
+    return `<div class="su-ni"><div><b>${esc(v.name || v.email)}</b> <span class="pill ${left <= 0 ? "blk" : "apr"}">${left <= 0 ? "Expired" : leftText(left) + " left"}</span><div class="mut" style="font-size:13px">${esc(v.email || "")} &middot; ${left <= 0 ? "ended " : "ends "}${fmtDT(m.until)}</div></div>
+      <div class="uact">${ph ? `<a class="btn wa" href="https://wa.me/${ph}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">WhatsApp reminder</a>` : '<span class="mut">No phone saved</span>'}</div></div>`;
+  }).join("") + "</div>";
+}
+
+// ===== per-member notification settings =====
+const NS_K = u => "fr_ns_" + u;
+let NS = { uid: "", pairs: {}, types: { BUY: true, SELL: true, DANGER: true }, ev: true, quiet: { on: false, from: "22:00", to: "06:00" }, push: { open: true, ev: true, renew: true, sig: false, pa: true } }, nsSig = "";
+function nsLoad() {
+  const u = auth.currentUser; if (!u) return false; if (NS.uid === u.uid) return true; let o = {};
+  try { o = JSON.parse(localStorage.getItem(NS_K(u.uid)) || "{}") || {}; } catch {}
+  NS = { uid: u.uid, pairs: o.pairs || {}, types: Object.assign({ BUY: true, SELL: true, DANGER: true }, o.types || {}), ev: o.ev !== false, quiet: Object.assign({ on: false, from: "22:00", to: "06:00" }, o.quiet || {}), push: Object.assign({ open: true, ev: true, renew: true, sig: false, pa: true }, o.push || {}) }; nsSig = ""; return true;
+}
+function nsSave() { try { localStorage.setItem(NS_K(NS.uid), JSON.stringify({ pairs: NS.pairs, types: NS.types, ev: NS.ev, quiet: NS.quiet, push: NS.push })); } catch {} pushPrefs(); }
+function nsQuiet() {
+  nsLoad(); if (!NS.quiet.on) return false; const n = new Date(), m = n.getHours() * 60 + n.getMinutes(), t = s => { const [h, mi] = String(s).split(":"); return (+h || 0) * 60 + (+mi || 0); }, a = t(NS.quiet.from), b = t(NS.quiet.to);
+  return a <= b ? m >= a && m < b : m >= a || m < b;
+}
+function nsAllow(pair, to) { if (!nsLoad()) return true; return NS.types[to] !== false && NS.pairs[pair] !== false && !nsQuiet(); }
+function nsRender(force) {
+  const el = $("ns_b"); if (!el || !nsLoad()) return; const keys = Object.keys(data), sig = keys.join("|") + "|" + PUSH_TOK();
+  if (!force && sig === nsSig) return; nsSig = sig; const q = NS.quiet, pt = PUSH_TOK(), ck = (b, a) => `<input type="checkbox" ${a} ${b ? "checked" : ""}>`;
+  el.innerHTML = `<div class="ins-c" style="margin-top:8px"><h4>Signal alerts for</h4><div class="chips" style="margin:0">${["BUY", "SELL", "DANGER"].map(t => `<label class="mut" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-nt="${t}" ${NS.types[t] !== false ? "checked" : ""} style="width:auto;margin:0"> ${t}</label>`).join("")}</div>
+    <h4 style="margin-top:10px">Pairs</h4><div class="chips" style="margin:0">${keys.length ? keys.map(p => `<label class="mut" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-np="${esc(p)}" ${NS.pairs[p] !== false ? "checked" : ""} style="width:auto;margin:0"> ${esc(p)}</label>`).join("") : '<span class="mut">Pairs appear once prices load.</span>'}</div>
+    <p class="mut" style="font-size:12px;margin:8px 0 0">Signal alerts also need <b>Turn on alerts</b> at the top of the page.</p></div>
+    <div class="ins-c" style="margin-top:8px"><h4>Other notices</h4>
+    <label class="mut" style="display:flex;gap:6px;align-items:center;margin:4px 0"><input type="checkbox" data-nev ${NS.ev ? "checked" : ""} style="width:auto;margin:0"> News warnings before big events</label>
+    <label class="mut" style="display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap"><input type="checkbox" data-nq ${q.on ? "checked" : ""} style="width:auto;margin:0"> Quiet hours from <input type="time" data-nqf value="${esc(q.from)}" style="width:auto;padding:3px 6px"> to <input type="time" data-nqt value="${esc(q.to)}" style="width:auto;padding:3px 6px"> <span style="font-size:12px">(signals, market-open and news notices are muted. Your own price alerts and renewal notices are not.)</span></label></div>
+    <div class="ins-c" style="margin-top:8px"><h4>Phone alerts (when the app is closed)</h4>
+    <p class="mut" style="margin:0 0 6px;font-size:13px">${pt ? "Phone alerts are <b>on</b> for this device." : SITE.vapid ? "Turn on push alerts to get price alerts, news warnings, market opens and renewal reminders even when this page is closed." : "Not available yet. The admin has not finished setting up phone alerts."}</p>
+    ${pt ? `<div class="chips" style="margin:0 0 8px">${[["open", "Market open"], ["ev", "News warnings"], ["pa", "Price alerts"], ["renew", "Renewals"], ["sig", "Signal changes"]].map(([k, l]) => `<label class="mut" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-pp="${k}" ${NS.push[k] ? "checked" : ""} style="width:auto;margin:0"> ${l}</label>`).join("")}</div><button type="button" id="ns_poff">Turn off on this device</button>` : SITE.vapid ? '<button type="button" class="pri" id="ns_pon">Turn on phone alerts</button>' : ""} <span class="mut" id="ns_pm" role="status"></span></div>`;
+}
+$("nsp").addEventListener("change", e => {
+  if (!nsLoad()) return; const t = e.target;
+  if (t.dataset.nt) NS.types[t.dataset.nt] = t.checked; else if (t.dataset.np) NS.pairs[t.dataset.np] = t.checked; else if (t.hasAttribute("data-nev")) NS.ev = t.checked;
+  else if (t.hasAttribute("data-nq")) NS.quiet.on = t.checked; else if (t.hasAttribute("data-nqf")) NS.quiet.from = t.value || "22:00"; else if (t.hasAttribute("data-nqt")) NS.quiet.to = t.value || "06:00"; else if (t.dataset.pp) NS.push[t.dataset.pp] = t.checked;
+  nsSave();
+});
+$("nsp").addEventListener("click", e => { if (e.target.id === "ns_pon") pushEnable(); if (e.target.id === "ns_poff") pushDisable(); });
+
+// ===== phone push (Firebase Cloud Messaging) =====
+const PUSH_TOK = () => { try { return localStorage.getItem("fr_pt_" + ((auth.currentUser || {}).uid || "")) || ""; } catch { return ""; } };
+const pushFlags = () => ({ open: NS.push.open, ev: NS.push.ev, renew: NS.push.renew, sig: NS.push.sig, pa: NS.push.pa });
+async function pushLoadLib() {
+  if (window.firebase && firebase.messaging) return;
+  for (const b of ["https://www.gstatic.com/firebasejs/10.12.2/", "https://cdn.jsdelivr.net/npm/firebase@10.12.2/"]) {
+    try { await new Promise((ok, no) => { const e = document.createElement("script"); e.src = b + "firebase-messaging-compat.js"; e.onload = ok; e.onerror = no; document.head.appendChild(e); }); if (firebase.messaging) return; } catch {}
+  }
+  throw new Error("Could not load the push library");
+}
+async function pushEnable() {
+  const m = $("ns_pm"); nsLoad();
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) throw new Error("This browser does not support phone push alerts");
+    if (!SITE.vapid) throw new Error("The admin has not added the push key yet");
+    m.textContent = "Turning on..."; await pushLoadLib();
+    if ((await Notification.requestPermission()) !== "granted") throw new Error("Notifications were not allowed in the browser");
+    const reg = await navigator.serviceWorker.register("firebase-messaging-sw.js"), tok = await firebase.messaging().getToken({ vapidKey: SITE.vapid, serviceWorkerRegistration: reg });
+    if (!tok) throw new Error("No device token was returned");
+    await dbr.ref("fcmtokens/" + auth.currentUser.uid + "/" + tok).set(Object.assign({ t: TS, ua: navigator.userAgent.slice(0, 80) }, pushFlags()));
+    localStorage.setItem("fr_pt_" + auth.currentUser.uid, tok); paMirror(); logEvt("Turned on phone alerts");
+  } catch (e) { if (m) m.textContent = "Could not turn on: " + e.message; return; }
+  nsRender(true);
+}
+async function pushDisable() {
+  const tok = PUSH_TOK(), u = auth.currentUser; if (!tok || !u) return;
+  try { await dbr.ref("fcmtokens/" + u.uid + "/" + tok).remove(); await dbr.ref("palerts/" + u.uid).remove(); } catch {}
+  try { if (window.firebase && firebase.messaging) await firebase.messaging().deleteToken(); } catch {}
+  try { localStorage.removeItem("fr_pt_" + u.uid); } catch {} nsRender(true);
+}
+function pushPrefs() { const t = PUSH_TOK(), u = auth.currentUser; if (t && u) dbr.ref("fcmtokens/" + u.uid + "/" + t).update(pushFlags()).catch(() => {}); }
+function paMirror() {                                  // copy active price alerts so the server can watch them while the app is closed
+  const t = PUSH_TOK(), u = auth.currentUser; if (!t || !u || PA.uid !== u.uid) return; const o = {};
+  PA.act.slice(0, 30).forEach(a => { o[a.id] = { pair: a.pair, dir: a.dir, price: a.price, note: a.note || "" }; });
+  dbr.ref("palerts/" + u.uid).set(PA.act.length ? o : null).catch(() => {});
+}
+$("vp_go").onclick = async () => {
+  const v = $("vp_key").value.trim(), m = $("vp_msg"); if (!isAdmin) return; if (v.length < 40) return m.textContent = "Paste the Web Push certificate key pair (public key) from Firebase.";
+  try { await dbr.ref("site/vapid").set(v); $("vp_key").value = ""; m.textContent = "Saved. Members can now turn on phone alerts."; logEvt("Saved the phone push key"); } catch (e) { m.textContent = "Failed: " + e.message; } setTimeout(() => m.textContent = "", 6000);
+};
+
+// ===== news-event warnings =====
+let EV = [], evRef = null;
+const evAff = (pair, ccy) => pair.split("/").includes(ccy) || (ccy === "USD" && typeOf(pair) !== "forex");
+const evTime = ms => new Date(ms).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function evRender() {
+  const el = $("evw"); if (!el) return; const now = rt(), list = EV.filter(e => e.t - now <= 120 * 60000 && e.t - now >= -15 * 60000);
+  if (!list.length || !isMember()) { el.style.display = "none"; return; }
+  const hot = list.some(e => e.t - now <= 30 * 60000); el.style.display = "block"; el.style.borderLeft = "4px solid var(" + (hot ? "--danger" : "--wait") + ")";
+  el.innerHTML = `<b>${hot ? "High-impact news window" : "News coming up"}</b>` + list.map(e => { const d = e.t - now, aff = Object.keys(data).filter(p => evAff(p, e.ccy));
+    return `<div class="pa-row" style="grid-template-columns:1fr auto"><div><b>${esc(e.ccy)}</b> ${esc(e.title)} <span class="pa-chip" style="${e.imp === "High" ? "color:var(--danger);border-color:var(--danger)" : "color:var(--wait);border-color:var(--wait)"}">${esc(e.imp || "Medium")}</span><div class="sub">${aff.length ? "Affects " + aff.map(esc).join(", ") : "None of your tracked pairs"} &middot; ${esc(evTime(e.t))}</div></div><span class="num">${d > 0 ? "in " + leftText(d) : "just released"}</span></div>`; }).join("") +
+    '<div class="mut" style="font-size:12px;margin-top:6px">Prices can jump and spreads widen around news, so signals are less reliable in this window.</div>';
+}
+function evCheck() {
+  if (!nsLoad() || !EV.length) return; const now = rt(), keys = Object.keys(data);
+  for (const e of EV) {
+    const d = e.t - now, stage = d > 30 * 60000 && d <= 60 * 60000 ? 60 : d > 0 && d <= 30 * 60000 ? 30 : d <= 0 && d > -5 * 60000 ? 0 : null; if (stage === null) continue;
+    const k = "fr_ev_" + e.id + "_" + stage; try { if (localStorage.getItem(k)) continue; localStorage.setItem(k, "1"); } catch { continue; }
+    const aff = keys.filter(p => evAff(p, e.ccy)); if (!aff.length || !NS.ev || nsQuiet()) continue;
+    paNotify(stage === 0 ? `${e.ccy} news is out now: ${e.title}. Expect fast moves on ${aff.slice(0, 3).join(", ")}.` : `${e.ccy} news in about ${stage} min: ${e.title}. Be careful with ${aff.slice(0, 3).join(", ")}.`);
+  }
+}
+function evMark() {
+  const now = rt(), near = EV.filter(e => e.t - now <= 60 * 60000 && e.t - now >= -15 * 60000); if (!near.length) return;
+  document.querySelectorAll("#list .row[data-p]").forEach(r => { if (r.querySelector(".evc")) return; const e = near.find(x => evAff(r.dataset.p, x.ccy)), b = r.querySelector("b"); if (e && b) b.insertAdjacentHTML("afterend", ' <span class="pa-chip wt evc" title="' + esc(e.ccy + " " + e.title) + '">News soon</span>'); });
+}
+function evAdminList() {
+  const el = $("ev_list"); if (!el) return; const now = rt(), up = EV.filter(e => e.t > now - 3600000);
+  el.innerHTML = up.length ? up.map(e => `<div class="urow"><div><b>${esc(e.ccy)}</b> ${esc(e.title)} <span class="pill">${esc(e.imp || "Medium")}</span><div class="mut">${esc(evTime(e.t))}</div></div><div><button class="bad" data-evd="${esc(e.id)}">Delete</button></div></div>`).join("") : '<p class="mut">No upcoming events. Add the big releases for the week (jobs data, inflation, rate decisions).</p>';
+}
+$("ev_add").onclick = async () => {
+  const m = $("ev_msg"), t = new Date($("ev_t").value).getTime(), title = $("ev_title").value.trim().slice(0, 80); if (!isAdmin) return;
+  if (!title || !(t > 0)) return m.textContent = "Add a title and a date and time.";
+  try { await dbr.ref("feed/events").push({ ccy: $("ev_ccy").value, title, t, imp: $("ev_imp").value }); $("ev_title").value = ""; m.textContent = "Event added. Members are warned 60 and 30 minutes before."; logEvt("Added news event: " + title.slice(0, 50)); }
+  catch (e) { m.textContent = /permission|denied/i.test(e.code + e.message) ? "Firebase refused the save. Check the database rules." : "Failed: " + e.message; } setTimeout(() => m.textContent = "", 6000);
+};
+$("ev_list").onclick = async e => { const b = e.target.closest("button[data-evd]"); if (b && isAdmin && confirm("Delete this event?")) try { await dbr.ref("feed/events/" + b.dataset.evd).remove(); } catch (er) { alert(er.message); } };
+function evTick() {
+  if (!MON || !auth.currentUser || !isMember()) return;
+  if (!evRef) { try { evRef = dbr.ref("feed/events"); evRef.on("value", s => { const v = s.val() || {}; EV = Object.entries(v).map(([id, x]) => ({ id, ...x })).filter(x => x && x.t).sort((a, b) => a.t - b.t); evRender(); evAdminList(); evMark();
+    if (isAdmin) EV.filter(x => x.t < rt() - 864e5).forEach(x => dbr.ref("feed/events/" + x.id).remove().catch(() => {})); }, () => {}); } catch { evRef = null; } }
+  evCheck(); evRender(); evMark();
+}
+setInterval(evTick, 15000);
+
+// ===== insights: news + overlap =====
+function insEvents(now) {
+  const up = EV.filter(e => e.t > now - 15 * 60000).slice(0, 3); if (!up.length) return "";
+  return `<div class="ins-c"><h4>Upcoming news</h4>${up.map(e => `<div class="l"><span>${esc(e.ccy)} ${esc(e.title)}</span><span class="num">${e.t > now ? leftText(e.t - now) : "now"}</span></div>`).join("")}</div>`;
+}
+function insOverlap(open) {
+  const ex = {}, add = (c, side, p, sg) => { (ex[c] = ex[c] || { long: [], short: [] })[side].push(p + " " + sg); };
+  for (const [p, d] of open) { if (typeOf(p) !== "forex" || (d.signal !== "BUY" && d.signal !== "SELL")) continue; const [b, q] = p.split("/"), buy = d.signal === "BUY"; add(b, buy ? "long" : "short", p, d.signal); add(q, buy ? "short" : "long", p, d.signal); }
+  const hits = []; for (const [c, o] of Object.entries(ex)) { if (o.long.length >= 2) hits.push(`Long ${c}: ${o.long.join(", ")}`); if (o.short.length >= 2) hits.push(`Short ${c}: ${o.short.join(", ")}`); }
+  return hits.length ? `<div class="ins-c"><h4>Overlap warning</h4>${hits.slice(0, 4).map(h => `<p style="margin:3px 0">${esc(h)}</p>`).join("")}<p class="mut">These setups lean on the same currency, so taking all of them is closer to one bigger bet than separate trades.</p></div>` : "";
+}
+
+// ===== personal trade journal =====
+const TJ_K = u => "fr_tj_" + u; let TJ = { uid: "", rows: [] };
+function tjLoad() { const u = auth.currentUser; if (!u) return false; if (TJ.uid === u.uid) return true; let a = []; try { a = JSON.parse(localStorage.getItem(TJ_K(u.uid)) || "[]"); } catch {} TJ = { uid: u.uid, rows: Array.isArray(a) ? a : [] }; return true; }
+function tjSave() { try { localStorage.setItem(TJ_K(TJ.uid), JSON.stringify(TJ.rows.slice(0, 300))); } catch {} }
+const tjRes = r => r.pl != null && isFinite(r.pl) ? r.pl : (r.exit != null && r.entry > 0 ? (r.exit - r.entry) / r.entry * 100 * (r.side === "BUY" ? 1 : -1) : null);
+function tjRender() {
+  if (!tjLoad()) return; const sel = $("tj_pair"), keys = Object.keys(data), sg = keys.join("|");
+  if (sel.dataset.k !== sg) { sel.dataset.k = sg; const c = sel.value; sel.innerHTML = '<option value="">Pair</option>' + keys.map(p => `<option>${esc(p)}</option>`).join(""); if (keys.includes(c)) sel.value = c; }
+  const rows = TJ.rows, done = rows.filter(r => tjRes(r) != null), w = done.filter(r => tjRes(r) > 0).length, tot = rows.reduce((t, r) => t + (r.pl != null && isFinite(r.pl) ? r.pl : 0), 0), pub = (typeof resStats === "function") ? resStats() : null;
+  $("tj_stats").innerHTML = `<div>TRADES<b>${rows.length}</b></div><div>WIN RATE<b>${done.length ? Math.round(w / done.length * 100) + "%" : "-"}</b></div><div>TOTAL P/L<b class="${tot >= 0 ? "up" : "dn"}">${tot >= 0 ? "+" : ""}${tot.toLocaleString(undefined, { maximumFractionDigits: 2 })}</b></div><div>RADAR RECORD<b>${pub && pub.rate != null ? Math.round(pub.rate * 100) + "%" : "-"}</b></div>`;
+  $("tj_list").innerHTML = rows.length ? rows.slice(0, 25).map(r => { const x = tjRes(r); return `<div class="pa-row"><div><b>${esc(r.pair)}</b> <span class="${r.side === "BUY" ? "up" : "dn"}">${esc(r.side)}</span> <span class="num">${esc(r.entry)}${r.exit != null ? " &rarr; " + esc(r.exit) : ""}</span><div class="sub">${esc(paDay(r.t))}${r.note ? " &middot; " + esc(r.note) : ""}</div></div><span class="num ${x == null ? "mut" : x >= 0 ? "up" : "dn"}">${x == null ? "open" : (r.pl != null && isFinite(r.pl) ? (x >= 0 ? "+" : "") + x : (x >= 0 ? "+" : "") + x.toFixed(2) + "%")}</span><button type="button" data-tjd="${esc(r.id)}" style="font-size:12px;padding:4px 10px">Delete</button></div>`; }).join("") : '<div class="pa-empty">No trades logged yet. Add the trades you take to see your own win rate next to the radar record.</div>';
+}
+$("tj_add").onclick = () => {
+  if (!tjLoad()) return; const pair = $("tj_pair").value, side = $("tj_side").value, en = parseFloat($("tj_in").value), ex = parseFloat($("tj_out").value), pl = parseFloat($("tj_pl").value), m = $("tj_msg");
+  if (!pair) return m.textContent = "Pick a pair."; if (!(en > 0)) return m.textContent = "Type your entry price.";
+  TJ.rows.unshift({ id: paId(), pair, side, entry: en, exit: ex > 0 ? ex : null, pl: isFinite(pl) ? pl : null, note: $("tj_note").value.trim().slice(0, 80), t: rt() }); tjSave();
+  ["tj_in", "tj_out", "tj_pl", "tj_note"].forEach(i => $(i).value = ""); m.textContent = "Saved."; setTimeout(() => m.textContent = "", 3000); tjRender();
+};
+$("tj").addEventListener("click", e => {
+  const d = e.target.closest("[data-tjd]"); if (d && tjLoad()) { TJ.rows = TJ.rows.filter(r => r.id !== d.dataset.tjd); tjSave(); tjRender(); return; }
+  if (e.target.id === "tj_csv" && tjLoad()) {
+    const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"', txt = ["Date,Pair,Side,Entry,Exit,PL,Note"].concat(TJ.rows.map(r => [new Date(r.t).toISOString(), r.pair, r.side, r.entry, r.exit, r.pl, r.note].map(q).join(","))).join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/csv" })); a.download = "my-trades.csv"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+});
+setInterval(() => { if (MON && auth.currentUser && isMember()) { try { nsRender(); tjRender(); } catch (er) { console.warn("panels tick:", er.message); } } }, 4000);
+
+// ===== admin analytics =====
+function anRender(rows) {
+  const el = $("an_b"); if (!el) return; const now = rt(), reg = rows.filter(r => r.t === 0), pays = pendingList().filter(p => p.status === "confirmed"), payer = {};
+  pays.forEach(p => { payer[p.uid] = (payer[p.uid] || 0) + 1; });
+  const paid = Object.keys(payer).length, rep = Object.values(payer).filter(n => n > 1).length, rev = pays.reduce((t, p) => t + (+p.amount || 0), 0);
+  const active = Object.entries(MS).filter(([id, m]) => AP[id] === true && m && (!m.until || m.until > now)).length, expired = Object.entries(MS).filter(([, m]) => m && m.until && m.until <= now).length;
+  const d = new Date(), mon = [], wk = [];
+  for (let i = 5; i >= 0; i--) { const a = new Date(d.getFullYear(), d.getMonth() - i, 1), b = new Date(d.getFullYear(), d.getMonth() - i + 1, 1); mon.push([a.toLocaleString([], { month: "short" }), pays.filter(p => (p.ts || 0) >= a.getTime() && (p.ts || 0) < b.getTime()).reduce((t, p) => t + (+p.amount || 0), 0)]); }
+  for (let i = 7; i >= 0; i--) { const b = now - i * 7 * 864e5, a = b - 7 * 864e5; wk.push(["-" + (i) + "w", reg.filter(r => (r.v.createdAt || 0) > a && (r.v.createdAt || 0) <= b).length]); }
+  const bars = (arr, f) => { const mx = Math.max(1, ...arr.map(x => x[1])); return arr.map(([l, v]) => `<div style="display:grid;grid-template-columns:44px 1fr 70px;gap:8px;align-items:center;font-size:12px;margin:3px 0"><span class="mut">${esc(l)}</span><span style="display:block;height:8px;border-radius:4px;background:var(--line)"><i style="display:block;height:8px;border-radius:4px;width:${Math.max(v ? 3 : 0, v / mx * 100)}%;background:var(--buy)"></i></span><span class="num">${f(v)}</span></div>`).join(""); };
+  el.innerHTML = `<div class="stats"><div>SIGN-UPS<b>${reg.length}</b></div><div>PAID EVER<b>${paid}</b></div><div>CONVERSION<b>${reg.length ? Math.round(paid / reg.length * 100) + "%" : "-"}</b></div><div>ACTIVE NOW<b style="color:var(--buy)">${active}</b></div><div>EXPIRED<b style="color:var(--wait)">${expired}</b></div><div>RENEWED<b>${paid ? Math.round(rep / paid * 100) + "%" : "-"}</b></div><div>AVG PER PAYER<b>${paid ? Math.round(rev / paid).toLocaleString() : "-"}</b></div></div>
+    <div class="ins-g"><div class="ins-c"><h4>Revenue, last 6 months</h4>${bars(mon, v => v.toLocaleString())}</div><div class="ins-c"><h4>Sign-ups per week</h4>${bars(wk, v => v)}</div></div>
+    <p class="mut" style="font-size:12px;margin:8px 0 0">Based on confirmed payments and the amounts typed on them. RENEWED = paying members with more than one confirmed payment.</p>`;
+}
 $("bb_save").onclick = async () => {
   const t = $("bb_txt").value.trim().slice(0, 590), m = $("bb_msg");
   try { await dbr.ref("site/billboard").set(t || null); m.textContent = t ? "Billboard updated." : "Billboard hidden."; logEvt(t ? "Updated the billboard" : "Cleared the billboard"); } catch (err) { m.textContent = "Failed: " + err.message; }
@@ -2899,7 +3131,7 @@ async function marketEnter(u) {
   status(); render(); start();
   return true;
 }
-function marketLeave() { MON = false; try { if (nfRef) nfRef.off(); } catch {} nfRef = null; NF = { ts: 0, items: [] }; NK = { key: "", prov: "finnhub", on: false, loaded: false }; nfTimer = 0; PA = { uid: "", act: [], hist: [], mo: {} }; MOS = {}; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
+function marketLeave() { MON = false; try { if (evRef) evRef.off(); } catch {} evRef = null; EV = []; NS.uid = ""; TJ.uid = ""; try { if (nfRef) nfRef.off(); } catch {} nfRef = null; NF = { ts: 0, items: [] }; NK = { key: "", prov: "finnhub", on: false, loaded: false }; nfTimer = 0; PA = { uid: "", act: [], hist: [], mo: {} }; MOS = {}; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
 $("goacc").onclick = () => SHELL.switchTo("staff", "x_acc"); $("gostaff").onclick = () => SHELL.switchTo("staff");
 SHELL.market = { enter: marketEnter, leave: marketLeave };
 
