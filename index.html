@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steve FX Radar</title>
+<title>Loyalty FX Radar</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#12202e">
 <meta name="referrer" content="no-referrer">
@@ -52,7 +52,7 @@ canvas{width:100%;height:120px;display:block}
 #login .go{width:100%;background:var(--buy);color:#06231f;font-weight:600;padding:10px;border:0}
 #err{color:var(--danger);min-height:22px;font-size:13px}
 #ok{color:var(--buy);font-size:13px}
-.lv{margin:10px 0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.lvb{margin:10px 0;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px}
 .lvr{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
 #app{display:none}
 #admin{display:none;margin-top:16px}
@@ -148,7 +148,7 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 
 .pill.own{color:var(--wait);border-color:var(--wait)}
 
-/* ---- Steve FX Radar backdrop ---- */
+/* ---- Loyalty FX Radar backdrop ---- */
 html{background:#0b1622}
 body{background:transparent;position:relative;min-height:100vh}
 body::before{content:"";position:fixed;inset:-6%;z-index:-2;pointer-events:none;
@@ -326,7 +326,7 @@ body.staffmode .note{display:none}
 .su-newh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
 .su-ni{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
 .su-ni .uact{display:flex;flex-wrap:wrap;gap:6px}
-/* ===== Steve FX Radar landing page ===== */
+/* ===== Loyalty FX Radar landing page ===== */
 :root{--cta:#2ec4b6;--cta-tx:#06231f}            /* want a red button like Deriv? set --cta:#ff444f and --cta-tx:#ffffff */
 body.landing{max-width:none;padding:0}
 body.landing>.note{display:none}
@@ -453,12 +453,72 @@ body.landing>.note{display:none}
 .px{font-weight:700;margin-right:10px;color:var(--tx);white-space:nowrap}
 @media(prefers-reduced-motion:reduce){.ld-chip{animation:none}}
 
+
+/* ---- Signals area: watermarks, cards, callouts ---- */
+:root{--wmcol:#6f8aa6}
+#list,#detail{position:relative;overflow:hidden;isolation:isolate}
+#list::before,#detail::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.09;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='170'><g transform='rotate(-24 160 85)' fill='%236f8aa6' font-family='Georgia,serif' font-weight='700'><text x='10' y='70' font-size='20' letter-spacing='3'>LOYALTY FX RADAR</text><path d='M12 100h40l8-16 10 30 9-22 6 8h40' fill='none' stroke='%236f8aa6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></g></svg>");}
+#detail::after{content:attr(data-wm);position:absolute;right:-6px;bottom:-14px;z-index:-1;pointer-events:none;font:800 84px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:-3px;color:var(--wmcol);opacity:.07;white-space:nowrap}
+#detail{--g:var(--mut);padding-top:18px}
+#detail[data-sig=BUY]{--g:var(--buy)}#detail[data-sig=SELL]{--g:var(--sell)}#detail[data-sig=WAIT]{--g:var(--wait)}#detail[data-sig=DANGER]{--g:var(--danger)}
+#detail{box-shadow:inset 0 3px 0 var(--g),0 10px 30px rgba(0,0,0,.18)}
+#detail .dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+#detail .dpair{font-weight:700;font-size:15px;letter-spacing:.3px}
+#detail .big{margin:2px 0 6px;font-size:38px;font-weight:600;letter-spacing:-1px}
+#detail .chartbox{border:1px solid var(--line);border-radius:12px;padding:6px;margin:6px 0 10px;background:
+  linear-gradient(to bottom,color-mix(in srgb,var(--g) 9%,transparent),transparent 70%),
+  repeating-linear-gradient(0deg,transparent 0 23px,color-mix(in srgb,var(--line) 70%,transparent) 23px 24px)}
+#detail .chartbox canvas{display:block;width:100%}
+#detail .tfs span{border-radius:999px;font-weight:600;background:color-mix(in srgb,var(--panel) 70%,transparent)}
+#detail .tfs span.up{color:var(--buy);border-color:color-mix(in srgb,var(--buy) 55%,transparent)}#detail .tfs span.up::before{content:"\25b2 ";font-size:9px}
+#detail .tfs span.dn{color:var(--sell);border-color:color-mix(in srgb,var(--sell) 55%,transparent)}#detail .tfs span.dn::before{content:"\25bc ";font-size:9px}
+#detail .bars div{grid-template-columns:48px 1fr 46px}
+#detail .trk{display:block;height:10px;border-radius:6px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden}
+#detail .bars i{height:10px;border-radius:6px;box-shadow:0 0 12px color-mix(in srgb,var(--g) 40%,transparent)}
+#detail .callout{display:flex;gap:12px;align-items:center;margin:12px 0;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--g) 50%,transparent);
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--g) 14%,transparent) 0 10px,color-mix(in srgb,var(--g) 7%,transparent) 10px 20px)}
+#detail .lvb{background:color-mix(in srgb,var(--panel) 78%,transparent);backdrop-filter:blur(2px);border-left:3px solid var(--g)}
+#detail .lvb>b{display:block;margin-bottom:4px;font-size:13.5px;letter-spacing:.2px}
+#list{padding:8px 0}
+#list .row{position:relative;overflow:hidden;margin:7px 8px;padding:12px 12px 12px 14px;border:1px solid var(--line);border-left-width:4px;border-radius:12px;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--panel) 85%,transparent),color-mix(in srgb,var(--panel) 55%,transparent));transition:transform .15s ease,box-shadow .15s ease}
+#list .row:last-child{border-bottom:1px solid var(--line)}
+#list .row::after{content:attr(data-sym);position:absolute;right:92px;top:50%;transform:translateY(-50%);font:800 50px/1 Georgia,serif;color:var(--wmcol);opacity:.12;pointer-events:none}
+#list .row:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+#list .row.sel{box-shadow:0 0 0 2px color-mix(in srgb,var(--g2,var(--buy)) 55%,transparent),0 10px 24px rgba(0,0,0,.22)}
+#list .row.BUY{--g2:var(--buy)}#list .row.SELL{--g2:var(--sell)}#list .row.WAIT{--g2:var(--wait)}#list .row.DANGER{--g2:var(--danger)}
+#list .row.BUY{border-left-color:var(--buy)}#list .row.SELL{border-left-color:var(--sell)}#list .row.WAIT{border-left-color:var(--wait)}#list .row.DANGER{border-left-color:var(--danger)}#list .row.PAUSED{border-left-color:var(--off)}
+#list .row b{font-size:15px;letter-spacing:.2px}
+#list .row .num{font-weight:600;font-size:16px}
+@media(prefers-reduced-motion:reduce){#list .row{transition:none}#list .row:hover{transform:none}}
+@media(max-width:600px){#list .row::after{right:70px;font-size:40px}#detail::after{font-size:56px}#detail .big{font-size:30px}}
+
+/* ---- Compact subscription cards ---- */
+.tiers{grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:10px}
+.tier{padding:10px 12px;border-radius:12px}.tier .medal{width:32px;height:38px}.tier h4{font-size:15px}.tier .tg{font-size:11.5px}
+.tier ul{margin:6px 0;font-size:12px}.tier li{padding:2px 0 2px 16px}
+.tier button.optb{display:inline-flex;width:auto;margin:6px 6px 0 0;padding:4px 6px 4px 10px;border-radius:999px;font-size:12px;gap:6px}
+.tier button.optb .go{background:var(--tc);color:#101010;border-radius:999px;padding:1px 8px;font-size:11px}
+.ld-plans{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.ld-plan{padding:14px;border-radius:14px}.ld-plan .med{width:34px;height:34px;font-size:14px;margin-bottom:6px}
+.ld-plan h3{font-size:17px}.ld-plan .tg{font-size:12px}.ld-plan .price{font-size:26px}.ld-plan .price small{font-size:12px}
+.ld-plan ul{margin:8px 0 12px;font-size:12.5px}.ld-plan li{padding:2px 0 2px 18px}
+.ld-plan .btn-p,.ld-plan .btn-o{padding:8px 12px;font-size:13px}
+/* ---- Debug tab ---- */
+#dbg .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:10px}
+#dbg .dc{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+#dbg .dc h4{margin:0 0 6px;font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--mut)}
+#dbg .dr{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+#dbg .dr:last-child{border-bottom:0}#dbg .dr span:last-child{text-align:right;word-break:break-word}
+#dbg .ok{color:var(--buy)}#dbg .bad{color:var(--danger)}#dbg .warn{color:var(--wait)}
+#dbg .elog{max-height:240px;overflow:auto;font:12px/1.5 "IBM Plex Mono",monospace;white-space:pre-wrap}
 </style>
 </head>
 <body>
 <div id="login">
   <div class="ld-nav"><div class="ld-wrap">
-    <span class="ld-brand" id="lname">Steve FX Radar</span>
+    <span class="ld-brand" id="lname">Loyalty FX Radar</span>
     <nav class="ld-links" aria-label="Sections">
       <button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_plans">Pricing</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_pay">Payments</button><button type="button" data-to="ld_help">Support</button>
     </nav>
@@ -582,13 +642,13 @@ body.landing>.note{display:none}
   <section class="ld-sec" style="padding-top:0"><div class="ld-wrap"><div class="ld-band"><h2>Ready to see the market clearly?</h2><button type="button" class="btn-p" id="ld_up3" style="padding:13px 28px;font-size:16px">Open account</button></div></div></section>
 
   <footer class="ld-foot"><div class="ld-wrap">
-    <div class="ld-fl"><span class="ld-brand">Steve FX Radar</span><span><button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_help">Support</button></span></div>
-    <p class="ld-risk">Steve FX Radar provides market information and alerts only. It is not a broker, does not hold your money and does not place trades. Signals are rule-based estimates built from public price data. They are not financial advice and are not guaranteed, and prices can differ from your broker's quotes. Trading forex, crypto and stocks carries a high risk of losing money. Only use money you can afford to lose.</p>
+    <div class="ld-fl"><span class="ld-brand">Loyalty FX Radar</span><span><button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_help">Support</button></span></div>
+    <p class="ld-risk">Loyalty FX Radar provides market information and alerts only. It is not a broker, does not hold your money and does not place trades. Signals are rule-based estimates built from public price data. They are not financial advice and are not guaranteed, and prices can differ from your broker's quotes. Trading forex, crypto and stocks carries a high risk of losing money. Only use money you can afford to lose.</p>
   </div></footer>
 </div>
 
 <div id="app">
-<header><h1 id="hname">Steve FX Radar</h1>
+<header><h1 id="hname">Loyalty FX Radar</h1>
   <div class="bar"><button id="gostaff" style="display:none">Staff workspace</button><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
@@ -672,7 +732,9 @@ body.landing>.note{display:none}
   <button data-t="ann">Messages</button>
   <button data-t="logs">Activity</button>
   <button data-t="admin">Settings</button>
+  <button data-t="dbg">Debug</button>
 </div>
+<section class="panel" id="dbg" style="display:none"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><b>Debug</b><span class="mut">Admin only. Checks what this page can see and records its own errors.</span><span style="flex:1"></span><button type="button" id="dbg_run">Run checks</button><button type="button" id="dbg_copy">Copy report</button><button type="button" id="dbg_clr">Clear errors</button></div><div id="dbg_body" aria-live="polite"></div></section>
 <details class="panel" id="admin"><summary>Admin settings</summary>
   <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
@@ -1264,21 +1326,24 @@ function status() {
 setInterval(() => auth.currentUser && status(), 2000);
 
 function render() { renderMain(); syncChartListener(); drawChart(); }
+const SYM = { USD: "$", EUR: "\u20ac", GBP: "\u00a3", JPY: "\u00a5", AUD: "A$", CAD: "C$", NZD: "N$", CHF: "Fr", BTC: "\u20bf", ETH: "\u039e", XAU: "Au", XAG: "Ag" };
+const symOf = p => SYM[String(p).slice(0, 3).toUpperCase()] || String(p).slice(0, 3).toUpperCase();
 function renderMain() {
   const st = status();
   $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin ? "Waiting for the signal feed." : loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
-    marketTabs() + Object.entries(data).filter(([p, d]) => MK === "all" || (d.type || typeOf(p)) === MK).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}">
+    marketTabs() + Object.entries(data).filter(([p, d]) => MK === "all" || (d.type || typeOf(p)) === MK).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}" data-sym="${esc(symOf(p))}">
       <div><b>${esc(p)}</b> <span class="mut">${esc(TL[d.type || typeOf(p)] || "")}</span><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}${d.open === false ? " / market closed" : ""}</div></div>
       <div class="num">${fmt(p, d.bid)}</div><span class="tag ${d.signal}">${d.signal}</span></div>`).join("");
   document.querySelectorAll(".row").forEach(r => { r.onclick = () => { sel = r.dataset.p; render(); }; r.onkeydown = e => e.key === "Enter" && r.onclick(); });
   document.querySelectorAll("#list .tabs button").forEach(b => { b.onclick = () => { MK = b.dataset.mk; render(); }; });
   const d = data[sel]; if (!d) { $("detail").innerHTML = '<p class="mut">Select a pair.</p>'; return; }
-  const bar = (n, v, c) => `<div><span>${n}</span><i style="width:${v * 100}%;background:var(${c})"></i><span class="num">${pct(v)}</span></div>`;
+  const bar = (n, v, c) => `<div><span>${n}</span><span class="trk"><i style="width:${Math.max(2, v * 100)}%;background:linear-gradient(90deg,color-mix(in srgb,var(${c}) 55%,transparent),var(${c}))"></i></span><span class="num">${pct(v)}</span></div>`;
   const bt = d.bt && d.bt.rate != null ? `${pct(d.bt.rate)} of ${d.bt.hit + d.bt.miss} past signals moved the right way (last ~24 hours, spread ignored)` : "not enough past signals to measure";
-  $("detail").innerHTML = `<div class="mut">${esc(sel)}</div><div class="big num">${fmt(sel, d.bid)}</div><canvas id="cv" width="600" height="120"></canvas>
+  $("detail").dataset.wm = sel.replace(/[^A-Za-z0-9]/g, ""); $("detail").dataset.sig = d.signal;
+  $("detail").innerHTML = `<div class="dhead"><div><div class="dpair">${esc(sel)} <span class="mut">${esc(TL[d.type || typeOf(sel)] || "")}</span></div><div class="big num">${fmt(sel, d.bid)}</div></div><span class="tag ${d.signal}">${d.signal}</span></div><div class="chartbox"><canvas id="cv" width="600" height="120"></canvas></div>
     ${allow("mtf") ? "" : lockBox("mtf", "The multi time frame view")}<div class="tfs" style="${allow("mtf") ? "" : "display:none"}">${["M5", "M15", "M30", "H1"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
-    <p><span class="tag ${d.signal}">${d.signal}</span> ${d.reason ? `<b>${esc(d.reason)}.</b> Previous setup is invalid.` : ""}</p>
+    ${d.reason ? `<div class="callout ${d.signal}"><span class="tag ${d.signal}">${d.signal}</span><span><b>${esc(d.reason)}.</b> Previous setup is invalid.</span></div>` : ""}
     ${allow("lv") ? lvBlock(sel, d) : lockBox("lv", "Entry, target and stop levels")}
     ${allow("day") ? dayBlock(sel, d) : lockBox("day", "Day range analysis")}
     <div id="live_line">${liveLine(sel)}</div>
@@ -1638,7 +1703,7 @@ function dayBlock(s, d) {
   const note = y.bias === "UP" ? (y.pos >= .85 ? "Short and medium trends are up, but price is already near the high, so a pullback is possible." : "Short and medium trends agree on up.")
     : y.bias === "DOWN" ? (y.pos <= .15 ? "Short and medium trends are down, but price is already near the low, so a bounce is possible." : "Short and medium trends agree on down.")
     : "Short and medium trends disagree. That lowers confidence in any signal.";
-  return `<div class="lv"><b>Last ${y.hours} hours</b>
+  return `<div class="lvb"><b>Last ${y.hours} hours</b>
     <div class="lvr"><span>High / Low</span><span class="num">${fmt(s, y.hi)} / ${fmt(s, y.lo)}</span></div>
     <div class="lvr"><span>Range</span><span class="num">${rng}</span></div>
     <div class="lvr"><span>Change</span><span class="num ${y.chg >= 0 ? "up" : "dn"}">${y.chg >= 0 ? "+" : ""}${y.chg.toFixed(2)}%</span></div>
@@ -1659,10 +1724,10 @@ function lvBlock(s, d) {
   const fx = typeOf(s) === "forex", pip = s.includes("JPY") ? .01 : .0001;
   const df = (a, b) => fx ? (Math.abs(a - b) / pip).toFixed(1) + " pips" : (Math.abs(a - b) / L.entry * 100).toFixed(2) + "%";
   const sw = L.swing != null ? `<div class="mut" style="margin-top:4px">Typical move in 10 minutes: about ${df(L.entry, L.entry + L.swing)}</div>` : "";
-  if (d.signal !== "BUY" && d.signal !== "SELL") return `<div class="lv"><b>How far it may move</b>${sw}<div class="mut">No setup right now, so there are no start or stop levels.</div></div>`;
+  if (d.signal !== "BUY" && d.signal !== "SELL") return `<div class="lvb"><b>How far it may move</b>${sw}<div class="mut">No setup right now, so there are no start or stop levels.</div></div>`;
   const row = (n, v, c, dist) => `<div class="lvr"><span style="color:${c}">${n}</span><span class="num">${fmt(s, v)}${dist ? ` <span class="mut">${df(L.entry, v)} ${v > L.entry ? "up" : "down"}</span>` : ""}</span></div>`;
   const note = L.src === "history" ? `From ${L.n} past signals on this pair: price reached Target 1 about half the time and Target 2 about a quarter of the time within 10 minutes. It went past the stop level about a quarter of the time.` : "Default levels. Not enough past signals on this pair yet.";
-  return `<div class="lv"><b>${d.signal === "BUY" ? "If price goes up" : "If price goes down"}</b>
+  return `<div class="lvb"><b>${d.signal === "BUY" ? "If price goes up" : "If price goes down"}</b>
     ${row("Start (entry)", L.entry, "var(--tx)", false)}${row("Target 1", L.t1, "var(--buy)", true)}${row("Target 2", L.t2, "var(--buy)", true)}${row("Stop (setup fails)", L.stop, "var(--danger)", true)}
     ${sw}${checks(s, d)}<div class="mut" style="margin-top:4px">${note} These are estimates from past price moves, not a promise.</div></div>`;
 }
@@ -1955,7 +2020,7 @@ function renderMember() {
   const hasT = !!SITE.terms; $("m_terms").style.display = hasT ? "block" : "none"; $("m_terms_t").textContent = SITE.terms || ""; $("m_agree_l").style.display = hasT ? "block" : "none";
   const PL = PLX(), mine = MEM.level ? tierKey(MEM.level) : "", shown = TIERS.filter(t => !PL.length || PL.some(q => tierKey(q.level || "normal") === t.k)).reverse();
   const planHtml = '<div class="tiers">' + shown.map(t => { const ps = PL.filter(q => tierKey(q.level || "normal") === t.k);
-    return `<div class="tier ${t.k}${mine === t.k ? " mine" : ""}"><div class="th">${medal(t.k)}<div><h4>${t.n}${mine === t.k ? ' <span class="lv ' + t.k + '">Your plan</span>' : ""}</h4><div class="tg">${t.tag}</div></div></div><ul>${t.f.map(f => "<li>" + esc(f) + "</li>").join("")}</ul>${ps.map(q => `<button type="button" class="optb" data-pick="${PL.indexOf(q)}"><span><b>${esc(q.name)}</b>${String(q.name).toLowerCase().includes(durText(q.days)) ? "" : ' <span class="mut">' + durText(q.days) + "</span>"}<br><span class="num" style="font-size:16px;font-weight:700">${esc(q.price || "")}</span></span><span class="go">${mine === t.k ? "Renew" : "Pay now"} &rarr;</span></button>`).join("")}</div>`; }).join("") + "</div>";
+    return `<div class="tier ${t.k}${mine === t.k ? " mine" : ""}"><div class="th">${medal(t.k)}<div><h4>${t.n}${mine === t.k ? ' <span class="lv ' + t.k + '">Your plan</span>' : ""}</h4><div class="tg">${t.tag}</div></div></div><ul>${t.f.map(f => "<li>" + esc(f) + "</li>").join("")}</ul>${ps.map(q => `<button type="button" class="optb" data-pick="${PL.indexOf(q)}"><span><b>${esc(q.name)}</b>${String(q.name).toLowerCase().includes(durText(q.days)) ? "" : ' <span class="mut">' + durText(q.days) + "</span>"}&nbsp;<b class="num">${esc(q.price || "")}</b></span><span class="go">${mine === t.k ? "Renew" : "Pay"} &rsaquo;</span></button>`).join("")}</div>`; }).join("") + "</div>";
   $("m_info").innerHTML = planHtml + (rows.length ? rows.map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("") : '<p class="mut">Payment details have not been added yet. Please contact the admin.</p>');
   if (PICK >= PL.length) PICK = -1; renderPick();
   const h = Object.entries(MYPAY).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
@@ -2147,13 +2212,13 @@ async function sweep() {                             // drop access when a membe
 }
 
 // ---------- company, contact, receipts, news, chat ----------
-let CO = "Steve FX Radar", NEWS = [], chRef = null, chUnread = 0, chInit = false, chLast = 0, chSend = 0;
+let CO = "Loyalty FX Radar", NEWS = [], chRef = null, chUnread = 0, chInit = false, chLast = 0, chSend = 0;
 try { const c0 = localStorage.getItem("fr_company"); if (c0) { CO = c0; $("lname").textContent = c0; $("hname").textContent = c0; document.title = c0; } } catch {}
 const stLabel = x => ({ confirmed: "Paid", pending: "Pending", rejected: "Rejected", reversed: "Reversed" })[x] || String(x);
 const stCls = x => x === "confirmed" ? "adm" : x === "pending" ? "apr" : "blk";
 function applySite() {
   if (auth.currentUser && !isAdmin && SITE.kick && SITE.kick > sessStart) { kickOut("An admin signed out all members. Please sign in again."); return; }
-  CO = SITE.company || "Steve FX Radar";
+  CO = !SITE.company || /^steve fx radar$/i.test(String(SITE.company).trim()) ? "Loyalty FX Radar" : SITE.company;
   $("hname").textContent = CO; $("lname").textContent = CO; document.title = CO;
   try { localStorage.setItem("fr_company", CO); } catch {}
   const wa = (SITE.wa || "254713474115").replace(/\D/g, ""), em = SITE.mail || "wanjohisteve85@gmail.com";
@@ -2324,8 +2389,50 @@ function marketTabs() {
 }
 
 // ----- admin tabs -----
+
+// ---------- Debug tab (admin) ----------
+const DBG = { errs: [], probes: null, conn: null, skew: null };
+(function () {                                              // keep the last 60 problems this page raised
+  const add = (k, m) => { DBG.errs.push({ t: Date.now(), k, m: String(m).slice(0, 400) }); if (DBG.errs.length > 60) DBG.errs.shift(); };
+  window.addEventListener("error", e => add("error", e.message + (e.filename ? " (" + String(e.filename).split("/").pop() + ":" + e.lineno + ")" : "")));
+  window.addEventListener("unhandledrejection", e => add("promise", (e.reason && (e.reason.code ? e.reason.code + ": " : "") + (e.reason.message || e.reason)) || "rejected"));
+  const w = console.warn, er = console.error; console.warn = (...a) => { add("warn", a.map(x => x && x.message || x).join(" ")); w.apply(console, a); }; console.error = (...a) => { add("console", a.map(x => x && x.message || x).join(" ")); er.apply(console, a); };
+  try { dbr.ref(".info/connected").on("value", s => { DBG.conn = s.val() === true; }); dbr.ref(".info/serverTimeOffset").on("value", s => { DBG.skew = s.val(); }); } catch {}
+})();
+const dAge = ms => { if (!ms) return "never"; const s = Math.round((rt() - ms) / 1000); return s < 90 ? s + "s ago" : s < 5400 ? Math.round(s / 60) + " min ago" : Math.round(s / 3600) + " h ago"; };
+async function dbgProbe() {
+  const paths = ["settings", "users", "admins", "superadmins", "approved", "memberships", "payments", "site", "feed", "logs", "stkreq", "staff", "fin"], out = {};
+  await Promise.all(paths.map(async p => { const t0 = performance.now(); try { await dbr.ref(p).limitToFirst(1).get(); out[p] = { ok: true, ms: Math.round(performance.now() - t0) }; } catch (e) { out[p] = { ok: false, msg: e.code || e.message }; } }));
+  return out;
+}
+function dbgSections() {
+  const u = auth.currentUser || {}, row = (a, b, c) => `<div class="dr"><span>${a}</span><span class="${c || ""}">${b}</span></div>`, card = (h, r) => `<div class="dc"><h4>${h}</h4>${r.join("")}</div>`;
+  const n = Object.keys(data || {}).length, ages = Object.entries(data || {}).map(([k, d]) => [k, d.age ?? 0]).filter(x => x[1] > 120), now = rt();
+  const act = Object.entries(MS || {}).filter(([id, m]) => AP[id] === true && m && m.until > now).length, pend = pendingList().filter(x => x.status === "pending").length;
+  const feedAge = feedTs ? Math.round((now - feedTs) / 1000) : null;
+  const cards = [
+    card("App", [row("Brand", esc(CO)), row("Page size", Math.round(document.documentElement.outerHTML.length / 1024) + " KB"), row("Theme", document.documentElement.dataset.theme || "dark"), row("Browser online", navigator.onLine ? "yes" : "no", navigator.onLine ? "ok" : "bad"), row("Viewport", innerWidth + " x " + innerHeight), row("Time zone", Intl.DateTimeFormat().resolvedOptions().timeZone)]),
+    card("Session", [row("Signed in as", esc(u.email || "-")), row("Email verified", u.emailVerified ? "yes" : "no", u.emailVerified ? "ok" : "warn"), row("Role", amOwner() ? "Owner" : amSuper() ? "Super admin" : isAdmin ? "Admin" : "Member"), row("User id", esc((u.uid || "").slice(0, 10)) + "..."), row("Tier view", esc(lvName(MEM.level) || "full access"))]),
+    card("Database", [row("Connected", DBG.conn === null ? "checking" : DBG.conn ? "yes" : "no", DBG.conn ? "ok" : "bad"), row("Clock offset vs server", DBG.skew == null ? "-" : Math.round(DBG.skew / 1000) + " s", Math.abs(DBG.skew || 0) > 120000 ? "warn" : "ok"), row("Users / approved / admins", Object.keys(U).length + " / " + Object.values(AP).filter(Boolean).length + " / " + Object.keys(AD).length), row("Rule read errors", apErr ? "yes" : "none", apErr ? "bad" : "ok")]),
+    card("Signal feed", [row("Mode", demo ? "Demo data" : asViewer ? "Server engine (viewer)" : KEY ? "This browser computes" : "No API key", KEY || asViewer || demo ? "" : "bad"), row("Last feed update", dAge(feedTs), feedAge == null ? "" : feedAge > 180 ? "bad" : feedAge > 90 ? "warn" : "ok"), row("Pairs", n + (loaded ? "" : " (loading)")), row("Stream", wsLive() ? "live" : wsUp ? "connected, quiet" : "down", wsLive() ? "ok" : "warn"), row("Pairs with old ticks", ages.length ? ages.map(x => esc(x[0]) + " " + x[1] + "s").join(", ") : "none", ages.length ? "warn" : "ok"), row("CBK rates", CBK && CBK.asOf ? dAge(CBK.asOf) : "none", CBK && CBK.asOf ? "" : "warn")]),
+    card("Money and access", [row("Active members", act), row("Payments waiting", pend, pend ? "warn" : ""), row("Plans saved", (SITE.plans || []).length || "none (defaults used)"), row("M-Pesa details", SITE.mpesa ? "set" : "missing", SITE.mpesa ? "ok" : "warn"), row("M-Pesa prompt", SITE.stk === true ? "on" : "off")])
+  ];
+  const errs = DBG.errs.slice().reverse();
+  cards.push(`<div class="dc" style="grid-column:1/-1"><h4>Recent problems (${errs.length})</h4><div class="elog">${errs.length ? errs.map(e => new Date(e.t).toLocaleTimeString() + "  [" + e.k + "]  " + esc(e.m)).join("\n") : "Nothing recorded since this page opened."}</div></div>`);
+  const pr = DBG.probes; cards.splice(3, 0, `<div class="dc"><h4>Read permissions</h4>${pr ? Object.entries(pr).map(([k, v]) => row(esc(k), v.ok ? "ok " + v.ms + " ms" : "blocked: " + esc(v.msg), v.ok ? "ok" : "warn")).join("") : '<div class="mut">Press Run checks.</div>'}<div class="mut" style="margin-top:6px;font-size:11.5px">Some blocked rows are normal. Only super admins read fin, staff and stkreq.</div></div>`);
+  return cards;
+}
+async function dbgRun() {
+  const b = $("dbg_body"); if (!b) return; b.innerHTML = '<div class="dgrid">' + dbgSections().join("") + "</div>";
+  DBG.probes = await dbgProbe(); if ($("dbg").style.display !== "none") b.innerHTML = '<div class="dgrid">' + dbgSections().join("") + "</div>";
+}
+function dbgText() { return $("dbg_body").innerText.replace(/\n{2,}/g, "\n") + "\n\nGenerated " + new Date().toISOString() + "\n" + navigator.userAgent; }
+$("dbg_run").onclick = dbgRun; $("dbg_clr").onclick = () => { DBG.errs = []; dbgRun(); };
+$("dbg_copy").onclick = async e => { try { await navigator.clipboard.writeText(dbgText()); e.target.textContent = "Copied"; } catch { prompt("Copy this report:", dbgText()); } setTimeout(() => { e.target.textContent = "Copy report"; }, 1500); };
+setInterval(() => { if (isAdmin && $("dbg") && $("dbg").style.display !== "none" && !DBG.busy) { $("dbg_body").innerHTML = '<div class="dgrid">' + dbgSections().join("") + "</div>"; } }, 5000);
 function showTab(t) {
-  ATAB = t; ["users", "pay", "ann", "logs", "admin"].forEach(k => { $(k).style.display = k === t ? "block" : "none"; });
+  ATAB = t; ["users", "pay", "ann", "logs", "admin", "dbg"].forEach(k => { $(k).style.display = k === t ? "block" : "none"; });
+  if (t === "dbg") dbgRun();
   if (t === "admin") $("admin").open = true;
   document.querySelectorAll("#atabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
 }
