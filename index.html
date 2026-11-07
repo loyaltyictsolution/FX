@@ -1465,8 +1465,20 @@ function status() {
   $("why").innerHTML = `${mem && !why ? "" : "<b>" + esc(why) + "</b>"}<div class="chips"><span>BUY ${c("BUY")}</span><span>SELL ${c("SELL")}</span><span>WAIT ${c("WAIT")}</span><span>DANGER ${c("DANGER")}</span><span>${esc(sessChip())}</span><span>Pairs loaded ${isAdmin && !asViewer ? loaded : vals.length}/${isAdmin && !asViewer ? PAIRS.length : vals.length}</span></div>`;
   if (isAdmin) $("health").innerHTML = [["Engine", asViewer ? "Server (24/7)" : "This page"], ["Stream", wsLive() ? "Live" : wsUp ? "Connected, no ticks" : "Down"], ["Last tick", ago(lastAny)], ["Market", PAIRS.some(isOpen) ? "Open" : "Closed"], ["Fallback refresh", Math.round(POLL_MS / 60000) + " min"]]
     .map(([k, v]) => `<div class="mut">${k}<b class="num" style="color:var(--tx)">${v}</b></div>`).join("");
-  try { sigRender(); } catch (e) {}
+  try { sigRender(); dlRun(); } catch (e) {}
   return st;
+}
+
+
+// ---------- tapped alert: open the pair or the renew box ----------
+const DL = (() => { try { const q = new URLSearchParams(location.search); return { pair: q.get("pair") || "", renew: q.get("renew") === "1", t0: Date.now() }; } catch { return { pair: "", renew: false, t0: 0 }; } })();
+function dlClean() { try { const q = new URLSearchParams(location.search); q.delete("pair"); q.delete("renew"); const r = q.toString(); history.replaceState(null, "", location.pathname + (r ? "?" + r : "") + location.hash); } catch {} }
+function dlRun() {
+  if (!DL.pair && !DL.renew) return;
+  if (Date.now() - DL.t0 > 60000) { DL.pair = ""; DL.renew = false; dlClean(); return; }
+  if (DL.pair && data[DL.pair]) { sel = DL.pair; render(); const r = Array.from(document.querySelectorAll(".row")).find(x => x.dataset.p === DL.pair); if (r) r.scrollIntoView({ block: "center" }); DL.pair = ""; }
+  if (DL.renew) { const r = $("renew"); if (r && r.style.display !== "none") { r.scrollIntoView({ behavior: "smooth", block: "center" }); DL.renew = false; } }
+  if (!DL.pair && !DL.renew) dlClean();
 }
 
 // ---------- live signal indicator (shown to every member and admin) ----------
