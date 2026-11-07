@@ -37,3 +37,11 @@ Send members this link: `https://YOUR-SITE/?install=1`
 - Google Cloud console, APIs and Services, Credentials: restrict the browser API key to your site address (HTTP referrers).
 - `pushCleanup` runs daily and removes old push log entries. `settings/newsErr` shows the last news fetch error.
 - Redeploy functions after updating: `firebase deploy --only functions`. Publish the new `database_rules.json`.
+
+# Phone alerts now follow each member's settings
+
+Quiet hours, muted pairs and switched-off signal types (BUY/SELL/DANGER) from Notification settings are now sent with the device and respected by the server. Quiet hours mute everything except renewal reminders and price alerts. Members' settings sync when they change them, so ask existing members to open Notification settings once. Redeploy functions and publish the new rules.
+
+# App icon
+
+`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` carry the Loyalty FX Radar design. The name under the icon on a phone is "Loyalty FX" (phones cut long names); the install screen shows the full "Loyalty FX Radar". If a phone shows the old icon, remove the app and install it again.

@@ -44,14 +44,50 @@
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         "$tok": {
-          ".validate": "newData.hasChildren(['t']) && (!newData.child('ua').exists() || (newData.child('ua').isString() && newData.child('ua').val().length <= 100))",
+          ".validate": "$tok.length <= 400 && newData.hasChildren(['t']) && (!newData.child('ua').exists() || (newData.child('ua').isString() && newData.child('ua').val().length <= 100))",
           "ua": {},
           "t": {},
-          "$f": {
+          "open": {
             ".validate": "newData.isBoolean()"
+          },
+          "ev": {
+            ".validate": "newData.isBoolean()"
+          },
+          "renew": {
+            ".validate": "newData.isBoolean()"
+          },
+          "sig": {
+            ".validate": "newData.isBoolean()"
+          },
+          "pa": {
+            ".validate": "newData.isBoolean()"
+          },
+          "qn": {
+            ".validate": "newData.isBoolean()"
+          },
+          "qf": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1440"
+          },
+          "qt": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1440"
+          },
+          "qo": {
+            ".validate": "newData.isNumber() && newData.val() >= -900 && newData.val() <= 900"
+          },
+          "mp": {
+            "$p": {
+              ".validate": "newData.isBoolean()"
+            }
+          },
+          "ty": {
+            "$k": {
+              ".validate": "newData.isBoolean()"
+            }
+          },
+          "$other": {
+            ".validate": "false"
           }
-        },
-        ".validate": "newData.numChildren() <= 10"
+        }
       }
     },
     "palerts": {
@@ -59,7 +95,7 @@
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         "$id": {
-          ".validate": "newData.hasChildren(['pair','dir','price']) && newData.child('pair').isString() && newData.child('pair').val().length <= 20 && (newData.child('dir').val() === 'above' || newData.child('dir').val() === 'below') && newData.child('price').isNumber() && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))",
+          ".validate": "$id.length <= 60 && newData.hasChildren(['pair','dir','price']) && newData.child('pair').isString() && newData.child('pair').val().length <= 20 && (newData.child('dir').val() === 'above' || newData.child('dir').val() === 'below') && newData.child('price').isNumber() && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 80))",
           "pair": {},
           "dir": {},
           "price": {},
@@ -67,8 +103,7 @@
           "$o": {
             ".validate": "false"
           }
-        },
-        ".validate": "newData.numChildren() <= 30"
+        }
       }
     },
     "paycodes": {

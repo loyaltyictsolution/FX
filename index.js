@@ -21,9 +21,20 @@ async function activeUids() {                                // admins plus appr
   Object.entries(ap.val() || {}).forEach(([id, v]) => { if (v === true && (!m[id] || !m[id].until || m[id].until > now)) out.add(id); });
   return out;
 }
-async function tokens(flag, only) {                          // [{uid, tok}] for devices that want this kind of alert
-  const snap = await db.ref("fcmtokens").get(), out = [];
-  snap.forEach(u => { if (only && !only.has(u.key)) return; u.forEach(t => { const v = t.val(); if (v && v[flag] !== false) out.push({ uid: u.key, tok: t.key }); }); });
+const inQuiet = (v, now) => {                               // member's quiet hours, using the offset their phone reported
+  if (!v || !v.qn || v.qf == null || v.qt == null) return false;
+  const m = (((Math.floor(now / MIN) - (v.qo || 0)) % 1440) + 1440) % 1440;
+  return v.qf <= v.qt ? (m >= v.qf && m < v.qt) : (m >= v.qf || m < v.qt);
+};
+async function tokens(flag, only, pair, signal) {            // [{uid, tok}] for devices that want this kind of alert
+  const snap = await db.ref("fcmtokens").get(), out = [], now = Date.now();
+  snap.forEach(u => { if (only && !only.has(u.key)) return; u.forEach(t => {
+    const v = t.val(); if (!v || v[flag] === false) return;
+    if (flag !== "renew" && flag !== "pa" && inQuiet(v, now)) return;        // quiet hours mute everything except renewals and price alerts
+    if (pair && v.mp && v.mp[safe(pair)]) return;                            // pair muted by the member
+    if (signal && v.ty && v.ty[signal] === false) return;                    // signal type switched off by the member
+    out.push({ uid: u.key, tok: t.key });
+  }); });
   return out;
 }
 async function send(list, title, body) {
@@ -117,7 +128,7 @@ exports.radarPush = onSchedule({ schedule: "every 1 minutes", region: "us-centra
       const was = prev[safe(p)]; if (!was || was === d.signal || d.signal === "WAIT") continue;
       if (now - (sigT[safe(p)] || 0) < SIG_GAP) continue;               // cooldown: at most one signal alert per pair per 15 minutes
       sigT[safe(p)] = now;
-      await send(await tokens("sig", act), `${p}: ${d.signal}`, d.signal === "DANGER" ? `${d.reason || "Danger"}. Do not enter.` : "Signal conditions changed.");
+      await send(await tokens("sig", act, p, d.signal), `${p}: ${d.signal}`, d.signal === "DANGER" ? `${d.reason || "Danger"}. Do not enter.` : "Signal conditions changed.");
     }
     await db.ref("pushlog/sig").set(next); await db.ref("pushlog/sigt").set(sigT);
   }

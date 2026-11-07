@@ -1,6 +1,6 @@
 {
   "name": "Loyalty FX Radar",
-  "short_name": "FX Radar",
+  "short_name": "Loyalty FX",
   "description": "Forex, crypto and stock signals with phone alerts",
   "start_url": "./",
   "scope": "./",
