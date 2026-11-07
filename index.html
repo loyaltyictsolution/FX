@@ -888,6 +888,11 @@ body.landing>.note{display:none}
   <div class="stats" id="pay_stats"></div>
   <div id="pend"></div>
   <div style="margin-top:8px"><button id="pay_csv">Export payments CSV</button></div>
+  <details style="margin-top:12px" id="rec"><summary style="cursor:pointer;font-weight:600">Payment check <span id="rec_n" class="pill apr" style="display:none"></span></summary>
+    <p class="mut" style="margin:6px 0">Matches M-Pesa prompts to payment entries and memberships and flags anything that does not add up. Look at the red ones first.</p>
+    <div id="rec_sum" class="chips"></div><div id="rec_b"></div>
+    <div style="margin-top:8px"><button id="rec_csv" type="button">Export payment check CSV</button></div>
+  </details>
   <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Membership settings</summary>
     <div id="pay_form" class="adduser">
       <input id="s_company" placeholder="Company name" maxlength="58">
@@ -1580,8 +1585,9 @@ async function resolveOpen() {                       // admin page only: score e
     }
   } finally { RESOLVING = false; }
 }
-function resStats(pair) {
-  const all = Object.values(RES).filter(r => r && (!pair || r.pair === pair)), a = all.filter(r => ["win", "loss", "flat"].includes(r.status));
+let RESWIN = 0;                                       // 0 = all time, else the last N days
+function resStats(pair, win) {
+  const since = win ? rt() - win * 864e5 : 0, all = Object.values(RES).filter(r => r && (!pair || r.pair === pair) && (r.ts || 0) >= since), a = all.filter(r => ["win", "loss", "flat"].includes(r.status));
   const w = a.filter(r => r.status === "win").length, l = a.filter(r => r.status === "loss").length;
   return { n: a.length, w, l, f: a.length - w - l, rate: w + l ? w / (w + l) : null, t1: a.filter(r => r.t1hit).length, stop: a.filter(r => r.stophit).length,
     ex: a.length ? a.reduce((m, r) => m + rOf(r), 0) / a.length : null, exn: a.length ? a.reduce((m, r) => m + rOf(r) - costR(r), 0) / a.length : null,
@@ -1598,18 +1604,20 @@ function renderResults() {
   $("track").style.display = allow("track") ? "" : "none";
   if (!allow("track")) { box.innerHTML = ""; return; }
   $("res_csv").style.display = isAdmin ? "" : "none";
-  const o = resStats(), done = o.w + o.l, pairs = [...new Set(Object.values(RES).map(r => r && r.pair).filter(Boolean))].sort();
+  const o = resStats(null, RESWIN), done = o.w + o.l, pairs = [...new Set(Object.values(RES).map(r => r && r.pair).filter(Boolean))].sort();
   let h = o.n ? `<p><b class="num">${done ? pct(o.rate) : "-"}</b> of ${done} decided signals moved the right way since ${fmtD(o.first)}.</p>
     <div class="chips"><span>Wins ${o.w}</span><span>Losses ${o.l}</span><span>Flat ${o.f}</span><span>Target 1 reached ${pct(o.t1 / o.n)}</span><span>Stop level passed ${pct(o.stop / o.n)}</span><span>Waiting ${o.open}</span></div>
     <p class="mut">Expectancy per trade: <b class="num">${o.ex >= 0 ? "+" : ""}${o.ex.toFixed(2)}R</b> before costs, <b class="num">${o.exn >= 0 ? "+" : ""}${o.exn.toFixed(2)}R</b> after a ${SPREAD}-pip spread (forex). ${o.exn < 0 ? "Negative: on these results the setup loses money after costs." : "Positive on these results."}${o.n < 30 ? " Too few signals to trust yet." : ""} Here 1R is the distance to the stop, a trade exits at Target 1, the stop, or after 10 minutes, and if both levels were reached the stop is assumed to come first.</p>`
     : `<p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.${o.open ? " Waiting: " + o.open + "." : ""}</p>`;
-  h += '<div style="margin-top:10px">' + pairs.map(p => { const s = resStats(p); return s.n ? `<div class="lvr"><span>${esc(p)}</span><span class="num">${s.w + s.l ? pct(s.rate) : "-"} <span class="mut">of ${s.w + s.l}${s.w + s.l < 30 ? " (few)" : ""}</span></span></div>` : ""; }).join("") + "</div>";
+  h += '<div style="margin-top:10px">' + pairs.map(p => { const s = resStats(p, RESWIN); return s.n ? `<div class="lvr"><span>${esc(p)}</span><span class="num">${s.w + s.l ? pct(s.rate) : "-"} <span class="mut">of ${s.w + s.l}${s.w + s.l < 30 ? " (few)" : ""}</span></span></div>` : ""; }).join("") + "</div>";
   const rec = Object.values(RES).filter(r => r && r.status && r.status !== "open").sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 8);
   h += rec.length ? '<div style="margin-top:10px">' + rec.map(r => `<div class="mut">${fmtT(r.ts)} ${esc(r.pair)} ${esc(r.sig)} &rarr; ${esc(r.status)}${r.move != null ? " (" + (r.move > 0 ? "+" : "") + r.move + " ATR)" : ""}</div>`).join("") + "</div>" : "";
   h += '<p class="mut" style="margin-top:10px">A signal is a win if price is more than 0.3 ATR in its direction after 10 minutes, and a loss if more than 0.3 ATR against it. Spread is ignored. Fewer than 30 decided signals is too small to judge.</p>';
+  h = '<div class="chips" style="margin:0 0 10px">' + [[7, "Last 7 days"], [30, "Last 30 days"], [0, "All time"]].map(([w, l]) => `<button type="button" data-rw="${w}" class="${RESWIN === w ? "pri" : ""}">${l}</button>`).join("") + "</div>" + h;
   box.innerHTML = h;
   const ll = $("live_line"); if (ll) ll.innerHTML = liveLine(sel);
 }
+$("track_body").addEventListener("click", e => { const b = e.target.closest("[data-rw]"); if (b) { RESWIN = +b.dataset.rw; renderResults(); } });
 $("res_csv").onclick = () => {
   const cell = v => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
   const rows = [["Time", "Pair", "Signal", "Entry", "Target1", "Target2", "Stop", "Status", "Move (ATR)", "T1 reached", "T2 reached", "Stop passed"]].concat(Object.values(RES).filter(r => r).sort((a, b) => (a.ts || 0) - (b.ts || 0))
@@ -1946,7 +1954,7 @@ function guard() {                                  // hand over to the server e
   else if (!up && asViewer) { asViewer = false; stopFeed(); if (KEY) start(); }
 }
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
-function stopUsers() { uRefs.forEach(r => r.off()); uRefs = []; ADMV = false; VB = {}; clearInterval(hb); clearInterval(sweepT); clearInterval(guardT); asViewer = false; SRV = { src: null, ts: 0 }; stopFeed(); stopResults(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
+function stopUsers() { STK = {}; uRefs.forEach(r => r.off()); uRefs = []; ADMV = false; VB = {}; clearInterval(hb); clearInterval(sweepT); clearInterval(guardT); asViewer = false; SRV = { src: null, ts: 0 }; stopFeed(); stopResults(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
 
 async function initSelf(u) {                       // profile, block check, presence
   const ur = dbr.ref("users/" + u.uid);
@@ -2303,14 +2311,58 @@ function startAdminExtras() {
       banner(msg); if (soundOn) beep(740, .15, 3);
       if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: msg }); } catch {}
     } });
-    knownPay = new Set(pend.map(p => p.pid)); renderPay();
+    knownPay = new Set(pend.map(p => p.pid)); renderPay(); try { recRender(); } catch (e) {}
   });
+  listen(dbr.ref("stkreq"), s => { STK = s.val() || {}; try { recRender(); } catch (e) {} });
   listen(dbr.ref("logs").limitToLast(100), s => { LG = []; s.forEach(c => { LG.push(c.val()); }); renderLogs(); });
   clearInterval(sweepT); sweepT = setInterval(sweep, 60000); startResults();
   listen(dbr.ref("feed/src"), s => { SRV.src = s.val(); });
   listen(dbr.ref("feed/ts"), s => { SRV.ts = s.val() || 0; });
   clearInterval(guardT); guardT = setInterval(guard, 10000);
 }
+// ---------- payment check: M-Pesa prompts vs payment entries vs memberships ----------
+let STK = {}, RECROWS = [];
+function recBuild() {
+  const now = rt(), rows = [], pays = pendingList(), plans = (typeof PLX === "function" ? PLX() : []);
+  const stk = []; for (const [uid, m] of Object.entries(STK || {})) for (const [id, r] of Object.entries(m || {})) stk.push({ uid, id, ...r });
+  const num = v => +String(v == null ? "" : v).replace(/[^0-9.]/g, "") || 0, who = uid => (typeof nm === "function" && nm(uid) !== uid) ? nm(uid) : ((U[uid] && U[uid].email) || uid);
+  const used = new Set(), add = (lv, t, uid, ts, amt, txt) => rows.push({ lv, t, uid, ts, amt, txt });
+  const find = k => pays.find(p => !used.has(p.pid) && p.uid === k.uid && p.status !== "rejected" && (p.ts || 0) >= (k.ts || 0) - 600000 && (p.ts || 0) <= (k.ts || 0) + 3 * 864e5 && (!p.amount || num(p.amount) === num(k.amount)));
+  stk.forEach(k => {
+    const age = now - (k.ts || 0);
+    if (k.status === "queued" || k.status === "sent") { if (age > 600000) add("r", "M-Pesa prompt", k.uid, k.ts, k.amount, "No answer from M-Pesa after " + leftText(age) + ". Ask the member whether money left their phone."); }
+    else if (k.status === "paid") {
+      const p = find(k); if (p) used.add(p.pid);
+      if (!p) add("r", "M-Pesa prompt", k.uid, k.ts, k.amount, "Paid by M-Pesa prompt but there is no matching payment entry. Money may have arrived without access being confirmed.");
+      else if (p.amount && num(p.amount) !== num(k.amount)) add("r", "Amount", k.uid, k.ts, k.amount, "Prompt amount " + k.amount + " but the payment entry says " + p.amount + ".");
+    }
+  });
+  pays.forEach(p => {
+    const age = now - (p.ts || 0), mine = MS && MS[p.uid];
+    if (p.status === "pending" && age > 864e5) add("a", "Pending too long", p.uid, p.ts, p.amount, "Waiting " + leftText(age) + " for confirmation (" + (p.method || "payment") + " " + (p.code || "") + ").");
+    if (p.status === "pending" && !p.amount) add("a", "No amount", p.uid, p.ts, "", "Payment code " + (p.code || "") + " has no amount written. Check your M-Pesa messages before confirming.");
+    if (p.status === "confirmed" && age < 7 * 864e5 && (!mine || !mine.until || mine.until < (p.ts || 0))) add("r", "Access missing", p.uid, p.ts, p.amount, "Confirmed " + (p.code || "payment") + " but the membership has no valid end date after it. Check the member's access.");
+    if (p.status === "confirmed" && p.amount) { const a = num(p.amount); if (plans.length && !plans.some(x => num(x.price) === a)) add("a", "Amount", p.uid, p.ts, p.amount, "Confirmed amount " + p.amount + " does not match any plan price. It may be a part payment or a wrong plan.");}
+  });
+  const seen = {}; pays.filter(p => p.code && p.code !== "MANUAL").forEach(p => { (seen[p.code] = seen[p.code] || []).push(p); });
+  Object.values(seen).forEach(a => { if (a.length > 1) add("r", "Duplicate code", a[0].uid, a[0].ts, a[0].amount, "The code " + a[0].code + " appears " + a.length + " times."); });
+  return rows.map(r => Object.assign(r, { who: who(r.uid) })).sort((a, b) => (a.lv === b.lv ? (b.ts || 0) - (a.ts || 0) : a.lv === "r" ? -1 : 1));
+}
+function recRender() {
+  const box = $("rec_b"); if (!box || !isAdmin) return;
+  RECROWS = recBuild(); const r = RECROWS.filter(x => x.lv === "r").length, a = RECROWS.length - r;
+  const n = $("rec_n"); n.style.display = RECROWS.length ? "inline-block" : "none"; n.textContent = r ? r + " to check" : a + " notes";
+  const sm = $("rec_sum"), d30 = rt() - 30 * 864e5, tot = f => Object.values(STK).reduce((t, m) => t + Object.values(m || {}).filter(x => x && f(x) && (x.ts || 0) > d30).reduce((s, x) => s + (+x.amount || 0), 0), 0);
+  const conf = pendingList().filter(p => p.status === "confirmed" && (p.ts || 0) > d30).reduce((s, p) => s + (+String(p.amount || 0).replace(/[^0-9.]/g, "") || 0), 0);
+  sm.innerHTML = `<span>Prompts paid (30 days) ${kes(tot(x => x.status === "paid"))}</span><span>Confirmed payments (30 days) ${kes(conf)}</span><span>Failed prompts ${Object.values(STK).reduce((t, m) => t + Object.values(m || {}).filter(x => x && x.status === "failed" && (x.ts || 0) > d30).length, 0)}</span>`;
+  box.innerHTML = RECROWS.length ? RECROWS.slice(0, 40).map(x => `<div class="lvr" style="align-items:flex-start"><span><b style="color:${x.lv === "r" ? "#ef4444" : "#f5b82e"}">${x.lv === "r" ? "Check" : "Note"}</b> &middot; ${esc(x.t)} &middot; ${esc(x.who)}<div class="mut">${esc(x.txt)}</div></span><span class="mut" style="text-align:right">${x.ts ? fmtDT(x.ts) : ""}${x.amt ? "<br>" + esc(x.amt) : ""}</span></div>`).join("") : '<p class="mut">Nothing to flag. Prompts, payments and memberships agree.</p>';
+}
+$("rec_csv").onclick = () => {
+  const cell = v => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const rows = [["Level", "Type", "Member", "Time", "Amount", "Note"]].concat(RECROWS.map(x => [x.lv === "r" ? "Check" : "Note", x.t, x.who, x.ts ? new Date(x.ts).toISOString() : "", x.amt, x.txt]));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(cell).join(",")).join("\n")], { type: "text/csv" })); a.download = "payment-check.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+
 function renderPay() {
   if (!isAdmin) return;
   const all = pendingList().sort((a, b) => (b.ts || 0) - (a.ts || 0)), pend = all.filter(p => p.status === "pending"), done = all.filter(p => p.status !== "pending").slice(0, 15);
@@ -3856,7 +3908,11 @@ SHELL.staff = { enter: staffEnter, leave: staffLeave };
 
 
 })();
+async function ownerBootstrap(u) {                    // the owner email is kept as the one bootstrap in the rules: this saves the owner as a super admin once, so every other rule can rely on superadmins/
+  try { if (u && isOwnerEmail(u.email) && (await dbr.ref("superadmins/" + u.uid).get()).val() !== true) await dbr.ref("superadmins/" + u.uid).set(true); } catch (e) {}
+}
 auth.onAuthStateChanged(async u => {
+  ownerBootstrap(u);
   const my = ++RTK; SHELL.market.leave(); SHELL.staff.leave(); SHELL.ctx = null;
   document.body.classList.remove("staffmode");
   G("login").style.display = u ? "none" : "block"; G("app").style.display = "none"; G("sx").style.display = "none";
