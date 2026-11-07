@@ -7,7 +7,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.database(), fcm = admin.messaging();
 const SITE_URL = process.env.SITE_URL || "https://loyalty-fx.web.app/";   // set this to your real site address
-const DAY = 864e5, MIN = 6e4;
+const DAY = 864e5, MIN = 6e4, SIG_GAP = 15 * MIN;
 const safe = k => String(k).replace(/[.#$\[\]\/]/g, "_");
 
 // ---------- helpers ----------
@@ -54,13 +54,26 @@ async function pull(prov, key) {
 }
 exports.newsRefresh = onSchedule({ schedule: "every 10 minutes", region: "us-central1", timeoutSeconds: 60 }, async () => {
   const s = (await db.ref("settings").get()).val() || {}; if (!s.newsOn || !s.newsKey) return;
-  const items = await pull(s.newsProv || "finnhub", s.newsKey); if (!items.length) return;
-  await db.ref("feed/news").set({ ts: admin.database.ServerValue.TIMESTAMP, prov: s.newsProv || "finnhub", src: "server", items });
+  try {
+    const items = await pull(s.newsProv || "finnhub", s.newsKey); if (!items.length) return;
+    await db.ref("feed/news").set({ ts: admin.database.ServerValue.TIMESTAMP, prov: s.newsProv || "finnhub", src: "server", items });
+    await db.ref("settings/newsErr").remove();
+  } catch (e) {                                                      // visible to admins at settings/newsErr in the console
+    await db.ref("settings/newsErr").set({ ts: Date.now(), msg: String(e && e.message || e).slice(0, 200) }); throw e;
+  }
+});
+
+// ---------- 3) housekeeping: delete old push log entries once a day ----------
+exports.pushCleanup = onSchedule({ schedule: "every 24 hours", region: "us-central1", timeoutSeconds: 120, maxInstances: 1 }, async () => {
+  const cut = Date.now() - 8 * DAY, snap = await db.ref("pushlog").get(), up = {};   // 8 days keeps every renewal window safe
+  snap.forEach(c => { if (typeof c.val() === "number" && c.val() < cut) up[c.key] = null; });
+  if (Object.keys(up).length) await db.ref("pushlog").update(up);
 });
 
 // ---------- 2) push alerts ----------
 exports.radarPush = onSchedule({ schedule: "every 1 minutes", region: "us-central1", timeoutSeconds: 120, maxInstances: 1 }, async () => {
   const now = Date.now(), act = await activeUids();
+  await db.ref("feed/pushbeat").set({ ts: now });                     // lets the admin checklist see that the server is alive
 
   // news events: 60 and 30 minutes before, and at release
   const evs = (await db.ref("feed/events").get()).val() || {};
@@ -98,12 +111,14 @@ exports.radarPush = onSchedule({ schedule: "every 1 minutes", region: "us-centra
       await send(await tokens("pa", new Set([uid])), `${a.pair} hit ${a.price}`, `Price is now ${d.bid}.${a.note ? " " + a.note : ""}`);
     }
     // signal changes
-    const prev = (await db.ref("pushlog/sig").get()).val() || {}, next = {};
+    const prev = (await db.ref("pushlog/sig").get()).val() || {}, next = {}, sigT = (await db.ref("pushlog/sigt").get()).val() || {};
     for (const [p, d] of Object.entries(px)) {
       next[safe(p)] = d.signal;
       const was = prev[safe(p)]; if (!was || was === d.signal || d.signal === "WAIT") continue;
+      if (now - (sigT[safe(p)] || 0) < SIG_GAP) continue;               // cooldown: at most one signal alert per pair per 15 minutes
+      sigT[safe(p)] = now;
       await send(await tokens("sig", act), `${p}: ${d.signal}`, d.signal === "DANGER" ? `${d.reason || "Danger"}. Do not enter.` : "Signal conditions changed.");
     }
-    await db.ref("pushlog/sig").set(next);
+    await db.ref("pushlog/sig").set(next); await db.ref("pushlog/sigt").set(sigT);
   }
 });
