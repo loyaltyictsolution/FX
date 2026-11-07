@@ -3,6 +3,7 @@
 // 2) radarPush   : every minute sends push alerts for news events, market opens,
 //                  renewals, price alerts and signal changes
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onValueCreated } = require("firebase-functions/v2/database");
 const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.database(), fcm = admin.messaging();
@@ -144,4 +145,18 @@ exports.weeklyBackup = onSchedule({ schedule: "every sunday 03:00", timeZone: "A
   const out = {};
   for (const p of ["users", "approved", "memberships", "payments", "paycodes", "admins", "superadmins", "staff", "site", "fin", "hr", "pay"]) out[p] = (await db.ref(p).get()).val();
   await admin.storage().bucket(bucket).file(`backups/${new Date().toISOString().slice(0, 10)}.json`).save(JSON.stringify(out), { contentType: "application/json" });
+});
+
+// ---------- 5) hard caps per member (Firebase rules cannot count, so this keeps the newest) ----------
+const MAX_DEVICES = 10, MAX_ALERTS = 30;
+exports.capDevices = onValueCreated({ ref: "/fcmtokens/{uid}/{tok}", region: "us-central1" }, async ev => {
+  const ref = db.ref("fcmtokens/" + ev.params.uid), all = (await ref.get()).val() || {}, keys = Object.keys(all);
+  if (keys.length <= MAX_DEVICES) return;
+  const old = keys.sort((a, b) => ((all[a] && all[a].t) || 0) - ((all[b] && all[b].t) || 0)).slice(0, keys.length - MAX_DEVICES), up = {};
+  old.forEach(k => { up[k] = null; }); await ref.update(up);
+});
+exports.capAlerts = onValueCreated({ ref: "/palerts/{uid}/{id}", region: "us-central1" }, async ev => {
+  const ref = db.ref("palerts/" + ev.params.uid), keys = Object.keys((await ref.get()).val() || {});
+  if (keys.length <= MAX_ALERTS) return;
+  const up = {}; keys.sort().slice(0, keys.length - MAX_ALERTS).forEach(k => { up[k] = null; }); await ref.update(up);   // ids start with a time stamp, so the oldest go first
 });

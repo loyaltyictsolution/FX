@@ -58,3 +58,24 @@ Quiet hours, muted pairs and switched-off signal types (BUY/SELL/DANGER) from No
 2. Copy `firebaserc.example` to `.firebaserc` next to your `firebase.json`.
 3. Test deploys: `firebase use staging`, then `firebase deploy --only functions,database`. Go live with `firebase use default` and deploy again.
 4. The page has the Firebase config inside `index.html` (and `firebase-messaging-sw.js`). For a staging copy of the site, change those values to the staging project's.
+
+# Payment check, results periods, caps, owner rules, recovery
+
+**Payment check** (Admin, Membership & payments, Payment check): matches M-Pesa prompts, payment entries and memberships. Red items: a prompt with no answer after 10 minutes, a paid prompt with no payment entry, an amount that differs, a confirmed payment where the member has no valid end date, a code used twice. Amber items: payments pending over 24 hours, no amount written, an amount that matches no plan price. It reads `stkreq`, so it only works where your STK server writes statuses `queued`, `sent`, `paid`, `failed` as the page expects. If your server writes payment entries in another shape, tell me and I will adjust the matching. Treat it as a second pair of eyes, not as proof: always compare with your M-Pesa statement.
+
+**Track record** now has Last 7 days, Last 30 days and All time buttons.
+
+**Caps**: `capDevices` keeps the newest 10 devices per member and `capAlerts` keeps the newest 30 price alerts. Deploy with the other functions.
+
+**Owner email in the rules** is now used in only 4 places on purpose: to let the owner save the owner as a super admin, to read the secret log, and for the owner-only payment reversal steps. Everywhere else the rules use `superadmins/`. Safe order:
+1. Upload the new `index.html`.
+2. Sign in once as the owner. The page saves `superadmins/<owner uid>` = true automatically.
+3. In the Firebase console, Realtime Database, check `superadmins` now contains your uid set to true.
+4. Only then publish the new `database_rules.json` (test it on staging first).
+If you ever get locked out after publishing: Realtime Database, Rules, paste the previous rules file back, publish, and sign in as owner again.
+
+**Account recovery**
+- Members and admins: Forgot password on the sign-in page sends a reset link. Admins can also send a reset link from the member list.
+- Owner: use Forgot password with the owner email. If you lose access to that mailbox, sign in to the Firebase console (Authentication, Users) with the Google account that owns the project and use Reset password, or change the email on that user. Keep the Google account for Firebase protected with two-step verification and a recovery phone.
+- Add a second super admin you trust (Admin, Staff) so one lost account never stops the business. Do not share the owner login.
+- Keep the weekly backup bucket private; it is your way back if data is deleted.

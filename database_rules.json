@@ -3,43 +3,43 @@
     ".read": false,
     ".write": false,
     "admins": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       }
     },
     "superadmins": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
         ".write": "(auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')"
       }
     },
     "approved": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       }
     },
     "memberships": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       }
     },
     "verifiedby": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))",
         ".validate": "newData.isBoolean()"
       }
     },
     "fcmtokens": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
@@ -107,22 +107,22 @@
       }
     },
     "paycodes": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$code": {
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && !data.exists() && newData.val() === auth.uid && (root.child('users/'+auth.uid+'/signup').val() !== true || auth.token.email_verified === true || root.child('verifiedby/'+auth.uid).val() === true))"
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && !data.exists() && newData.val() === auth.uid && (root.child('users/'+auth.uid+'/signup').val() !== true || auth.token.email_verified === true || root.child('verifiedby/'+auth.uid).val() === true))"
       }
     },
     "payments": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
         "$pid": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && auth.uid === $uid && !data.exists() && newData.child('status').val() === 'pending' && (root.child('users/'+auth.uid+'/signup').val() !== true || auth.token.email_verified === true || root.child('verifiedby/'+auth.uid).val() === true))"
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && auth.uid === $uid && !data.exists() && newData.child('status').val() === 'pending' && (root.child('users/'+auth.uid+'/signup').val() !== true || auth.token.email_verified === true || root.child('verifiedby/'+auth.uid).val() === true))"
         }
       }
     },
     "stkreq": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         "$id": {
@@ -142,9 +142,9 @@
       }
     },
     "chatidx": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && auth.uid === $uid && newData.child('from').val() === 'u' && newData.child('unread').val() === true)",
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && auth.uid === $uid && newData.child('from').val() === 'u' && newData.child('unread').val() === true)",
         ".validate": "newData.hasChildren(['last','t','from','unread']) && newData.child('last').isString() && newData.child('last').val().length <= 90 && (newData.child('from').val() === 'u' || newData.child('from').val() === 'a') && newData.child('unread').isBoolean() && newData.child('t').isNumber()",
         "last": {},
         "t": {},
@@ -165,10 +165,10 @@
       }
     },
     "users": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && auth.uid === $uid && !data.exists())",
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && auth.uid === $uid && !data.exists())",
         "name": {
           ".validate": "newData.isString() && newData.val().length <= 60"
         },
@@ -187,45 +187,45 @@
     "site": {
       ".read": "auth != null",
       "plans": {
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       },
       "days": {
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       },
       "stk": {
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       },
       "vapid": {
-        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
         ".validate": "newData.isString() && newData.val().length >= 40 && newData.val().length <= 200"
       },
       "terms": {
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))"
       },
       "$other": {
-        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) && $other !== 'plans' && $other !== 'days' && $other !== 'terms' && $other !== 'vapid'"
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) && $other !== 'plans' && $other !== 'days' && $other !== 'terms' && $other !== 'vapid'"
       }
     },
     "settings": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
     },
     "feed": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
-      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
     },
     "results": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
-      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
     },
     "news": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
-      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+      ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
     },
     "chat": {
       "room": {
-        ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
-        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now))",
+        ".write": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
         "$msg": {
           ".write": "(auth != null && root.child('approved/'+auth.uid).val() === true && (!root.child('memberships/'+auth.uid+'/until').exists() || root.child('memberships/'+auth.uid+'/until').val() > now)) && !data.exists() && newData.child('uid').val() === auth.uid",
           ".validate": "newData.hasChildren(['t','uid','msg']) && newData.child('msg').isString() && newData.child('msg').val().length <= 400"
@@ -236,36 +236,36 @@
           "$msg": {
             ".validate": "newData.hasChildren(['t','uid','msg']) && newData.child('msg').isString() && newData.child('msg').val().length <= 400"
           },
-          ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-          ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+          ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+          ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
         }
       }
     },
     "logs": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-      ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+      ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))",
       "$id": {
         ".write": "auth != null && !data.exists()",
         ".validate": "newData.child('uid').val() === auth.uid && newData.child('msg').isString() && newData.child('msg').val().length <= 280 && (!newData.child('email').exists() || newData.child('email').val().length <= 120)"
       }
     },
     "presence": {
-      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
       }
     },
     "sessions": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-        ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))"
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))",
+        ".write": "auth != null && auth.uid === $uid || (auth != null && (root.child('admins/'+auth.uid).val() === true || root.child('superadmins/'+auth.uid).val() === true))"
       }
     },
     "staff": {
-      ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+      ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com'))",
+        ".read": "auth != null && auth.uid === $uid || (auth != null && (root.child('superadmins/'+auth.uid).val() === true))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true))",
         ".validate": "newData.hasChildren(['email','name','active','modules'])",
         "active": {
           ".validate": "newData.isBoolean()"
@@ -283,102 +283,102 @@
     "slog": {
       ".read": "(auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')",
       "$id": {
-        ".write": "((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true)) && !data.exists() && newData.exists()",
+        ".write": "((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true)) && !data.exists() && newData.exists()",
         ".validate": "newData.hasChildren(['t','uid','mod','action']) && newData.child('uid').val() === auth.uid && newData.child('t').val() === now"
       }
     },
     "fin": {
       "invoices": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'view' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'view' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))) && !data.exists())",
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))) && !data.exists())",
           ".validate": "newData.hasChildren(['no','adm','name','amt','ts','by']) && newData.child('amt').isNumber() && newData.child('amt').val() > 0 && (data.exists() || newData.child('by').val() === auth.uid)"
         }
       },
       "payments": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'view' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'view' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))",
         "$pid": {
-          ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))) && !data.exists() && newData.child('status').val() === 'paid' && newData.child('by').val() === auth.uid) || ((auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com') && data.exists())",
+          ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))) && !data.exists() && newData.child('status').val() === 'paid' && newData.child('by').val() === auth.uid) || ((auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com') && data.exists())",
           ".validate": "newData.hasChildren(['inv','amt','method','ref','rct','status','ts','by']) && $pid.matches(/^(MPESA|BANK|CASH|CHEQUE)_[A-Z0-9]{4,30}$/) && newData.child('amt').isNumber() && newData.child('amt').val() > 0 && (newData.child('status').val() === 'paid' || newData.child('status').val() === 'reversed') && root.child('fin/invoices/'+newData.child('inv').val()).exists() && (!data.exists() || newData.child('amt').val() === data.child('amt').val())"
         }
       },
       "reversals": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'view' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'view' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))",
         "$id": {
-          ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))) && !data.exists() && newData.child('status').val() === 'requested' && newData.child('by').val() === auth.uid) || ((auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com') && data.exists()) || ((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) && data.exists() && data.child('status').val() === 'requested' && data.child('by').val() !== auth.uid && (newData.child('status').val() === 'recommended' || newData.child('status').val() === 'declined'))",
+          ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/finance').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/finance').val() === 'manage'))) && !data.exists() && newData.child('status').val() === 'requested' && newData.child('by').val() === auth.uid) || ((auth != null && auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com') && data.exists()) || ((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) && data.exists() && data.child('status').val() === 'requested' && data.child('by').val() !== auth.uid && (newData.child('status').val() === 'recommended' || newData.child('status').val() === 'declined'))",
           ".validate": "newData.hasChildren(['pid','rct','amt','reason','status','by','ts']) && (newData.child('status').val() === 'requested' || newData.child('status').val() === 'recommended' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'declined') && (!data.exists() || (newData.child('amt').val() === data.child('amt').val() && newData.child('pid').val() === data.child('pid').val()))"
         }
       }
     },
     "hr": {
       "employees": {
-        ".read": "((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) || ((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage')))",
+        ".read": "((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) || ((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage')))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
           ".validate": "newData.child('no').isString() && (data.exists() ? newData.child('no').val() === data.child('no').val() : newData.child('no').val().matches(/^STF-[0-9]{4,}$/))"
         }
       },
       "leave": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
         "$id": {
-          ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) && !data.exists() && newData.child('status').val() === 'pending' && newData.child('by').val() === auth.uid) || (((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) && data.exists() && data.child('status').val() === 'pending' && (newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected'))"
+          ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) && !data.exists() && newData.child('status').val() === 'pending' && newData.child('by').val() === auth.uid) || (((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) && data.exists() && data.child('status').val() === 'pending' && (newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected'))"
         }
       },
       "attendance": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
         "$day": {
           "$emp": {
-            ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
+            ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
             ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
           }
         }
       },
       "counter": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
-        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
+        ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))",
         ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
       },
       "groups": {
-        ".read": "((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) || ((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage')))",
+        ".read": "((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/hr').val() === 'view' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/hr').val() === 'manage'))) || ((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage')))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
           ".validate": "newData.hasChildren(['name'])"
         }
       }
     },
     "rec": {
       "visitors": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'view' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'view' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))"
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))"
         }
       },
       "appointments": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'view' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'view' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))"
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))"
         }
       },
       "messages": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'view' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'view' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))"
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/rec').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/rec').val() === 'manage'))"
         }
       }
     },
     "pay": {
       "scales": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
         "$id": {
-          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
+          ".write": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
           ".validate": "newData.child('basic').isNumber() && newData.child('basic').val() > 0"
         }
       },
       "runs": {
-        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
+        ".read": "(auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'view' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))",
         "$ym": {
           "$emp": {
-            ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))) && (!data.exists() || data.child('status').val() === 'draft') && newData.child('status').val() === 'draft' && newData.child('by').val() === auth.uid) || (((auth != null && (root.child('superadmins/'+auth.uid).val() === true || auth.token.email.toLowerCase() === 'wanjohisteve85@gmail.com')) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))) && data.exists() && ((data.child('status').val() === 'draft' && newData.child('status').val() === 'approved') || (data.child('status').val() === 'approved' && newData.child('status').val() === 'paid')))",
+            ".write": "(((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'edit' || root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))) && (!data.exists() || data.child('status').val() === 'draft') && newData.child('status').val() === 'draft' && newData.child('by').val() === auth.uid) || (((auth != null && (root.child('superadmins/'+auth.uid).val() === true)) || (auth != null && root.child('staff/'+auth.uid+'/active').val() === true && (root.child('staff/'+auth.uid+'/modules/payroll').val() === 'manage'))) && data.exists() && ((data.child('status').val() === 'draft' && newData.child('status').val() === 'approved') || (data.child('status').val() === 'approved' && newData.child('status').val() === 'paid')))",
             ".validate": "$ym.matches(/^[0-9]{4}-[0-9]{2}$/) && newData.hasChildren(['no','name','gross','net','status','by']) && newData.child('gross').isNumber() && newData.child('net').isNumber() && (!data.exists() || data.child('status').val() === 'draft' || newData.child('net').val() === data.child('net').val())"
           }
         }
