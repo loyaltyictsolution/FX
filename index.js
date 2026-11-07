@@ -8,6 +8,7 @@ admin.initializeApp();
 const db = admin.database(), fcm = admin.messaging();
 const SITE_URL = process.env.SITE_URL || "https://loyalty-fx.web.app/";   // set this to your real site address
 const DAY = 864e5, MIN = 6e4, SIG_GAP = 15 * MIN;
+const deep = q => SITE_URL + (SITE_URL.includes("?") ? "&" : "?") + q;
 const safe = k => String(k).replace(/[.#$\[\]\/]/g, "_");
 
 // ---------- helpers ----------
@@ -28,7 +29,9 @@ const inQuiet = (v, now) => {                               // member's quiet ho
 };
 async function tokens(flag, only, pair, signal) {            // [{uid, tok}] for devices that want this kind of alert
   const snap = await db.ref("fcmtokens").get(), out = [], now = Date.now();
-  snap.forEach(u => { if (only && !only.has(u.key)) return; u.forEach(t => {
+  let live = {}; if (flag === "pa" || flag === "sig" || flag === "ev") live = (await db.ref("presence").get()).val() || {};
+  const here = id => { const p = live[id]; return !!p && p.online === true && now - (p.last || 0) < 150000; };   // page open now: it alerts on its own
+  snap.forEach(u => { if (only && !only.has(u.key)) return; if (here(u.key)) return; u.forEach(t => {
     const v = t.val(); if (!v || v[flag] === false) return;
     if (flag !== "renew" && flag !== "pa" && inQuiet(v, now)) return;        // quiet hours mute everything except renewals and price alerts
     if (pair && v.mp && v.mp[safe(pair)]) return;                            // pair muted by the member
@@ -37,10 +40,10 @@ async function tokens(flag, only, pair, signal) {            // [{uid, tok}] for
   }); });
   return out;
 }
-async function send(list, title, body) {
+async function send(list, title, body, link) {
   for (let i = 0; i < list.length; i += 500) {
     const chunk = list.slice(i, i + 500);
-    const res = await fcm.sendEachForMulticast({ tokens: chunk.map(x => x.tok), notification: { title, body }, webpush: { fcmOptions: { link: SITE_URL } } });
+    const res = await fcm.sendEachForMulticast({ tokens: chunk.map(x => x.tok), notification: { title, body }, webpush: { fcmOptions: { link: link || SITE_URL } } });
     await Promise.all(res.responses.map((r, k) => (!r.success && r.error && /registration-token-not-registered|invalid-argument|invalid-registration/.test(r.error.code || "")) ? db.ref(`fcmtokens/${chunk[k].uid}/${chunk[k].tok}`).remove() : null));
   }
 }
@@ -105,7 +108,7 @@ exports.radarPush = onSchedule({ schedule: "every 1 minutes", region: "us-centra
   for (const [uid, m] of Object.entries(ms)) {
     if (!m || !m.until) continue; const left = m.until - now; if (left > 7 * DAY || left < -2 * DAY) continue;
     const stg = left <= 0 ? "exp" : left <= DAY ? "1" : left <= 3 * DAY ? "3" : "7"; if (!(await once(`renew/${uid}_${m.until}_${stg}`))) continue;
-    await send(await tokens("renew", new Set([uid])), left <= 0 ? "Your membership has expired" : "Your membership is ending soon", left <= 0 ? "Renew to unlock the radar again." : `About ${Math.max(1, Math.round(left / DAY))} day(s) left. Renew to keep access.`);
+    await send(await tokens("renew", new Set([uid])), left <= 0 ? "Your membership has expired" : "Your membership is ending soon", left <= 0 ? "Renew to unlock the radar again." : `About ${Math.max(1, Math.round(left / DAY))} day(s) left. Tap to renew.`, deep("renew=1"));
   }
 
   // live prices and signals from the feed
@@ -119,7 +122,7 @@ exports.radarPush = onSchedule({ schedule: "every 1 minutes", region: "us-centra
       const d = px[a.pair]; if (!d || d.bid == null || d.open === false) continue;
       if (!(a.dir === "above" ? d.bid >= a.price : d.bid <= a.price)) continue;
       await db.ref(`palerts/${uid}/${id}`).remove();
-      await send(await tokens("pa", new Set([uid])), `${a.pair} hit ${a.price}`, `Price is now ${d.bid}.${a.note ? " " + a.note : ""}`);
+      await send(await tokens("pa", new Set([uid])), `${a.pair} hit ${a.price}`, `Price is now ${d.bid}.${a.note ? " " + a.note : ""}`, deep("pair=" + encodeURIComponent(a.pair)));
     }
     // signal changes
     const prev = (await db.ref("pushlog/sig").get()).val() || {}, next = {}, sigT = (await db.ref("pushlog/sigt").get()).val() || {};
@@ -128,8 +131,17 @@ exports.radarPush = onSchedule({ schedule: "every 1 minutes", region: "us-centra
       const was = prev[safe(p)]; if (!was || was === d.signal || d.signal === "WAIT") continue;
       if (now - (sigT[safe(p)] || 0) < SIG_GAP) continue;               // cooldown: at most one signal alert per pair per 15 minutes
       sigT[safe(p)] = now;
-      await send(await tokens("sig", act, p, d.signal), `${p}: ${d.signal}`, d.signal === "DANGER" ? `${d.reason || "Danger"}. Do not enter.` : "Signal conditions changed.");
+      await send(await tokens("sig", act, p, d.signal), `${p}: ${d.signal}`, d.signal === "DANGER" ? `${d.reason || "Danger"}. Do not enter.` : "Signal conditions changed.", deep("pair=" + encodeURIComponent(p)));
     }
     await db.ref("pushlog/sig").set(next); await db.ref("pushlog/sigt").set(sigT);
   }
+});
+
+// ---------- 4) weekly backup of key data to Cloud Storage ----------
+// Set BACKUP_BUCKET (for example your-project.firebasestorage.app) when deploying. Without it this job does nothing.
+exports.weeklyBackup = onSchedule({ schedule: "every sunday 03:00", timeZone: "Africa/Nairobi", region: "us-central1", timeoutSeconds: 300, memory: "512MiB", maxInstances: 1 }, async () => {
+  const bucket = process.env.BACKUP_BUCKET; if (!bucket) { console.warn("BACKUP_BUCKET is not set, backup skipped"); return; }
+  const out = {};
+  for (const p of ["users", "approved", "memberships", "payments", "paycodes", "admins", "superadmins", "staff", "site", "fin", "hr", "pay"]) out[p] = (await db.ref(p).get()).val();
+  await admin.storage().bucket(bucket).file(`backups/${new Date().toISOString().slice(0, 10)}.json`).save(JSON.stringify(out), { contentType: "application/json" });
 });

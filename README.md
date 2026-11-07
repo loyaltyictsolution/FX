@@ -45,3 +45,16 @@ Quiet hours, muted pairs and switched-off signal types (BUY/SELL/DANGER) from No
 # App icon
 
 `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` carry the Loyalty FX Radar design. The name under the icon on a phone is "Loyalty FX" (phones cut long names); the install screen shows the full "Loyalty FX Radar". If a phone shows the old icon, remove the app and install it again.
+
+# Tap to open, no double alerts, backups
+
+- Phone alerts now open the right place: price and signal alerts open that pair, renewal reminders open the renew box.
+- If a member's page is open (seen online in the last 2.5 minutes), the server skips price, signal and news alerts for them, because the page alerts on its own. This removes the double notice.
+- `weeklyBackup` saves users, memberships, payments, staff, finance, HR and payroll data to Cloud Storage every Sunday 03:00 Nairobi time. Deploy with the bucket name: `firebase functions:secrets` is not needed, use an environment variable: create `functions/.env` containing `BACKUP_BUCKET=your-bucket-name` before `firebase deploy --only functions`. Keep the bucket private and add a lifecycle rule in Google Cloud to delete backups older than 90 days. The backup holds personal and payment data, so limit who can open that bucket.
+
+# Staging
+
+1. Firebase console: create a second project, for example `loyalty-fx-staging`, with Realtime Database, Authentication and (for push) the Blaze plan.
+2. Copy `firebaserc.example` to `.firebaserc` next to your `firebase.json`.
+3. Test deploys: `firebase use staging`, then `firebase deploy --only functions,database`. Go live with `firebase use default` and deploy again.
+4. The page has the Firebase config inside `index.html` (and `firebase-messaging-sw.js`). For a staging copy of the site, change those values to the staging project's.

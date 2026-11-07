@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "loyalty-fx",
+    "staging": "loyalty-fx-staging"
+  }
+}
