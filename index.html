@@ -112,6 +112,31 @@ code{background:var(--bg);padding:1px 6px;border-radius:4px}
 .bbtxt{margin:4px 0 0;white-space:pre-wrap}
 .news-i{padding:10px 0;border-bottom:1px solid var(--line)}.news-i:last-child{border-bottom:0}
 .news-i p{margin:4px 0 0;white-space:pre-wrap}
+
+/* ---- price alerts, insights, market news ---- */
+[hidden]{display:none!important}
+#pa .pa-h,#ins .pa-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+#pa .tabs button{padding:5px 12px;font-size:13px}
+.pa-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 4px}
+.pa-form select,.pa-form input{padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit;min-width:0}
+.pa-form input[type=number]{width:140px}.pa-form .pa-note{flex:1 1 140px}
+.pa-form .pri,.pa-btn.pri{background:var(--buy);color:#06231f;border:0;font-weight:600}
+.pa-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:14px}
+.pa-row:last-child{border-bottom:0}
+.pa-row .sub{font-size:12px;color:var(--mut)}
+.pa-chip{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+.pa-chip.go{color:var(--buy);border-color:var(--buy)}.pa-chip.wt{color:var(--wait);border-color:var(--wait)}.pa-chip.no{color:var(--off)}
+.pa-empty{padding:10px 2px;color:var(--mut);font-size:13px}
+.pa-mk{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.pa-mk:last-child{border-bottom:0}.pa-mk label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.pa-mk input{width:auto;margin:0}
+.ins-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.ins-c{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+.ins-c h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.ins-c .l{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.ins-c p{margin:4px 0 0}
+.ins-big{font-size:20px;font-weight:600;margin:0 0 4px}
+@media(max-width:600px){.pa-row{grid-template-columns:1fr auto}.pa-row .pa-chip{display:none}.pa-form input[type=number]{width:100%}}
 .news-i .bad{color:var(--danger);padding:2px 8px;font-size:12px;margin-left:6px}
 #chat summary{cursor:pointer;font-weight:600}
 #ch_list{height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0;background:rgba(0,0,0,.18)}
@@ -722,7 +747,33 @@ body.landing>.note{display:none}
   <canvas id="c_rsi"></canvas><canvas id="c_macd"></canvas><canvas id="c_sto"></canvas><canvas id="c_adx"></canvas>
   <div id="c_read"></div>
 </section>
-<section class="panel" style="margin-top:16px"><b>Recent alerts</b><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
+<section class="panel" id="pa" style="margin-top:16px" aria-label="Price alerts">
+  <div class="pa-h"><b>Price alerts</b>
+    <div class="tabs" role="tablist"><button type="button" data-pt="act" class="on">Active <span class="pill" id="pa_na">0</span></button><button type="button" data-pt="hist">History <span class="pill" id="pa_nh">0</span></button><button type="button" data-pt="mkt">Market open</button></div></div>
+  <div id="pa_v_act">
+    <div class="pa-form">
+      <select id="pa_pair" aria-label="Pair"></select>
+      <input id="pa_px" type="number" step="any" min="0" inputmode="decimal" placeholder="Alert price" aria-label="Alert price">
+      <input id="pa_note" class="pa-note" maxlength="60" placeholder="Note (optional)" aria-label="Note">
+      <button type="button" class="pa-btn pri" id="pa_add">Add alert</button>
+    </div>
+    <div class="mut" id="pa_hint" style="font-size:12px;min-height:18px" role="status"></div>
+    <div id="pa_list"></div>
+  </div>
+  <div id="pa_v_hist" hidden>
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px"><span class="mut" style="font-size:12px">Triggered and cancelled alerts, plus market-open notices (last 100).</span><button type="button" id="pa_clr" style="font-size:12px;padding:4px 10px">Clear history</button></div>
+    <div id="pa_hlist"></div>
+  </div>
+  <div id="pa_v_mkt" hidden>
+    <p class="mut" style="margin:2px 0 6px;font-size:13px">Get a notification the moment a market opens. Times shown in your local time.</p>
+    <div id="pa_mlist"></div>
+  </div>
+  <div class="mut" id="pa_perm" style="margin-top:10px;font-size:12px"></div>
+</section>
+<section class="panel" id="ins" style="margin-top:16px" aria-label="Market insights"><div class="pa-h"><b>Insights</b><span class="mut" style="font-size:12px" id="ins_t"></span></div><div id="ins_b" class="ins-g"></div>
+  <p class="mut" style="font-size:12px;margin:10px 0 0">Insights describe what the tracked markets are doing right now. They are not forecasts or financial advice.</p></section>
+<section class="panel" id="mnews" style="display:none;margin-top:16px" aria-label="Market news"></section>
+<section class="panel" style="margin-top:16px"><b>Signal alerts</b> <span class="mut" style="font-size:12px">BUY, SELL and DANGER changes this session</span><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
 <section class="panel" id="track" style="margin-top:16px"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
   <div id="track_body"><p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.</p></div></section>
 <details class="panel" id="calc" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Position size and risk calculator</summary>
@@ -767,6 +818,14 @@ body.landing>.note{display:none}
     <label class="mut">Min strength <input id="thr" type="number" min="0.4" max="0.9" step="0.05"></label>
     <button class="pri" id="save">Save</button><span id="toast" role="status"></span>
   </div>
+  <div style="margin-top:14px"><b>Market news key</b> <span id="nk_st" class="pill">Off</span>
+    <p class="mut" style="margin:4px 0 8px">Optional. Create a free key with the news provider you choose, paste it here and press Activate. The app tests it first, then saves it privately (admins only). While an admin page is open it refreshes headlines every 10 minutes and shares them with members under Market news.</p>
+    <div class="ctl">
+      <label class="mut">Provider <select id="nk_prov" style="padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option value="finnhub">Finnhub (finnhub.io)</option><option value="marketaux">Marketaux (marketaux.com)</option></select></label>
+      <label class="mut">News API key <input id="nk_key" type="password" style="width:230px" autocomplete="off" placeholder="paste key"></label>
+      <button class="pri" id="nk_go" type="button">Activate</button><button id="nk_off" type="button">Deactivate</button><button id="nk_now" type="button">Refresh now</button>
+      <span id="nk_msg" class="mut" role="status"></span>
+    </div></div>
   <div class="grid" id="health"></div>
   <div style="margin-top:14px"><b>Markets to track</b>
     <p class="mut">Forex, crypto and stocks from Twelve Data. The free plan works best with 8 symbols or fewer (maximum 12).</p>
@@ -825,6 +884,7 @@ body.landing>.note{display:none}
   <div class="adduser">
     <input id="nw_t" placeholder="Newsletter title" maxlength="110" style="flex:1 1 100%">
     <textarea id="nw_b" rows="4" maxlength="2900" placeholder="Write the newsletter. It shows under News &amp; updates for every user."></textarea>
+    <label class="mut" style="flex:1 1 100%"><input type="checkbox" id="nw_m"> Post as market news (shows under Market news instead of News &amp; updates)</label>
     <button class="pri" id="nw_go">Publish newsletter</button><button id="nw_copy">Copy member emails</button><span id="nw_msg" class="mut" role="status"></span>
   </div>
 </section>
@@ -1989,7 +2049,7 @@ function startCommon(u) {
   $("nu_em").value = ""; $("nu_pw").value = ""; $("nu_share").innerHTML = ""; if (isAdmin && amOwner()) dbr.ref("superadmins/" + u.uid).set(true).catch(() => {});
   try { if (sessionStorage.getItem("fr_log") !== u.uid) { sessionStorage.setItem("fr_log", u.uid); logEvt("Signed in"); } } catch { logEvt("Signed in"); }
   listen(dbr.ref("site"), s => { SITE = s.val() || {}; IDLE_MIN = SITE.idleMinutes || 30; resetIdle(); applySite(); renderMember(); fillSite(); });
-  listen(dbr.ref("news").limitToLast(8), s => { NEWS = []; s.forEach(c => { NEWS.push({ id: c.key, ...c.val() }); }); renderNews(); });
+  listen(dbr.ref("news").limitToLast(30), s => { NEWS = []; s.forEach(c => { NEWS.push({ id: c.key, ...c.val() }); }); renderNews(); });
   if (isAdmin) startAdminExtras();
   else {
     listen(dbr.ref("approved/" + u.uid), s => { MEM.apr = s.val() === true; access(); });
@@ -2294,20 +2354,225 @@ function showReceipt(p, uid) {
 $("m_hist").onclick = e => { const b = e.target.closest("button[data-rc]"); if (b && MYPAY[b.dataset.rc]) showReceipt(MYPAY[b.dataset.rc], auth.currentUser.uid); };
 
 // ----- news + billboard -----
+const isMk = x => /^\[M\]\s/.test(x.title || "");
+function newsItem(x) { return `<div class="news-i"><b>${esc(String(x.title || "").replace(/^\[M\]\s*/, ""))}</b> <span class="mut">${fmtD(x.t || 0)}</span>${isAdmin ? `<button class="bad" data-nd="${esc(x.id)}">Delete</button>` : ""}<p>${esc(x.body)}</p></div>`; }
 function renderNews() {
-  const el = $("news"), n = NEWS.slice().reverse();
-  el.style.display = n.length && isMember() ? "block" : "none";
-  el.innerHTML = "<b>News &amp; updates</b>" + n.map(x => `<div class="news-i"><b>${esc(x.title)}</b> <span class="mut">${fmtD(x.t || 0)}</span>${isAdmin ? `<button class="bad" data-nd="${esc(x.id)}">Delete</button>` : ""}<p>${esc(x.body)}</p></div>`).join("");
+  const n = NEWS.slice().reverse(), mem = isMember(), a = n.filter(x => !isMk(x)), b = n.filter(isMk);
+  const el = $("news"); el.style.display = a.length && mem ? "block" : "none";
+  el.innerHTML = "<b>News &amp; updates</b>" + a.map(newsItem).join("");
+  const m = $("mnews"); if (!m) return; m.style.display = mem ? "block" : "none";
+  m.innerHTML = "<b>Market news</b>" + nfHtml() + (b.length || NF.items.length ? b.map(newsItem).join("") : '<p class="pa-empty">No market news yet. Headlines appear here as soon as they are published.</p>');
 }
 $("news").onclick = async e => { const b = e.target.closest("button[data-nd]"); if (b && isAdmin && confirm("Delete this post?")) { try { await dbr.ref("news/" + b.dataset.nd).remove(); logEvt("Deleted a newsletter post"); } catch (err) { alert(err.message); } } };
+
+// ----- price alerts (active + history), market-open notices, insights -----
+$("mnews").onclick = $("news").onclick;
+const PA_K = u => "fr_pa_" + u, MO_K = u => "fr_mo_" + u;
+let PA = { uid: "", act: [], hist: [], mo: {} }, MOS = {}, paTab = "act", paSel = "", paOpenAt = {}, paOpenT = 0, paInsT = 0, paRT = 0;
+const wkAt = t => { const d = new Date(t), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); };
+const NYF = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+function nyAt(t) { const f = NYF.formatToParts(new Date(t)), g = k => (f.find(x => x.type === k) || {}).value, m = (+g("hour") % 24) * 60 + +g("minute"); return !["Sat", "Sun"].includes(g("weekday")) && m >= 570 && m < 960; }
+const MOK = [{ k: "fx", n: "Forex week", f: t => !wkAt(t) }, { k: "us", n: "US stocks", f: nyAt },
+  ...["Sydney", "Tokyo", "London", "New York"].map(n => ({ k: n, n: n + " session", f: t => !wkAt(t) && sessOpen(n, t) }))];
+function nextOpen(f, now) {                           // 0 = open now, else the first minute it opens, null = none within 8 days
+  let t = Math.floor(now / 60000) * 60000; if (f(t)) return 0;
+  for (let i = 0; i < 1152; i++) { const n = t + 600000; if (f(n)) { for (let q = t + 60000; q <= n; q += 60000) if (f(q)) return q; } t = n; }
+  return null;
+}
+function paLoad() {
+  const u = auth.currentUser; if (!u) return false; if (PA.uid === u.uid) return true;
+  let o = {}, m = { fx: true, us: true };
+  try { o = JSON.parse(localStorage.getItem(PA_K(u.uid)) || "{}") || {}; } catch {}
+  try { const x = JSON.parse(localStorage.getItem(MO_K(u.uid)) || "null"); if (x && typeof x === "object") m = x; } catch {}
+  PA = { uid: u.uid, act: Array.isArray(o.act) ? o.act : [], hist: Array.isArray(o.hist) ? o.hist : [], mo: m }; MOS = {}; paSel = ""; return true;
+}
+function paSave() { try { localStorage.setItem(PA_K(PA.uid), JSON.stringify({ act: PA.act, hist: PA.hist.slice(0, 100) })); localStorage.setItem(MO_K(PA.uid), JSON.stringify(PA.mo)); } catch {} }
+function paNotify(m) { banner(m, true); if (soundOn) beep(880, .15, 2); if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO, { body: m }); } catch {} }
+const paId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const paWhen = ms => new Date(ms).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
+const paDay = ms => new Date(ms).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function paTypeOpen(a) { const d = data[a.pair]; return d ? d.open !== false : isOpen(a.pair); }
+
+function paCheck() {
+  if (!paLoad() || !PA.act.length) return; let ch = false;
+  for (const a of PA.act.slice()) {
+    const d = data[a.pair]; if (!d || d.bid == null || d.open === false || (d.stale && !demo)) continue;
+    const hit = a.dir === "above" ? d.bid >= a.price : d.bid <= a.price; if (!hit) continue;
+    PA.act = PA.act.filter(x => x.id !== a.id); PA.hist.unshift({ ...a, k: "hit", done: rt(), at: d.bid }); ch = true;
+    paNotify(`${a.pair} ${a.dir === "above" ? "rose to" : "fell to"} your alert ${fmt(a.pair, a.price)}. Price now ${fmt(a.pair, d.bid)}.${a.note ? " Note: " + a.note : ""}`);
+  }
+  if (ch) { paSave(); paRender(); }
+}
+function moCheck() {
+  if (!paLoad()) return; const now = rt(); let ch = false;
+  for (const k of MOK) {
+    const o = k.f(now), was = MOS[k.k]; MOS[k.k] = o;
+    if (was === false && o && PA.mo[k.k]) {
+      const wait = PA.act.filter(a => { const t = (data[a.pair] && data[a.pair].type) || typeOf(a.pair); return k.k === "fx" ? t === "forex" : k.k === "us" ? t === "stocks" : false; });
+      PA.hist.unshift({ k: "open", n: k.n, done: now }); ch = true;
+      paNotify(`${k.n} is now open.` + (wait.length ? ` ${wait.length} price alert${wait.length > 1 ? "s are" : " is"} watching: ${wait.slice(0, 3).map(a => a.pair).join(", ")}.` : ""));
+    }
+  }
+  if (ch) { paSave(); paRender(); }
+}
+function paPopulate() {
+  const keys = Object.keys(data), sig = keys.join("|"), el = $("pa_pair"); if (el.dataset.k === sig) return; el.dataset.k = sig;
+  const cur = el.value || paSel; el.innerHTML = keys.length ? keys.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join("") : '<option value="">Waiting for prices...</option>';
+  if (keys.includes(cur)) el.value = cur; else if (sel && keys.includes(sel)) el.value = sel;
+}
+function paHint() {
+  const p = $("pa_pair").value, d = data[p], h = $("pa_hint"); if (!d || d.bid == null) { h.textContent = ""; return; }
+  const v = parseFloat($("pa_px").value), dir = v > 0 ? (v > d.bid ? "above" : v < d.bid ? "below" : "") : "";
+  h.textContent = `${p} now ${fmt(p, d.bid)}${d.open === false ? " (market closed)" : ""}.` + (dir ? ` You will be alerted when price ${dir === "above" ? "rises to" : "falls to"} ${fmt(p, v)}${d.open === false ? ", once the market opens" : ""}.` : "");
+}
+function paAdd() {
+  if (!paLoad()) return; const p = $("pa_pair").value, v = parseFloat($("pa_px").value), m = $("pa_hint"), d = data[p];
+  if (!p || !d || d.bid == null) return m.textContent = "No live price for this pair yet. Try again in a moment.";
+  if (!(v > 0)) return m.textContent = "Type the price you want to be alerted at.";
+  if (v === d.bid) return m.textContent = "That is the current price. Pick a level above or below it.";
+  if (PA.act.length >= 30) return m.textContent = "You can keep up to 30 active alerts. Cancel one first.";
+  PA.act.unshift({ id: paId(), pair: p, dir: v > d.bid ? "above" : "below", price: v, from: d.bid, t: rt(), note: $("pa_note").value.trim().slice(0, 60) });
+  paSave(); $("pa_px").value = ""; $("pa_note").value = ""; paSel = p; paRender(); paHint();
+  if ("Notification" in window && Notification.permission === "default") $("pa_perm").scrollIntoView({ block: "nearest" });
+}
+function paRender() {
+  if (!paLoad()) return;
+  $("pa_na").textContent = PA.act.length; $("pa_nh").textContent = PA.hist.length;
+  document.querySelectorAll("#pa [data-pt]").forEach(b => b.classList.toggle("on", b.dataset.pt === paTab));
+  $("pa_v_act").hidden = paTab !== "act"; $("pa_v_hist").hidden = paTab !== "hist"; $("pa_v_mkt").hidden = paTab !== "mkt";
+  paPopulate();
+  $("pa_list").innerHTML = PA.act.length ? PA.act.map(a => {
+    const d = data[a.pair], px = d && d.bid, closed = !paTypeOpen(a), dist = px ? ((a.price - px) / px * 100) : null;
+    return `<div class="pa-row"><div><b>${esc(a.pair)}</b> <span class="mut">${a.dir === "above" ? "rises to" : "falls to"}</span> <span class="num">${fmt(a.pair, a.price)}</span>
+      <div class="sub">${px ? "Now " + fmt(a.pair, px) + " &middot; " + (dist >= 0 ? "+" : "") + dist.toFixed(2) + "% away" : "No price yet"}${a.note ? " &middot; " + esc(a.note) : ""} &middot; set ${paDay(a.t)}</div></div>
+      <span class="pa-chip ${closed ? "wt" : "go"}">${closed ? "Waiting for market open" : "Watching"}</span><button type="button" data-pc="${esc(a.id)}" style="font-size:12px;padding:4px 10px">Cancel</button></div>`;
+  }).join("") : '<div class="pa-empty">No active price alerts. Pick a pair, type a price and tap Add alert.</div>';
+  $("pa_hlist").innerHTML = PA.hist.length ? PA.hist.map(h => h.k === "open"
+    ? `<div class="pa-row"><div><b>${esc(h.n)} opened</b><div class="sub">${paDay(h.done)}</div></div><span class="pa-chip go">Market open</span><span></span></div>`
+    : `<div class="pa-row"><div><b>${esc(h.pair)}</b> <span class="mut">${h.dir === "above" ? "rise to" : "fall to"}</span> <span class="num">${fmt(h.pair, h.price)}</span>
+      <div class="sub">${h.k === "hit" ? "Triggered " + paDay(h.done) + " at " + fmt(h.pair, h.at) : "Cancelled " + paDay(h.done)}${h.note ? " &middot; " + esc(h.note) : ""}</div></div>
+      <span class="pa-chip ${h.k === "hit" ? "go" : "no"}">${h.k === "hit" ? "Triggered" : "Cancelled"}</span><span></span></div>`).join("")
+    : '<div class="pa-empty">No history yet. Triggered and cancelled alerts will be listed here.</div>';
+  paMktRender(true); paPerm();
+}
+function paMktRender(force) {
+  if (paTab !== "mkt" && !force) return; const now = rt();
+  if (force || now - paOpenT > 30000) { paOpenT = now; paOpenAt = {}; for (const k of MOK) paOpenAt[k.k] = nextOpen(k.f, now); }
+  if (paTab !== "mkt") return;
+  $("pa_mlist").innerHTML = MOK.map(k => { const n = paOpenAt[k.k];
+    return `<div class="pa-mk"><label><input type="checkbox" data-mo="${esc(k.k)}" ${PA.mo[k.k] ? "checked" : ""}> <span><b>${esc(k.n)}</b><br><span class="mut" style="font-size:12px">${n === 0 ? "Open now" : n ? "Opens " + paWhen(n) + " (in " + leftText(n - now) + ")" : "No opening in the next 8 days"}</span></span></label>
+      <span class="pa-chip ${n === 0 ? "go" : "wt"}">${n === 0 ? "Open" : "Closed"}</span></div>`; }).join("") +
+    '<div class="pa-mk"><span><b>Crypto</b><br><span class="mut" style="font-size:12px">Trades 24/7, so there is no opening to announce.</span></span><span class="pa-chip go">Always open</span></div>';
+}
+function paPerm() {
+  const el = $("pa_perm"); if (!("Notification" in window)) { el.textContent = "This browser does not support notifications. You will still see an on-screen banner."; return; }
+  const p = Notification.permission;
+  el.innerHTML = p === "granted" ? "Notifications are on. Alerts fire while this page or app stays open." : p === "denied" ? "Notifications are blocked in your browser settings. You will still see an on-screen banner while this page is open." : 'Turn on notifications to be told when a price is hit or a market opens. <button type="button" id="pa_ask" style="font-size:12px;padding:3px 10px">Enable notifications</button>';
+}
+$("pa").addEventListener("click", async e => {
+  const t = e.target.closest("[data-pt]"); if (t) { paTab = t.dataset.pt; paRender(); return; }
+  const c = e.target.closest("[data-pc]"); if (c && paLoad()) { const a = PA.act.find(x => x.id === c.dataset.pc); if (a) { PA.act = PA.act.filter(x => x !== a); PA.hist.unshift({ ...a, k: "x", done: rt() }); paSave(); paRender(); } return; }
+  if (e.target.id === "pa_ask") { try { await Notification.requestPermission(); } catch {} soundOn || (audio = audio || new (window.AudioContext || window.webkitAudioContext)()); paPerm(); return; }
+  if (e.target.id === "pa_clr" && paLoad() && PA.hist.length && confirm("Clear all alert history?")) { PA.hist = []; paSave(); paRender(); }
+});
+$("pa").addEventListener("change", e => { const m = e.target.closest("[data-mo]"); if (m && paLoad()) { PA.mo[m.dataset.mo] = m.checked; paSave(); if (m.checked && "Notification" in window && Notification.permission === "default") try { Notification.requestPermission().then(paPerm); } catch {} } if (e.target.id === "pa_pair") { paSel = e.target.value; paHint(); } });
+$("pa_add").onclick = paAdd; $("pa_px").oninput = paHint;
+$("pa_px").onkeydown = $("pa_note").onkeydown = e => { if (e.key === "Enter") paAdd(); };
+
+function insRender() {
+  const el = $("ins_b"); if (!el) return; const E = Object.entries(data);
+  if (!E.length) { el.innerHTML = '<div class="ins-c"><h4>Waiting</h4><p class="mut">Insights appear once prices have loaded.</p></div>'; $("ins_t").textContent = ""; return; }
+  const open = E.filter(([, d]) => d.open !== false), sg = k => open.filter(([, d]) => d.signal === k).length;
+  const buy = sg("BUY"), sell = sg("SELL"), wait = sg("WAIT"), dng = sg("DANGER");
+  const mood = !open.length ? "All tracked markets closed" : dng ? "Caution: danger on " + dng + " pair" + (dng > 1 ? "s" : "") : buy > sell + 1 ? "Leaning bullish" : sell > buy + 1 ? "Leaning bearish" : buy + sell === 0 ? "Quiet, no clear setups" : "Mixed signals";
+  const str = d => Math.max(d.pBuy || 0, d.pSell || 0), line = (a, b, c) => `<div class="l"><span>${a}</span><span class="num ${c || ""}">${b}</span></div>`;
+  const top = open.filter(([, d]) => d.signal === "BUY" || d.signal === "SELL").sort((a, b) => str(b[1]) - str(a[1])).slice(0, 3);
+  const mv = E.filter(([, d]) => d.day && isFinite(d.day.chg)).sort((a, b) => Math.abs(b[1].day.chg) - Math.abs(a[1].day.chg)).slice(0, 3);
+  const edge = E.filter(([, d]) => d.day && d.open !== false && (d.day.pos >= .85 || d.day.pos <= .15)).slice(0, 3);
+  const hot = E.filter(([, d]) => d.volatility === "HIGH" && d.open !== false).slice(0, 3), now = rt();
+  const closed = MOK.slice(0, 2).map(k => [k, nextOpen(k.f, now)]).filter(x => x[1] !== 0 && x[1]);
+  paLoad(); const near = PA.act.map(a => { const d = data[a.pair]; return d && d.bid ? { a, dist: Math.abs((a.price - d.bid) / d.bid * 100) } : null; }).filter(Boolean).sort((x, y) => x.dist - y.dist)[0];
+  el.innerHTML = [
+    `<div class="ins-c"><h4>Market mood</h4><p class="ins-big">${esc(mood)}</p>${line("BUY / SELL", buy + " / " + sell)}${line("WAIT / DANGER", wait + " / " + dng)}<p class="mut">${esc(sessChip())}</p></div>`,
+    `<div class="ins-c"><h4>Strongest setups</h4>${top.length ? top.map(([p, d]) => line(esc(p) + " " + d.signal, pct(str(d)), d.signal === "BUY" ? "up" : "dn")).join("") : '<p class="mut">No BUY or SELL setups right now.</p>'}</div>`,
+    `<div class="ins-c"><h4>Biggest movers (24h)</h4>${mv.length ? mv.map(([p, d]) => line(esc(p), (d.day.chg >= 0 ? "+" : "") + d.day.chg.toFixed(2) + "%", d.day.chg >= 0 ? "up" : "dn")).join("") : '<p class="mut">Not enough data yet.</p>'}</div>`,
+    `<div class="ins-c"><h4>Watch out</h4>${dng || hot.length || edge.length ? [...E.filter(([, d]) => d.signal === "DANGER").map(([p, d]) => line(esc(p), "DANGER", "dn")), ...hot.map(([p]) => line(esc(p), "High volatility")), ...edge.map(([p, d]) => line(esc(p), d.day.pos >= .85 ? "Near day high" : "Near day low"))].slice(0, 5).join("") : '<p class="mut">Nothing unusual on the tracked pairs.</p>'}</div>`,
+    `<div class="ins-c"><h4>Next market opens</h4>${closed.length ? closed.map(([k, n]) => line(esc(k.n), paWhen(n))).join("") + '<p class="mut">Turn on open alerts under Price alerts, Market open.</p>' : '<p class="mut">Forex and US stocks are open now.</p>'}</div>`,
+    near ? `<div class="ins-c"><h4>Closest price alert</h4>${line(esc(near.a.pair), fmt(near.a.pair, near.a.price))}<p class="mut">${near.dist.toFixed(2)}% away from the current price.</p></div>` : ""
+  ].join("");
+  $("ins_t").textContent = "Updated " + fmtT(now);
+}
+setInterval(() => {
+  if (!MON || !auth.currentUser || !isMember()) return;
+  try { if (PA.uid !== auth.currentUser.uid) { paLoad(); paRender(); insRender(); } paCheck(); moCheck(); paPopulate(); paMktRender(); if (rt() - paInsT > 4000) { paInsT = rt(); insRender(); } if (rt() - paRT > 6000) { paRT = rt(); paRender(); } } catch (er) { console.warn("alerts tick:", er.message); }
+}, 2000);
+$("pa_pair").addEventListener("focus", paPopulate);
+
+// ----- market news feed: admin key + headlines shared with members -----
+let NK = { key: "", prov: "finnhub", on: false, loaded: false }, NF = { ts: 0, items: [] }, nfRef = null, nfTimer = 0, nfBusy = false;
+const nfSafe = u => /^https:\/\//i.test(u || "") ? u : "";
+function nfHtml() {
+  if (!NF.items.length) return "";
+  return '<div class="mut" style="font-size:12px;margin:2px 0 4px">Headlines' + (NF.ts ? " &middot; updated " + fmtT(NF.ts) : "") + "</div>" + NF.items.slice(0, 12).map(x => {
+    const u = nfSafe(x.u), h = esc(x.h);
+    return `<div class="news-i" style="padding:7px 0">${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:var(--tx);font-weight:600;text-decoration:none">${h}</a>` : `<b>${h}</b>`}<div class="mut" style="font-size:12px">${esc(x.s || "")}${x.t ? " &middot; " + fmtD(x.t * 1000) + " " + fmtT(x.t * 1000) : ""}</div></div>`;
+  }).join("");
+}
+function nfStatus() {
+  const el = $("nk_st"); if (!el) return; el.textContent = NK.on ? "Active" : "Off"; el.className = "pill " + (NK.on ? "adm" : "");
+  $("nk_key").placeholder = NK.on ? "saved (hidden)" : "paste key"; $("nk_prov").value = NK.prov;
+}
+async function nfPull(prov, key) {                     // returns [{h, s, u, t}] newest first
+  const j = async u => { const r = await fetch(u); if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? "The provider rejected this key" : "Provider error " + r.status); return r.json(); };
+  let out = [];
+  if (prov === "finnhub") {
+    const all = await Promise.all(["general", "forex", "crypto"].map(c => j("https://finnhub.io/api/v1/news?category=" + c + "&token=" + encodeURIComponent(key))));
+    out = all.flat().map(x => ({ h: x.headline, s: x.source, u: x.url, t: x.datetime }));
+  } else {
+    const r = await j("https://api.marketaux.com/v1/news/all?language=en&limit=20&api_token=" + encodeURIComponent(key));
+    out = (r.data || []).map(x => ({ h: x.title, s: x.source, u: x.url, t: Math.floor(Date.parse(x.published_at) / 1000) || 0 }));
+  }
+  const seen = new Set();
+  return out.filter(x => x.h && !seen.has(x.h) && seen.add(x.h)).map(x => ({ h: String(x.h).slice(0, 180), s: String(x.s || "").slice(0, 40), u: nfSafe(x.u).slice(0, 400), t: +x.t || 0 })).sort((a, b) => b.t - a.t).slice(0, 20);
+}
+async function nfRefresh(say) {
+  if (!isAdmin || !NK.on || !NK.key || nfBusy) return; nfBusy = true; const m = $("nk_msg");
+  try {
+    const items = await nfPull(NK.prov, NK.key); if (!items.length) throw new Error("No headlines came back");
+    await dbr.ref("feed/news").set({ ts: TS, prov: NK.prov, items }); if (say) m.textContent = items.length + " headlines published.";
+  } catch (e) { if (say) m.textContent = /permission|denied/i.test(e.code + e.message) ? "Firebase refused the publish. Publish the database rules so admins can write feed/news." : "News refresh failed: " + e.message + (/Failed to fetch|NetworkError/i.test(e.message) ? " (the provider may block browser requests)" : ""); }
+  nfBusy = false; if (say) setTimeout(() => m.textContent = "", 7000);
+}
+$("nk_go").onclick = async () => {
+  const k = $("nk_key").value.trim() || NK.key, p = $("nk_prov").value, m = $("nk_msg");
+  if (!isAdmin) return; if (!k) return m.textContent = "Paste your news API key first.";
+  m.textContent = "Testing the key...";
+  try { const it = await nfPull(p, k); if (!it.length) throw new Error("No headlines came back"); }
+  catch (e) { return m.textContent = "Not activated. " + e.message + (/Failed to fetch|NetworkError/i.test(e.message) ? " (check the key, or the provider may block browser requests)." : "."); }
+  try { await dbr.ref("settings").update({ newsKey: k, newsProv: p, newsOn: true }); } catch (e) { return m.textContent = /permission|denied/i.test(e.code + e.message) ? "Firebase refused the save. Publish the new database rules, then try again." : "Save failed: " + e.message; }
+  NK = { key: k, prov: p, on: true, loaded: true }; $("nk_key").value = ""; nfStatus(); logEvt("Activated the market news key (" + p + ")"); m.textContent = "Activated."; nfRefresh(true);
+};
+$("nk_off").onclick = async () => {
+  if (!isAdmin || !confirm("Deactivate market news? The saved key will be deleted.")) return;
+  try { await dbr.ref("settings").update({ newsKey: null, newsOn: false }); NK = { key: "", prov: NK.prov, on: false, loaded: true }; nfStatus(); logEvt("Deactivated the market news key"); $("nk_msg").textContent = "Deactivated."; }
+  catch (e) { $("nk_msg").textContent = "Failed: " + e.message; }
+};
+$("nk_now").onclick = () => { if (!NK.on) return $("nk_msg").textContent = "Activate a key first."; nfRefresh(true); };
+function nfTick() {
+  if (!MON || !auth.currentUser || !isMember()) return;
+  if (!nfRef) { try { nfRef = dbr.ref("feed/news"); nfRef.on("value", s => { const v = s.val(); NF = v && Array.isArray(v.items) ? { ts: v.ts || 0, items: v.items } : { ts: 0, items: [] }; renderNews(); }, () => {}); } catch { nfRef = null; } }
+  if (isAdmin && !NK.loaded) { NK.loaded = true; dbr.ref("settings").get().then(x => { const v = x.val() || {}; NK = { key: v.newsKey || "", prov: v.newsProv || "finnhub", on: v.newsOn === true && !!v.newsKey, loaded: true }; nfStatus(); if (NK.on) nfRefresh(false); }).catch(() => {}); }
+  if (isAdmin && NK.on && rt() - nfTimer > 600000) { nfTimer = rt(); nfRefresh(false); }
+}
+setInterval(nfTick, 5000);
 $("bb_save").onclick = async () => {
   const t = $("bb_txt").value.trim().slice(0, 590), m = $("bb_msg");
   try { await dbr.ref("site/billboard").set(t || null); m.textContent = t ? "Billboard updated." : "Billboard hidden."; logEvt(t ? "Updated the billboard" : "Cleared the billboard"); } catch (err) { m.textContent = "Failed: " + err.message; }
   setTimeout(() => m.textContent = "", 5000);
 };
 $("nw_go").onclick = async () => {
-  const t = $("nw_t").value.trim().slice(0, 110), b = $("nw_b").value.trim().slice(0, 2900), m = $("nw_msg");
-  if (!t || !b) return m.textContent = "Add a title and a message.";
+  const t0 = $("nw_t").value.trim(), t = ($("nw_m") && $("nw_m").checked ? "[M] " : "") + t0.slice(0, 106), b = $("nw_b").value.trim().slice(0, 2900), m = $("nw_msg");
+  if (!t0 || !b) return m.textContent = "Add a title and a message.";
   try { await dbr.ref("news").push({ title: t, body: b, t: TS }); $("nw_t").value = $("nw_b").value = ""; m.textContent = "Published."; logEvt("Published newsletter: " + t.slice(0, 60)); } catch (err) { m.textContent = "Failed: " + err.message; }
   setTimeout(() => m.textContent = "", 5000);
 };
@@ -2628,7 +2893,7 @@ async function marketEnter(u) {
   status(); render(); start();
   return true;
 }
-function marketLeave() { MON = false; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
+function marketLeave() { MON = false; try { if (nfRef) nfRef.off(); } catch {} nfRef = null; NF = { ts: 0, items: [] }; NK = { key: "", prov: "finnhub", on: false, loaded: false }; nfTimer = 0; PA = { uid: "", act: [], hist: [], mo: {} }; MOS = {}; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
 $("goacc").onclick = () => SHELL.switchTo("staff", "x_acc"); $("gostaff").onclick = () => SHELL.switchTo("staff");
 SHELL.market = { enter: marketEnter, leave: marketLeave };
 
