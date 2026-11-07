@@ -1,20 +1,23 @@
-# Forex Radar (browser only, alerts only, no orders)
+# Server setup (phone alerts + 24/7 news)
 
-Everything runs in the portal page. No Python, no Telegram, no MT5 terminal.
-(The old `backend/` folder is optional and unused. Ignore it.)
+The page works without this. Do this once if you want alerts when the app is closed and headlines that refresh without an admin page open.
 
-## Setup
-1. Firebase > Realtime Database > Rules: paste `database.rules.json`, Publish.
-2. Authentication: Email/Password on, your user added, sign-ups off.
-3. Database Data tab: `admins` > `<your UID>` = true (boolean).
-4. Paste your Firebase web config into `index.html` (`firebaseConfig`).
-5. Get a free key at twelvedata.com (check the plan's limits there).
-6. Push to GitHub Pages, sign in, open **Admin settings**, paste the key, Save.
+Needs: Firebase **Blaze** (pay-as-you-go) plan. At this size the cost is usually a few cents a month, but check Firebase pricing.
 
-## Limits (read these)
-- Alerts work only while the page is open in a browser tab. Closing it stops them.
-- Use "Keep screen on" and keep the tab open on a laptop that is not asleep.
-- Free price plans limit requests. If no live stream is allowed, the page refreshes every ~11 minutes.
-- Prices come from a data provider, not your Exness account, so quotes can differ slightly.
-- Signals are rule-based scores (trend, momentum, RSI, volatility), not trained AI.
-- Forex is closed from Friday ~22:00 to Sunday ~22:00 UTC.
+1. Install tools:  `npm i -g firebase-tools`  then  `firebase login`
+2. In an empty folder run `firebase init functions` (JavaScript, Node 20, project `loyalty-fx`). Replace the generated `functions/index.js` and `functions/package.json` with the ones here, then `cd functions && npm install`.
+3. Open `functions/index.js` and set `SITE_URL` to your real site address (or deploy with `SITE_URL` as an environment variable).
+4. Deploy:  `firebase deploy --only functions`
+5. Upload `firebase-messaging-sw.js` to the **same folder as index.html** on your host.
+6. Firebase console, Project settings, Cloud Messaging, Web Push certificates: Generate key pair, copy the public key. In the app, Admin settings, Phone push key: paste and Save.
+7. Publish `database_rules.json` (it adds `fcmtokens` and `palerts`).
+8. Members open Notification settings, then Turn on phone alerts.
+
+What runs:
+- `newsRefresh` every 10 min: uses the news key saved in Admin settings.
+- `radarPush` every minute: news-event warnings, market opens, renewal reminders, price alerts, signal changes.
+
+Notes:
+- Phone alerts need the page opened over https and a browser that supports web push. On iPhone the app must be added to the Home Screen first.
+- Price alerts are watched by the server only for members who turned on phone alerts.
+- If the server and an open page both catch the same price alert, the member may get two notices.

@@ -1,10 +1,10 @@
 {
-  "name": "steve-fx-radar-engine",
-  "version": "1.0.0",
+  "name": "loyalty-fx-functions",
   "private": true,
-  "description": "Always-on signal engine for Steve FX Radar",
-  "main": "radar-engine.js",
-  "scripts": { "start": "node radar-engine.js" },
-  "engines": { "node": ">=18" },
-  "dependencies": { "firebase-admin": "^12.0.0", "ws": "^8.16.0" }
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  }
 }
