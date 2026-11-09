@@ -1391,21 +1391,31 @@ function merge(p, fresh) {
     if (last && f.t === last.t) Object.assign(last, f); else if (!last || f.t > last.t) p.candles.push(f); }
   p.price = p.candles[p.candles.length - 1].c; p.tickAt = rt(); p.dirty = true;
 }
+let bootBusy = false, bootAt = 0, WS_MAX = 8;          // Basic 8 plan: 8 requests a minute, 8 streamed symbols
 async function bootstrap() {
-  loaded = 0; loadErr = "";
-  for (const s of PAIRS) {
-    try {
-      const cd = await fetchCandles(s, 1440);
-      P[s] = { candles: cd, price: cd[cd.length - 1].c, tickAt: 0, dirty: true, sig: "WAIT", dir: 0, dangerUntil: 0, reason: "", bt: null };
-      P[s].bt = backtest(series(cd), THR); loaded++;
-    } catch (e) { loadErr = e.message; if (/key|api|credit|limit/i.test(e.message)) break; }
-    await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1500));
-  }
+  if (bootBusy) return; bootBusy = true; bootAt = rt(); loadErr = "";
+  try {
+    for (const s of PAIRS) {
+      if (P[s] || !KEY) continue;
+      try {
+        const cd = await fetchCandles(s, 1440);
+        if (cd.length < 2) throw new Error("Not enough history for " + s);
+        P[s] = { candles: cd, price: cd[cd.length - 1].c, tickAt: 0, dirty: true, sig: "WAIT", dir: 0, dangerUntil: 0, reason: "", bt: null };
+        P[s].bt = backtest(series(cd), THR); loaded = Object.keys(P).length; loadErr = "";
+        if (!ws && !wsUp) connectWS();                 // start streaming as soon as the first pair is ready
+      } catch (e) {
+        loadErr = s + ": " + e.message;
+        if (/apikey|api key|invalid|incorrect|not valid|run out of/i.test(e.message) && !/minute|per minute/i.test(e.message)) break;   // a bad key will not fix itself
+        if (/minute|too many|rate/i.test(e.message)) { await new Promise(r => setTimeout(r, 62000)); continue; }
+      }
+      await new Promise(r => setTimeout(r, 8000));      // stays under 8 requests a minute
+    }
+  } finally { bootBusy = false; }
 }
 function connectWS() {
   if (!KEY || !auth.currentUser) return;
   ws = new WebSocket("wss://ws.twelvedata.com/v1/quotes/price?apikey=" + encodeURIComponent(KEY));
-  ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.join(",") } }));
+  ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.slice(0, WS_MAX).join(",") } }));
     hbT = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ action: "heartbeat" })), 10000); };
   ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "price") onTick(m.symbol, +m.price, m.timestamp || rt() / 1000); } catch {} };
   ws.onclose = () => { wsUp = false; clearInterval(hbT); if (auth.currentUser && KEY) setTimeout(connectWS, 8000); };
@@ -1413,14 +1423,15 @@ function connectWS() {
 }
 async function pollOnce() {
   lastPoll = rt();
-  for (const s of PAIRS.filter(isOpen)) { try { if (P[s]) merge(P[s], await fetchCandles(s, 5)); } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1200)); }
+  for (const s of PAIRS.filter((x, i) => isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) merge(P[s], await fetchCandles(s, 5)); } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1200)); }
 }
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
   stop(); if (!KEY) return;
   if (srvUp()) { asViewer = true; startFeed(); return; }
-  await bootstrap(); connectWS();
-  every(() => { if (!demo && KEY && PAIRS.some(isOpen) && !wsLive() && loaded && rt() - lastPoll > POLL_MS) pollOnce(); }, 15000);
+  bootstrap().then(() => { if (!ws && !wsUp) connectWS(); });
+  every(() => { if (KEY && !bootBusy && PAIRS.some(s => !P[s]) && rt() - bootAt > 30000) bootstrap(); }, 15000);          // retry pairs that failed to load
+  every(() => { if (!demo && KEY && PAIRS.some(isOpen) && loaded && rt() - lastPoll > POLL_MS) pollOnce(); }, 15000);
   every(compute, 1000); every(resolveOpen, 20000);
 }
 function stop() { timers.forEach(clearInterval); timers = []; clearInterval(hbT); if (ws) { ws.onclose = null; ws.close(); } wsUp = false; P = {}; data = {}; loaded = 0; }
@@ -1487,7 +1498,17 @@ function dlRun() {
 }
 
 // ---------- live signal indicator (shown to every member and admin) ----------
+const DBL = { up: null, t: Date.now(), on: false };
+function dbWatch() { if (DBL.on || typeof dbr === "undefined" || !dbr) return; DBL.on = true; try { dbr.ref(".info/connected").on("value", x => { const u = x.val() === true; if (u !== DBL.up) { DBL.up = u; DBL.t = Date.now(); } }); } catch { DBL.on = false; } }
 function sigState() {
+  dbWatch();
+  if (!demo && DBL.up === false && Date.now() - DBL.t > 6000) {
+    const c = Object.values(data).some(d => d.cached) && fcAt ? " Showing the last signals received at " + new Date(fcAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + ". They are out of date, do not trade on them." : "";
+    return { c: "r", t: "Database offline", s: "Cannot reach the server, so no new signals can arrive." + c + " It reconnects by itself when your internet or the service is back." };
+  }
+  return sigState0();
+}
+function sigState0() {
   if (demo) return { c: "y", t: "Demo data", s: "These are practice numbers, not real signals." };
   const now = rt(), adm = isAdmin && !asViewer, syms = adm ? PAIRS : Object.keys(data);
   const wkT = t => { const d = new Date(t), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); };
@@ -2174,9 +2195,19 @@ function access() {
 setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
 
 // ----- member side: signal feed (published by the admin's open page) -----
+const FC_KEY = "fx_lastfeed", FC_MAX = 3 * 3600e3;      // last signals kept on this device, shown only when the database cannot be reached
+let fcSave = 0, fcAt = 0;
+function fcLoad() {
+  try { const c = JSON.parse(localStorage.getItem(FC_KEY) || "null"); if (!c || !c.pairs || Date.now() - c.at > FC_MAX) return;
+    data = {}; for (const k of Object.keys(c.pairs)) { const d = c.pairs[k], p = d.pair || k.replace("_", "/"); d.spark = d.spark || []; d.tf = d.tf || { M5: 0, M15: 0, M30: 0 }; d.reason = d.reason || ""; d.stale = true; d.cached = true; d.age = Math.round((Date.now() - c.at) / 1000); data[p] = d; }
+    fcAt = c.at; if (!sel || !data[sel]) sel = Object.keys(data)[0] || null; render(); } catch {}
+}
+function fcStore(f) { if (Date.now() - fcSave < 30000) return; fcSave = Date.now(); try { localStorage.setItem(FC_KEY, JSON.stringify({ at: Date.now(), pairs: f.pairs })); } catch {} }
 function startFeed() {
   if (feedOn) return; feedOn = true; feedRef = dbr.ref("feed");
-  feedRef.on("value", s => applyFeed(s.val()), e => { feedOn = false; loadErr = e.message; });
+  if (!Object.keys(data).length) fcLoad();
+  feedRef.on("value", s => { fcAt = 0; applyFeed(s.val()); }, e => { feedOn = false; loadErr = e.message; try { feedRef.off(); } catch {} feedRef = null;
+    setTimeout(() => { if (!feedOn && auth.currentUser && !isAdmin && isMember()) startFeed(); }, 15000); });   // a refused read used to stop the feed for good
 }
 let cbkRef = null, CBK = null;
 function startCbk() { if (cbkRef) return; cbkRef = dbr.ref("feed/cbk"); cbkRef.on("value", s => { CBK = s.val(); renderCbk(); }, () => { CBK = null; renderCbk(); }); }
@@ -2193,7 +2224,7 @@ function renderCbk() {                               // official Central Bank of
 function stopFeed() { stopCbk(); if (feedRef) { feedRef.off(); data = {}; } feedRef = null; feedOn = false; feedTs = 0; }
 function applyFeed(f) {
   if (!f || !f.pairs) { feedTs = 0; return; }
-  feedTs = f.ts || 0; const prev = data, old = rt() - feedTs > 180000; data = {};
+  feedTs = f.ts || 0; const prev = data, old = rt() - feedTs > 180000; data = {}; if (!old) fcStore(f);
   for (const k of Object.keys(f.pairs)) {
     const d = f.pairs[k], p = d.pair || k.replace("_", "/");
     d.spark = d.spark || []; d.tf = d.tf || { M5: 0, M15: 0, M30: 0 }; d.reason = d.reason || "";
@@ -3184,7 +3215,7 @@ function dbgSections() {
     card("App", [row("Brand", esc(CO)), row("Page size", Math.round(document.documentElement.outerHTML.length / 1024) + " KB"), row("Theme", document.documentElement.dataset.theme || "dark"), row("Browser online", navigator.onLine ? "yes" : "no", navigator.onLine ? "ok" : "bad"), row("Viewport", innerWidth + " x " + innerHeight), row("Time zone", Intl.DateTimeFormat().resolvedOptions().timeZone)]),
     card("Session", [row("Signed in as", esc(u.email || "-")), row("Email verified", u.emailVerified ? "yes" : "no", u.emailVerified ? "ok" : "warn"), row("Role", amOwner() ? "Owner" : amSuper() ? "Super admin" : isAdmin ? "Admin" : "Member"), row("User id", esc((u.uid || "").slice(0, 10)) + "..."), row("Tier view", esc(lvName(MEM.level) || "full access"))]),
     card("Database", [row("Connected", DBG.conn === null ? "checking" : DBG.conn ? "yes" : "no", DBG.conn ? "ok" : "bad"), row("Clock offset vs server", DBG.skew == null ? "-" : Math.round(DBG.skew / 1000) + " s", Math.abs(DBG.skew || 0) > 120000 ? "warn" : "ok"), row("Users / approved / admins", Object.keys(U).length + " / " + Object.values(AP).filter(Boolean).length + " / " + Object.keys(AD).length), row("Rule read errors", apErr ? "yes" : "none", apErr ? "bad" : "ok")]),
-    card("Signal feed", [row("Mode", demo ? "Demo data" : asViewer ? "Server engine (viewer)" : KEY ? "This browser computes" : "No API key", KEY || asViewer || demo ? "" : "bad"), row("Last feed update", dAge(feedTs), feedAge == null ? "" : feedAge > 180 ? "bad" : feedAge > 90 ? "warn" : "ok"), row("Pairs", n + (loaded ? "" : " (loading)")), row("Stream", wsLive() ? "live" : wsUp ? "connected, quiet" : "down", wsLive() ? "ok" : "warn"), row("Pairs with old ticks", ages.length ? ages.map(x => esc(x[0]) + " " + x[1] + "s").join(", ") : "none", ages.length ? "warn" : "ok"), row("CBK rates", CBK && CBK.asOf ? dAge(CBK.asOf) : "none", CBK && CBK.asOf ? "" : "warn")]),
+    card("Signal feed", [row("Mode", demo ? "Demo data" : asViewer ? "Server engine (viewer)" : KEY ? "This browser computes" : "No API key", KEY || asViewer || demo ? "" : "bad"), row("Last feed update", dAge(feedTs), feedAge == null ? "" : feedAge > 180 ? "bad" : feedAge > 90 ? "warn" : "ok"), row("Pairs", n + (loaded ? "" : " (loading)")), row("Stream", wsLive() ? "live" : wsUp ? "connected, quiet" : "down", wsLive() ? "ok" : "warn"), row("Pairs with old ticks", ages.length ? ages.map(x => esc(x[0]) + " " + x[1] + "s").join(", ") : "none", ages.length ? "warn" : "ok"), row("CBK rates", CBK && CBK.asOf ? dAge(CBK.asOf) : "none", CBK && CBK.asOf ? "" : "warn"), row("Price key", KEY ? "saved (" + KEY.length + " characters)" : "missing", KEY ? "" : "bad"), row("History loaded", loaded + " of " + PAIRS.length + " pairs", loaded ? "" : "bad"), row("Fewest candles", String(Math.min(...PAIRS.map(x => P[x] ? P[x].candles.length : 0), 9999) === 9999 ? 0 : Math.min(...PAIRS.map(x => P[x] ? P[x].candles.length : 0))) + " (needs 130)"), row("Price source says", esc(loadErr || "no error"), loadErr ? "bad" : "ok")]),
     card("Money and access", [row("Active members", act), row("Payments waiting", pend, pend ? "warn" : ""), row("Plans saved", (SITE.plans || []).length || "none (defaults used)"), row("M-Pesa details", SITE.mpesa ? "set" : "missing", SITE.mpesa ? "ok" : "warn"), row("M-Pesa prompt", SITE.stk === true ? "on" : "off")])
   ];
   const errs = DBG.errs.slice().reverse();
