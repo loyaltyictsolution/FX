@@ -582,6 +582,27 @@ body.adminview #apanel{display:block!important}
 .vchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid;white-space:nowrap}
 .vchip[hidden]{display:none}.vchip.ok{color:#1fbf8f;border-color:#1fbf8f;background:rgba(31,191,143,.12)}.vchip.no{color:#e0a31f;border-color:#e0a31f;background:rgba(224,163,31,.10)}
 @media(max-width:600px){.lcbtn span{display:none}.lcbtn{padding:14px}}
+
+/* ---- Polish: more room, steadier spacing ---- */
+body:not(.staffmode){max-width:1280px;padding:18px clamp(14px,3vw,32px) 104px}
+#app .panel{padding:18px 20px;border-radius:14px}
+#app .panel + .panel,#app section.panel{margin-top:18px}
+#sigwrap>main{gap:18px;align-items:start}
+#list,#detail{min-height:150px}
+header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar button{white-space:nowrap;padding:7px 13px}
+#app select,.alform select{background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font:inherit;font-size:14px;max-width:100%}
+#app input:not([type=checkbox]):not([type=radio]){border-radius:9px}
+.ctl{gap:10px 12px}.ctl input{width:auto;min-width:130px;padding:8px 10px}
+#admin{padding:20px 22px}#admin>div[style*="margin-top:14px"]{border-top:1px solid var(--line);padding-top:18px;margin-top:20px!important}
+#admin>p.mut,#admin .mut{line-height:1.55}
+#admin .ctl{margin:10px 0}
+.provs{padding:4px 16px;margin:8px 0 18px;background:color-mix(in srgb,var(--panel) 70%,transparent)}
+.prow{padding:12px 0}.prow b{font-size:15px}
+#atabs{gap:8px;flex-wrap:wrap}#atabs button{padding:8px 16px}
+.aph{margin:18px 0 4px;font-size:22px}
+.alr{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px}.alr:last-child{border-bottom:0}
+.lcbtn{bottom:18px}
+@media (max-width:760px){main{grid-template-columns:1fr}#app .panel{padding:14px}header{padding:10px 12px}header .bar button{padding:6px 11px;font-size:13px}.ctl input{min-width:0;flex:1 1 140px}#admin{padding:14px}}
 </style>
 </head>
 <body>
@@ -814,6 +835,17 @@ body.adminview #apanel{display:block!important}
   <div id="calc_out" class="mut" role="status">Select a pair that shows BUY or SELL to see its trade size.</div>
   <p class="mut">Lots = (balance x risk %) / (stop in pips x pip value). Pip values here are for USD pairs. Check the result with your broker's calculator before trading.</p>
 </details>
+<details class="panel" id="guide" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">How to use the signals</summary>
+  <ol class="mut" style="line-height:1.7;margin:10px 0 0;padding-left:20px">
+    <li><b>Wait for the green light.</b> Only act when the top box says "Live signal". If it says Buffering or Closed, do not trade on what you see.</li>
+    <li><b>Pick a pair</b> from the list. Tap the star to keep favourites at the top.</li>
+    <li><b>Read the signal.</b> BUY and SELL show direction. WAIT means no clear setup. DANGER means conditions changed, so stay out.</li>
+    <li><b>Check the levels.</b> Entry, targets and stop are suggestions from the chart, not orders. Always place your own stop loss.</li>
+    <li><b>Size your trade</b> with the risk calculator below. Risking 1 to 2 percent of your account per trade is a common limit.</li>
+    <li><b>Set a price alert</b> and turn on notifications so you do not need to watch the screen.</li>
+  </ol>
+  <p class="mut" style="margin:10px 0 0;font-size:12px">Signals are rule-based scores from public price data. They are not guarantees and trading carries risk of loss.</p>
+</details>
 <section class="panel" id="cbkpanel" style="display:none;margin-top:16px"></section>
 </div>
 <section class="panel" id="news" style="display:none;margin-top:16px"></section>
@@ -924,7 +956,7 @@ body.adminview #apanel{display:block!important}
     </div>
   </details>
 </section>
-<section class="panel" id="ann" style="display:none;margin-top:16px"><b>Billboard &amp; newsletter</b>
+<section class="panel" id="ann" style="display:none;margin-top:16px"><div id="due" style="margin-bottom:14px"></div><b>Billboard &amp; newsletter</b>
   <div class="adduser">
     <textarea id="bb_txt" rows="2" maxlength="590" placeholder="Billboard: a notice shown at the top for everyone (leave empty to hide)"></textarea>
     <button class="pri" id="bb_save">Update billboard</button><span id="bb_msg" class="mut" role="status"></span>
@@ -1461,7 +1493,7 @@ async function pollOnce() {
 }
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
-  stop(); if (!srcReady()) return;
+  stop(); srcStart = rt(); if (!srcReady()) return;
   if (srvUp()) { asViewer = true; startFeed(); return; }
   bootstrap().then(() => { if (!ws && !wsUp) connectWS(); });
   every(() => { if (srcReady() && !bootBusy && PAIRS.some(s => covered(s) && !P[s]) && rt() - bootAt > 30000) bootstrap(); }, 15000);          // retry pairs that failed to load
@@ -1574,6 +1606,29 @@ function sigRender() {
   const x = sigState(); el.style.display = ""; el.className = x.c;
   const b = el.querySelector("b"), p = el.querySelector("span"); if (b.textContent !== x.t) b.textContent = x.t; if (p.textContent !== x.s) p.textContent = x.s;
 }
+
+// ----- uptime watchdog (admin) and renewals due -----
+let upAlertAt = 0, upSince = 0, srcStart = 0;
+function upCheck() {
+  if (!isAdmin || demo || PROV === "off" || !PAIRS.some(isOpen)) { upSince = 0; return; }
+  const now = rt(), bad = asViewer ? (!feedTs || now - feedTs > 300000) : srcReady() && now - Math.max(lastAny, lastPoll, srcStart) > 300000;
+  if (!bad) { upSince = 0; return; }
+  if (!upSince) upSince = now;
+  if (now - upAlertAt < 900000) return; upAlertAt = now;
+  const msg = "Signals have not updated for over 5 minutes. Check the price source in Admin panel, Settings." + (loadErr ? " Last error: " + loadErr : "");
+  banner(msg); if (soundOn) beep(440, .25, 3);
+  if ("Notification" in window && Notification.permission === "granted") try { new Notification(CO + ": signals stalled", { body: msg }); } catch {}
+  try { logEvt("Signals stalled over 5 minutes"); } catch {}
+}
+function waNum(ph) { let d = String(ph || "").replace(/\D/g, ""); if (d.startsWith("0")) d = "254" + d.slice(1); else if (d.length === 9) d = "254" + d; return d; }
+function dueRender() {
+  const el = $("due"); if (!el) return; const now = rt(), D = 864e5;
+  const rows = Object.entries(MS).map(([id, m]) => ({ id, m, u: U[id] || {} })).filter(x => x.m && x.m.until && x.m.until > now - 7 * D && x.m.until < now + 3 * D).sort((a, b) => a.m.until - b.m.until);
+  el.innerHTML = `<b>Renewals due</b> <span class="mut">Expiring in 3 days, or ended in the last 7</span>` + (rows.length ? rows.map(x => {
+    const left = x.m.until - now, txt = left > 0 ? "expires in " + Math.max(1, Math.ceil(left / D)) + " day(s)" : "ended " + Math.ceil(-left / D) + " day(s) ago", n = waNum(x.u.phone);
+    const msg = encodeURIComponent("Hello" + (x.u.name ? " " + x.u.name : "") + ", your " + CO + " subscription " + txt + ". Reply here to renew and keep your signals running.");
+    return `<div class="alr"><span>${esc(x.u.email || x.id)} <span class="mut">${esc(x.m.plan || "")} / ${txt}</span></span>${n ? `<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${msg}">WhatsApp</a>` : '<span class="mut">no phone</span>'}</div>`; }).join("") : '<p class="mut">Nobody is due right now.</p>');
+}
 function provState(me) {                                     // [pill text, pill class, detail] for one price source
   const mine = PROV === me, n = PAIRS.filter(x => me === "binance" ? !!binSym(x) : true).length;
   if (!mine) return me === "twelvedata" ? [KEY ? "Standby" : "Not set", KEY ? "" : "blk", KEY ? "Stopped. Press Activate to use it." : "Paste your key and press Save, then Activate."] : ["Standby", "", n ? "Stopped. Press Activate to use it for " + n + " crypto pair" + (n > 1 ? "s" : "") + "." : "None of your tracked pairs are crypto. Add BTC/USD in Tracked markets first."];
@@ -1596,7 +1651,8 @@ async function setProv(k) {
   const was = PROV; PROV = k; stop(); loaded = 0; loadErr = ""; try { logEvt("Price source changed: " + was + " to " + k); } catch {} start(); status(); render(); tdStatus(); toast(k === "off" ? "Signals switched off." : "Switched to " + (k === "binance" ? "Binance" : "Twelve Data") + ".");
 }
 $("prov").onclick = e => { const b = e.target.closest("button[data-pv]"); if (b) setProv(b.dataset.pv); };
-setInterval(() => { if (!auth.currentUser) return; status(); try { tdStatus(); } catch {} }, 2000);
+let dueN = 0;
+setInterval(() => { if (!auth.currentUser) return; status(); try { tdStatus(); upCheck(); if (isAdmin && ATAB === "ann" && ++dueN % 5 === 0) dueRender(); } catch {} }, 2000);
 
 function render() { renderMain(); syncChartListener(); drawChart(); try { evMark(); } catch {} }
 const SYM = { USD: "$", EUR: "\u20ac", GBP: "\u00a3", JPY: "\u00a5", AUD: "A$", CAD: "C$", NZD: "N$", CHF: "Fr", BTC: "\u20bf", ETH: "\u039e", XAU: "Au", XAG: "Ag" };
@@ -3294,6 +3350,7 @@ function showTab(t) {
   ATAB = t; ["users", "pay", "ann", "logs", "admin", "dbg"].forEach(k => { $(k).style.display = k === t ? "block" : "none"; });
   if (t === "dbg") dbgRun();
   if (t === "admin") $("admin").open = true;
+  if (t === "ann") dueRender();
   document.querySelectorAll("#atabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
 }
 function adminView(on) {
