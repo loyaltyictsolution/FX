@@ -52,6 +52,15 @@ function levels(p, atr, dir) {                       // price levels from how fa
   k1 = clamp(k1, .3, 3); k2 = Math.max(clamp(k2, .5, 4), k1 + .3); ks = clamp(ks, .5, 3);
   return { entry: e, atr, t1: e + sg * k1 * atr, t2: e + sg * k2 * atr, stop: e - sg * ks * atr, src: ok ? "history" : "default", n: ok ? bt.n : 0, swing: bt && bt.swing != null ? bt.swing : atr * 2 };
 }
+// entry / targets / stop stay fixed while a BUY or SELL call is active (same as the page)
+function tradeLv(p, sig, atr, dir) {
+  if (sig === "BUY" || sig === "SELL") {
+    if (!p.lvF || p.lvF.sig !== sig) p.lvF = { sig, L: levels(p, atr, dir) };
+    return p.lvF.L;
+  }
+  p.lvF = null;
+  return levels(p, atr, dir);
+}
 
 function dayStats(S, price) {                        // what the last ~24 hours of 1-minute data show
   const c = S.c, n = Math.min(c.length, 1440), w = c.slice(-n), hi = Math.max(...w), lo = Math.min(...w), op = w[0], rng = hi - lo || 1e-9;
@@ -93,23 +102,40 @@ function mergeCandles(p, fresh, now) {
   if (p.candles.length > 1700) p.candles.splice(0, p.candles.length - 1700);
   p.price = p.candles[p.candles.length - 1].c; p.tickAt = now; p.dirty = true;
 }
+
 // one pass of the page's compute() for a single pair
 function evaluate(p, s, THR, t, stale) {
-  const S = series(p.candles), i = S.c.length - 1, dir = dirAt(S, i), str = Math.abs(dir), vr = volRatio(S, i);
+  const S = series(p.candles), i = S.c.length - 1, ic = i - 1;          // ic = last CLOSED candle
+  const dir = dirAt(S, ic), str = Math.abs(dir), vr = volRatio(S, i);
   let sig = str >= THR ? (dir > 0 ? "BUY" : "SELL") : "WAIT", reason = "";
+
+  // keep an active call steady: ends only when strength < 60% of THR, and lasts at least 5 minutes
+  if (p.call) {
+    const same = (p.call === "BUY") === (dir > 0);
+    if (same && str >= THR * .6) sig = p.call;
+    else if (!(str >= THR) && t - (p.callAt || 0) < 300000) sig = p.call;
+  }
+
   if (vr > 2) reason = "Volatility spike";
   else if ((p.sig === "BUY" || p.sig === "SELL") && (sig === "BUY" || sig === "SELL") && sig !== p.sig) reason = "Momentum reversed";
   else if ((p.sig === "BUY" || p.sig === "SELL") && p.str - str > .25) reason = "Strength collapsed";
   if (reason) { p.dangerUntil = t + 60000; p.reason = reason; }
   if (t < p.dangerUntil) sig = "DANGER"; else p.reason = "";
+
+  // remember the active call, and explain a WAIT that follows one
+  if (sig === "BUY" || sig === "SELL") { if (p.call !== sig) { p.call = sig; p.callAt = t; } }
+  else if (p.call) { p.exitFrom = p.call; p.exitUntil = t + 300000; p.call = null; }
+  if (sig === "WAIT" && t < (p.exitUntil || 0))
+    p.reason = "Earlier " + p.exitFrom + " call has ended. If you are already in that trade, close it or let your stop handle it";
+
   const prevSig = p.sig; p.sig = sig; if (sig === "BUY" || sig === "SELL") p.str = str; else p.str = p.str || 0;
   const d = { pair: s, type: typeOf(s), open: isOpen(s, t), bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
     trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
-    tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30), H1: tfTrend(S.c, 60) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir), day: dayStats(S, p.price) };
+    tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30), H1: tfTrend(S.c, 60) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: tradeLv(p, sig, S.atr[ic], dir), day: dayStats(S, p.price) };
   const log = !!(p.seen && !stale && (sig === "BUY" || sig === "SELL") && prevSig !== sig && t - (p.lastLog || 0) > 300000);
   if (log) p.lastLog = t;
   p.seen = true;                                       // the first pass never logs, so old setups are not counted as new
   return { d, log, prevSig };
 }
 
-module.exports = { clamp, ema, series, dirAt, volRatio, backtest, tfTrend, levels, dayStats, CRYPTO, typeOf, weekend, nyOpen, isOpen, SYM_OK, parseWatch, pollMs, safeKey, newPair, applyTick, mergeCandles, evaluate };
+module.exports = { clamp, ema, series, dirAt, volRatio, backtest, tfTrend, levels, tradeLv, dayStats, CRYPTO, typeOf, weekend, nyOpen, isOpen, SYM_OK, parseWatch, pollMs, safeKey, newPair, applyTick, mergeCandles, evaluate };
