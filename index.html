@@ -401,6 +401,7 @@ body.landing>.note{display:none}
 /* sign in / create account tabs */
 body.adminview #app>*:not(header):not(#banner):not(#apanel):not(#toast){display:none!important}
 body.adminview #apanel{display:block!important}
+.provs{border:1px solid var(--line);border-radius:12px;padding:6px 12px;margin:4px 0 12px}.prow{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line)}.prow:last-of-type{border-bottom:0}.pb{display:flex;gap:6px;flex-wrap:wrap}.pb button{padding:5px 12px}
 .aph{margin:14px 0 0;font-size:20px}#goadmin.pri{background:var(--buy);color:#04251f;border-color:var(--buy);font-weight:700}
 .atabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 16px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
 .atabs button{border:0;background:transparent;padding:9px;border-radius:9px;font-weight:600}
@@ -841,7 +842,11 @@ body.adminview #apanel{display:block!important}
 </div>
 <section class="panel" id="dbg" style="display:none"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><b>Debug</b><span class="mut">Admin only. Checks what this page can see and records its own errors.</span><span style="flex:1"></span><button type="button" id="dbg_run">Run checks</button><button type="button" id="dbg_copy">Copy report</button><button type="button" id="dbg_clr">Clear errors</button></div><div id="dbg_body" aria-live="polite"></div></section>
 <details class="panel" id="admin"><summary>Admin settings</summary>
-  <div style="margin:2px 0 6px"><b>Price data (Twelve Data)</b> <span id="td_st" class="pill">Checking</span> <span id="td_msg" class="mut" role="status"></span></div>
+  <div id="prov" class="provs" role="group" aria-label="Signal price sources">
+    <div class="prow"><div><b>Twelve Data</b> <span id="td_st" class="pill">Checking</span><div id="td_msg" class="mut" role="status"></div></div><span class="pb"><button type="button" class="pri" data-pv="twelvedata">Activate</button><button type="button" data-pv="off" data-from="twelvedata">Deactivate</button></span></div>
+    <div class="prow"><div><b>Binance backup</b> <span class="mut">(crypto only, no key needed)</span> <span id="bn_st" class="pill">Off</span><div id="bn_msg" class="mut" role="status"></div></div><span class="pb"><button type="button" class="pri" data-pv="binance">Activate</button><button type="button" data-pv="off" data-from="binance">Deactivate</button></span></div>
+    <p class="mut" style="margin:6px 0 0;font-size:12px">One source runs at a time. Activating one stops the other. Twelve Data covers forex, gold, stocks and crypto. Binance covers crypto pairs only, so forex and stock pairs pause while it is active. The 24/7 server engine always uses Twelve Data.</p>
+  </div>
   <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
     <label class="mut">API key <input id="key" type="password" style="width:230px" autocomplete="off" placeholder="paste key"></label>
@@ -1070,6 +1075,11 @@ const ago = ms => !ms ? "never" : Math.round((rt() - ms) / 1000) + "s ago";
 
 let KEY = "", THR = 0.6, isAdmin = false, data = {}, sel = null, P = {}, ws, hbT, wsUp = false, lastAny = 0,
     lastPoll = 0, loaded = 0, loadErr = "", soundOn = false, audio, demo = false, demoTimer, alerts = [], lock, idle, timers = [];
+let PROV = "twelvedata";                                   // which price source is switched on: twelvedata, binance or off
+const srcReady = () => PROV === "binance" || (PROV === "twelvedata" && !!KEY);
+const binSym = x => { const [a, b] = String(x).split("/"); return CRYPTO.has(a) ? a + (!b || b === "USD" ? "USDT" : b) : null; };
+const covered = x => PROV !== "binance" || !!binSym(x);     // Binance only carries crypto
+const pollMode = () => PROV === "twelvedata" && POLL_SEC > 0;
 let POLL_SEC = 0, POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000;   // keeps a 800-credit/day plan under budget
 
 function weekend() { const d = new Date(rt()), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); }
@@ -1385,7 +1395,13 @@ function raise(pair, from, to, reason, strength) {
 }
 
 // ---------- data ----------
+async function binCandles(sym, n) {
+  const r = await fetch("https://api.binance.com/api/v3/klines?symbol=" + binSym(sym) + "&interval=1m&limit=" + Math.min(n, 1000));
+  const j = await r.json(); if (!Array.isArray(j)) throw new Error((j && j.msg) || "Binance returned no data");
+  return j.map(k => ({ t: Math.floor(k[0] / 1000), o: +k[1], h: +k[2], l: +k[3], c: +k[4] }));
+}
 async function fetchCandles(sym, n) {
+  if (PROV === "binance") return binCandles(sym, n);
   const r = await fetch(`https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym)}&interval=1min&outputsize=${n}&timezone=UTC&apikey=${encodeURIComponent(KEY)}`);
   const j = await r.json(); if (j.status === "error" || !j.values) throw new Error(j.message || "No data");
   return j.values.reverse().map(v => ({ t: Date.parse(v.datetime.replace(" ", "T") + "Z") / 1000, o: +v.open, h: +v.high, l: +v.low, c: +v.close }));
@@ -1407,7 +1423,7 @@ async function bootstrap() {
   if (bootBusy) return; bootBusy = true; bootAt = rt(); loadErr = "";
   try {
     for (const s of PAIRS) {
-      if (P[s] || !KEY) continue;
+      if (P[s] || !srcReady() || !covered(s)) continue;
       try {
         const cd = await fetchCandles(s, 1440);
         if (cd.length < 2) throw new Error("Not enough history for " + s);
@@ -1419,30 +1435,37 @@ async function bootstrap() {
         if (/apikey|api key|invalid|incorrect|not valid|run out of/i.test(e.message) && !/minute|per minute/i.test(e.message)) break;   // a bad key will not fix itself
         if (/minute|too many|rate/i.test(e.message)) { await new Promise(r => setTimeout(r, 62000)); continue; }
       }
-      await new Promise(r => setTimeout(r, POLL_SEC ? 600 : 8000));      // free plan: stay under 8 requests a minute
+      await new Promise(r => setTimeout(r, PROV === "binance" || POLL_SEC ? 600 : 8000));      // free plan: stay under 8 requests a minute
     }
   } finally { bootBusy = false; }
 }
 function connectWS() {
-  if (!KEY || !auth.currentUser || POLL_SEC) return;          // paid Grow plans only have trial streaming, so poll instead
-  ws = new WebSocket("wss://ws.twelvedata.com/v1/quotes/price?apikey=" + encodeURIComponent(KEY));
-  ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.slice(0, WS_MAX).join(",") } }));
-    hbT = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ action: "heartbeat" })), 10000); };
-  ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "price") onTick(m.symbol, +m.price, m.timestamp || rt() / 1000); } catch {} };
-  ws.onclose = () => { wsUp = false; clearInterval(hbT); if (auth.currentUser && KEY) setTimeout(connectWS, 8000); };
-  ws.onerror = () => ws.close();
+  if (!srcReady() || !auth.currentUser || pollMode() || (ws && ws.readyState <= 1)) return;          // paid Grow plans only have trial streaming, so poll instead
+  if (PROV === "binance") {
+    const rev = {}; PAIRS.forEach(x => { const b = binSym(x); if (b) rev[b] = x; }); const st = Object.keys(rev).map(x => x.toLowerCase() + "@trade").join("/"); if (!st) return;
+    ws = new WebSocket("wss://stream.binance.com:9443/stream?streams=" + st);
+    ws.onopen = () => { wsUp = true; };
+    ws.onmessage = e => { try { const d = JSON.parse(e.data).data; if (d && d.e === "trade" && rev[d.s]) onTick(rev[d.s], +d.p, d.T / 1000); } catch {} };
+  } else {
+    ws = new WebSocket("wss://ws.twelvedata.com/v1/quotes/price?apikey=" + encodeURIComponent(KEY));
+    ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.slice(0, WS_MAX).join(",") } }));
+      hbT = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ action: "heartbeat" })), 10000); };
+    ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.event === "price") onTick(m.symbol, +m.price, m.timestamp || rt() / 1000); } catch {} };
+  }
+  ws.onclose = () => { wsUp = false; clearInterval(hbT); ws = null; if (auth.currentUser && srcReady()) setTimeout(connectWS, 8000); };
+  ws.onerror = () => { try { ws && ws.close(); } catch {} };
 }
 async function pollOnce() {
   lastPoll = rt();
-  for (const s of PAIRS.filter((x, i) => isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) { merge(P[s], await fetchCandles(s, 5)); const c = P[s].candles; P[s].price = c[c.length - 1].c; P[s].tickAt = rt(); P[s].dirty = true; } } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, POLL_SEC ? 400 : PAIRS.length > 8 ? 7600 : 1200)); }
+  for (const s of PAIRS.filter((x, i) => covered(x) && isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) { merge(P[s], await fetchCandles(s, 5)); const c = P[s].candles; P[s].price = c[c.length - 1].c; P[s].tickAt = rt(); P[s].dirty = true; } } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PROV === "binance" || POLL_SEC ? 400 : PAIRS.length > 8 ? 7600 : 1200)); }
 }
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
-  stop(); if (!KEY) return;
+  stop(); if (!srcReady()) return;
   if (srvUp()) { asViewer = true; startFeed(); return; }
   bootstrap().then(() => { if (!ws && !wsUp) connectWS(); });
-  every(() => { if (KEY && !bootBusy && PAIRS.some(s => !P[s]) && rt() - bootAt > 30000) bootstrap(); }, 15000);          // retry pairs that failed to load
-  every(() => { if (!demo && KEY && PAIRS.some(isOpen) && loaded && rt() - lastPoll > POLL_MS) pollOnce(); }, 15000);
+  every(() => { if (srcReady() && !bootBusy && PAIRS.some(s => covered(s) && !P[s]) && rt() - bootAt > 30000) bootstrap(); }, 15000);          // retry pairs that failed to load
+  every(() => { if (!demo && srcReady() && PAIRS.some(isOpen) && loaded && !(PROV === "binance" && wsLive()) && rt() - lastPoll > (PROV === "binance" ? 60000 : POLL_MS)) pollOnce(); }, 15000);
   every(compute, 1000); every(resolveOpen, 20000);
 }
 function stop() { timers.forEach(clearInterval); timers = []; clearInterval(hbT); if (ws) { ws.onclose = null; ws.close(); } wsUp = false; P = {}; data = {}; loaded = 0; }
@@ -1480,10 +1503,11 @@ function status() {
   if (demo) { st = "DEMO"; why = "Demo data. These are not real signals."; }
   else if (!isMember()) { st = "OFFLINE"; why = "Membership needed. Pay using the details below, then send your payment code. Access starts when the admin confirms it."; }
   else if (!isAdmin || asViewer) { const old = !feedTs || rt() - feedTs > 180000; const anyO = Object.values(data).some(d => d.open !== false); st = !anyO || old ? "STALE" : "LIVE"; why = !anyO ? "All tracked markets are closed right now." : !feedTs ? "Waiting for the signal feed..." : old ? "The signal feed has paused. It should resume shortly." : "Live feed connected."; }
-  else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
+  else if (PROV === "off") { st = "OFFLINE"; why = "Signals are switched off. Open the Admin panel, Settings, and Activate a price source."; }
+  else if (!srcReady()) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
   else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
   else if (!PAIRS.some(isOpen)) { st = "STALE"; why = "All tracked markets are closed right now. Forex reopens Sunday about 22:00 UTC, US stocks trade Mon to Fri 9:30 to 16:00 New York time, and crypto never closes."; }
-  else if (POLL_SEC) { st = vals.some(d => d.stale && d.open !== false) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Prices refresh every " + POLL_SEC / 60 + " min." : "Waiting for the next price refresh."; }
+  else if (pollMode()) { st = vals.some(d => d.stale && d.open !== false) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Prices refresh every " + POLL_SEC / 60 + " min." : "Waiting for the next price refresh."; }
   else if (wsLive()) { st = vals.some(d => d.stale && d.open !== false) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
   const sup = (() => { try { return amSuper(); } catch { return false; } })(), el = $("status"), mem = isMember() && !isAdmin && !sup && !demo;      // members never see feed or stream health, only admins do
@@ -1532,9 +1556,10 @@ function sigState0() {
     return { c: "r", t: "Signals closed", s: n ? "Opening " + new Date(n).toLocaleString([], { weekday: "long", hour: "2-digit", minute: "2-digit" }) + " " + tz + ", in " + leftText(n - now) + ". Signals are paused while the markets are shut." : "Markets are closed. Signals resume when they reopen." };
   }
   if (adm) {
-    if (!KEY) return { c: "r", t: "No signals", s: "The price data key is missing. Add it in Admin settings." };
+    if (PROV === "off") return { c: "r", t: "No signals", s: "Signals are switched off. Activate a price source in the Admin panel." };
+    if (!srcReady()) return { c: "r", t: "No signals", s: "The price data key is missing. Add it in Admin settings." };
     if (!loaded) return { c: "y", t: "Buffering", s: loadErr ? "Price source problem: " + loadErr : "Loading price history. Signals appear in a moment." };
-    if ((wsLive() || POLL_SEC) && !Object.values(data).some(d => d.stale && d.open !== false)) return { c: "g", t: "Live signal", s: "Signals are updating in real time." };
+    if ((wsLive() || pollMode()) && !Object.values(data).some(d => d.stale && d.open !== false)) return { c: "g", t: "Live signal", s: "Signals are updating in real time." };
     return { c: "y", t: "Buffering", s: "Some prices are slow to arrive. Signals may be a little behind." };
   }
   const age = feedTs ? now - feedTs : null;
@@ -1549,17 +1574,28 @@ function sigRender() {
   const x = sigState(); el.style.display = ""; el.className = x.c;
   const b = el.querySelector("b"), p = el.querySelector("span"); if (b.textContent !== x.t) b.textContent = x.t; if (p.textContent !== x.s) p.textContent = x.s;
 }
-function tdStatus() {
-  const el = $("td_st"), m = $("td_msg"); if (!el) return; let t, c, d;
-  if (asViewer) { t = "Active"; c = "adm"; d = "The 24/7 server engine is supplying prices."; }
-  else if (!KEY) { t = "Not set"; c = "blk"; d = "Paste your key and press Save."; }
-  else if (!loaded) { t = loadErr ? "Error" : "Connecting"; c = loadErr ? "blk" : "apr"; d = loadErr ? loadErr : "Loading price history, one pair every few seconds."; }
-  else if (POLL_SEC && loaded) { t = "Active"; c = "adm"; d = "Refreshing every " + (POLL_SEC / 60) + " min. Pairs loaded " + loaded + " of " + PAIRS.length + "."; }
-  else if (wsLive()) { t = "Active"; c = "adm"; d = "Live stream. Pairs loaded " + loaded + " of " + PAIRS.length + "."; }
-  else if (wsUp) { t = "Active"; c = "apr"; d = "Connected, waiting for ticks. Pairs loaded " + loaded + " of " + PAIRS.length + "."; }
-  else { t = "Not active"; c = "apr"; d = "No live stream, refreshing slowly. Pairs loaded " + loaded + " of " + PAIRS.length + "." + (loadErr ? " Last error: " + loadErr : ""); }
-  if (el.textContent !== t) el.textContent = t; el.className = "pill " + c; if (m.textContent !== d) m.textContent = d;
+function provState(me) {                                     // [pill text, pill class, detail] for one price source
+  const mine = PROV === me, n = PAIRS.filter(x => me === "binance" ? !!binSym(x) : true).length;
+  if (!mine) return me === "twelvedata" ? [KEY ? "Standby" : "Not set", KEY ? "" : "blk", KEY ? "Stopped. Press Activate to use it." : "Paste your key and press Save, then Activate."] : ["Standby", "", n ? "Stopped. Press Activate to use it for " + n + " crypto pair" + (n > 1 ? "s" : "") + "." : "None of your tracked pairs are crypto. Add BTC/USD in Tracked markets first."];
+  if (asViewer) return ["Active", "adm", "The 24/7 server engine is supplying prices."];
+  if (!loaded) return loadErr ? ["Error", "blk", loadErr] : ["Connecting", "apr", "Loading price history."];
+  if (pollMode()) return ["Active", "adm", "Refreshing every " + POLL_SEC / 60 + " min. Pairs loaded " + loaded + " of " + n + "."];
+  if (wsLive()) return ["Active", "adm", "Live stream. Pairs loaded " + loaded + " of " + n + "."];
+  if (wsUp) return ["Active", "apr", "Connected, waiting for ticks. Pairs loaded " + loaded + " of " + n + "."];
+  return ["Not active", "apr", "No live stream, refreshing slowly. Pairs loaded " + loaded + " of " + n + "." + (loadErr ? " Last error: " + loadErr : "")];
 }
+function tdStatus() {
+  [["twelvedata", "td_st", "td_msg"], ["binance", "bn_st", "bn_msg"]].forEach(([k, a, b]) => { const el = $(a), m = $(b); if (!el) return; const [t, c, d] = provState(k); if (el.textContent !== t) el.textContent = t; el.className = "pill " + c; if (m.textContent !== d) m.textContent = d; });
+  document.querySelectorAll("#prov button[data-pv]").forEach(b => { const k = b.dataset.pv; b.style.display = k === "off" ? (b.dataset.from === PROV ? "" : "none") : (k === PROV ? "none" : ""); });
+}
+async function setProv(k) {
+  if (k === "twelvedata" && !KEY) return toast("Paste and save your Twelve Data key first.");
+  if (k === "binance") { if (!PAIRS.some(binSym)) return toast("None of your tracked pairs are crypto. Add BTC/USD in Tracked markets first."); if (!confirm("Binance carries crypto only. Forex, gold and stock pairs will stop updating for members while it is active. Switch to Binance?")) return; }
+  if (k === "off" && !confirm("Switch signals off? Members will see no new signals until you Activate a source.")) return;
+  try { await dbr.ref("settings").update({ provider: k }); } catch (e) { return toast(/permission|denied/i.test(e.code + e.message) ? "Firebase refused the change. Check your admin rules." : "Could not switch: " + e.message); }
+  const was = PROV; PROV = k; stop(); loaded = 0; loadErr = ""; try { logEvt("Price source changed: " + was + " to " + k); } catch {} start(); status(); render(); tdStatus(); toast(k === "off" ? "Signals switched off." : "Switched to " + (k === "binance" ? "Binance" : "Twelve Data") + ".");
+}
+$("prov").onclick = e => { const b = e.target.closest("button[data-pv]"); if (b) setProv(b.dataset.pv); };
 setInterval(() => { if (!auth.currentUser) return; status(); try { tdStatus(); } catch {} }, 2000);
 
 function render() { renderMain(); syncChartListener(); drawChart(); try { evMark(); } catch {} }
@@ -1995,7 +2031,7 @@ function guard() {                                  // hand over to the server e
   if (!isAdmin || demo || !auth.currentUser) return;
   const up = srvUp();
   if (up && !asViewer) { asViewer = true; stop(); startFeed(); status(); }
-  else if (!up && asViewer) { asViewer = false; stopFeed(); if (KEY) start(); }
+  else if (!up && asViewer) { asViewer = false; stopFeed(); if (srcReady()) start(); }
 }
 function listen(ref, cb, onErr) { ref.on("value", cb, onErr || (e => console.warn("Database read refused:", e.message))); uRefs.push(ref); }
 function stopUsers() { STK = {}; uRefs.forEach(r => r.off()); uRefs = []; ADMV = false; VB = {}; clearInterval(hb); clearInterval(sweepT); clearInterval(guardT); asViewer = false; SRV = { src: null, ts: 0 }; stopFeed(); stopResults(); resetChat(); NEWS = []; wasLive = null; SA = {}; U = {}; PR = {}; AD = {}; AP = {}; apErr = false; MS = {}; PAY = {}; MYPAY = {}; SITE = {}; LG = []; MEM = { apr: false, until: 0 }; knownPay = null; IDLE_MIN = 30; }
@@ -3348,7 +3384,7 @@ async function marketEnter(u) {
   if (!(await initSelf(u))) return false;
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
   startCommon(u);
-  if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; POLL_SEC = +s.pollSec || 0; $("pollsel").value = String(POLL_SEC); POLL_MS = POLL_SEC ? POLL_SEC * 1000 : POLL_MS; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
+  if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; PROV = s.provider === "binance" || s.provider === "off" ? s.provider : "twelvedata"; THR = s.threshold || .6; POLL_SEC = +s.pollSec || 0; $("pollsel").value = String(POLL_SEC); POLL_MS = POLL_SEC ? POLL_SEC * 1000 : POLL_MS; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
   if (isAdmin) { try { const [a, b] = await Promise.all([dbr.ref("feed/src").get(), dbr.ref("feed/ts").get()]); SRV = { src: a.val(), ts: b.val() || 0 }; } catch {} }
   status(); render(); start();
   return true;
