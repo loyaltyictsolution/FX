@@ -845,6 +845,7 @@ body.adminview #apanel{display:block!important}
   <p class="mut">Prices come from Twelve Data. Create a free key at twelvedata.com, paste it here once, and Save. It is stored in your private database and read only by admin accounts.</p>
   <div class="ctl">
     <label class="mut">API key <input id="key" type="password" style="width:230px" autocomplete="off" placeholder="paste key"></label>
+    <label class="mut">Refresh speed <select id="pollsel" aria-label="Refresh speed"><option value="0">Free plan (slow, saves credits)</option><option value="120">Every 2 minutes (paid plan)</option><option value="60">Every minute (paid plan)</option></select></label>
     <label class="mut">Min strength <input id="thr" type="number" min="0.4" max="0.9" step="0.05"></label>
     <button class="pri" id="save">Save</button><span id="toast" role="status"></span>
   </div>
@@ -1069,7 +1070,7 @@ const ago = ms => !ms ? "never" : Math.round((rt() - ms) / 1000) + "s ago";
 
 let KEY = "", THR = 0.6, isAdmin = false, data = {}, sel = null, P = {}, ws, hbT, wsUp = false, lastAny = 0,
     lastPoll = 0, loaded = 0, loadErr = "", soundOn = false, audio, demo = false, demoTimer, alerts = [], lock, idle, timers = [];
-let POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000;   // keeps a 800-credit/day plan under budget
+let POLL_SEC = 0, POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000;   // keeps a 800-credit/day plan under budget
 
 function weekend() { const d = new Date(rt()), w = d.getUTCDay(), h = d.getUTCHours(); return w === 6 || (w === 5 && h >= 22) || (w === 0 && h < 22); }
 const wsLive = () => wsUp && rt() - lastAny < 30000;
@@ -1418,12 +1419,12 @@ async function bootstrap() {
         if (/apikey|api key|invalid|incorrect|not valid|run out of/i.test(e.message) && !/minute|per minute/i.test(e.message)) break;   // a bad key will not fix itself
         if (/minute|too many|rate/i.test(e.message)) { await new Promise(r => setTimeout(r, 62000)); continue; }
       }
-      await new Promise(r => setTimeout(r, 8000));      // stays under 8 requests a minute
+      await new Promise(r => setTimeout(r, POLL_SEC ? 600 : 8000));      // free plan: stay under 8 requests a minute
     }
   } finally { bootBusy = false; }
 }
 function connectWS() {
-  if (!KEY || !auth.currentUser) return;
+  if (!KEY || !auth.currentUser || POLL_SEC) return;          // paid Grow plans only have trial streaming, so poll instead
   ws = new WebSocket("wss://ws.twelvedata.com/v1/quotes/price?apikey=" + encodeURIComponent(KEY));
   ws.onopen = () => { wsUp = true; ws.send(JSON.stringify({ action: "subscribe", params: { symbols: PAIRS.slice(0, WS_MAX).join(",") } }));
     hbT = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ action: "heartbeat" })), 10000); };
@@ -1433,7 +1434,7 @@ function connectWS() {
 }
 async function pollOnce() {
   lastPoll = rt();
-  for (const s of PAIRS.filter((x, i) => isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) { merge(P[s], await fetchCandles(s, 5)); const c = P[s].candles; P[s].price = c[c.length - 1].c; P[s].tickAt = rt(); P[s].dirty = true; } } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1200)); }
+  for (const s of PAIRS.filter((x, i) => isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) { merge(P[s], await fetchCandles(s, 5)); const c = P[s].candles; P[s].price = c[c.length - 1].c; P[s].tickAt = rt(); P[s].dirty = true; } } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, POLL_SEC ? 400 : PAIRS.length > 8 ? 7600 : 1200)); }
 }
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
@@ -1482,6 +1483,7 @@ function status() {
   else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
   else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
   else if (!PAIRS.some(isOpen)) { st = "STALE"; why = "All tracked markets are closed right now. Forex reopens Sunday about 22:00 UTC, US stocks trade Mon to Fri 9:30 to 16:00 New York time, and crypto never closes."; }
+  else if (POLL_SEC) { st = vals.some(d => d.stale && d.open !== false) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Prices refresh every " + POLL_SEC / 60 + " min." : "Waiting for the next price refresh."; }
   else if (wsLive()) { st = vals.some(d => d.stale && d.open !== false) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
   const sup = (() => { try { return amSuper(); } catch { return false; } })(), el = $("status"), mem = isMember() && !isAdmin && !sup && !demo;      // members never see feed or stream health, only admins do
@@ -1532,7 +1534,7 @@ function sigState0() {
   if (adm) {
     if (!KEY) return { c: "r", t: "No signals", s: "The price data key is missing. Add it in Admin settings." };
     if (!loaded) return { c: "y", t: "Buffering", s: loadErr ? "Price source problem: " + loadErr : "Loading price history. Signals appear in a moment." };
-    if (wsLive() && !Object.values(data).some(d => d.stale && d.open !== false)) return { c: "g", t: "Live signal", s: "Signals are updating in real time." };
+    if ((wsLive() || POLL_SEC) && !Object.values(data).some(d => d.stale && d.open !== false)) return { c: "g", t: "Live signal", s: "Signals are updating in real time." };
     return { c: "y", t: "Buffering", s: "Some prices are slow to arrive. Signals may be a little behind." };
   }
   const age = feedTs ? now - feedTs : null;
@@ -1552,6 +1554,7 @@ function tdStatus() {
   if (asViewer) { t = "Active"; c = "adm"; d = "The 24/7 server engine is supplying prices."; }
   else if (!KEY) { t = "Not set"; c = "blk"; d = "Paste your key and press Save."; }
   else if (!loaded) { t = loadErr ? "Error" : "Connecting"; c = loadErr ? "blk" : "apr"; d = loadErr ? loadErr : "Loading price history, one pair every few seconds."; }
+  else if (POLL_SEC && loaded) { t = "Active"; c = "adm"; d = "Refreshing every " + (POLL_SEC / 60) + " min. Pairs loaded " + loaded + " of " + PAIRS.length + "."; }
   else if (wsLive()) { t = "Active"; c = "adm"; d = "Live stream. Pairs loaded " + loaded + " of " + PAIRS.length + "."; }
   else if (wsUp) { t = "Active"; c = "apr"; d = "Connected, waiting for ticks. Pairs loaded " + loaded + " of " + PAIRS.length + "."; }
   else { t = "Not active"; c = "apr"; d = "No live stream, refreshing slowly. Pairs loaded " + loaded + " of " + PAIRS.length + "." + (loadErr ? " Last error: " + loadErr : ""); }
@@ -3181,7 +3184,7 @@ const SYM_OK = /^[A-Z0-9.\-]{1,12}(\/[A-Z0-9]{2,6})?$/;
 function setWatch(v) {
   const a = (Array.isArray(v) ? v : String(v).split(",")).map(x => x.trim().toUpperCase()).filter(x => SYM_OK.test(x));
   PAIRS = [...new Set(a)].slice(0, 12); if (!PAIRS.length) PAIRS = ["EUR/USD"];
-  POLL_MS = Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000; WL = PAIRS.slice(); renderWL();
+  POLL_MS = POLL_SEC ? POLL_SEC * 1000 : Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000; WL = PAIRS.slice(); renderWL();
 }
 function renderWL() {
   const all = [...new Set([...Object.values(PRESETS).flat(), ...WL])];
@@ -3333,8 +3336,8 @@ $("cp_go").onclick = async () => {
 $("save").onclick = async () => {
   const v = parseFloat($("thr").value), k = $("key").value.trim(), u = {};
   if (v >= .4 && v <= .9) u.threshold = v; else return toast("Min strength must be 0.40 to 0.90.");
-  if (k) u.dataKey = k;
-  try { await dbr.ref("settings").update(u); THR = v; if (k) { KEY = k; $("key").value = ""; $("key").placeholder = "saved (hidden)"; } toast("Saved."); start(); }
+  if (k) u.dataKey = k; u.pollSec = +$("pollsel").value || 0;
+  try { await dbr.ref("settings").update(u); THR = v; POLL_SEC = u.pollSec; POLL_MS = POLL_SEC ? POLL_SEC * 1000 : Math.ceil(PAIRS.length * 86400 / (800 * .8)) * 1000; if (k) { KEY = k; $("key").value = ""; $("key").placeholder = "saved (hidden)"; } toast("Saved."); start(); }
   catch (e) { toast(/permission|denied/i.test(e.code + e.message) ? "Firebase refused the save. Publish the new database rules, then try again." : "Save failed: " + e.message); }
 };
 function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 5000); }
@@ -3345,7 +3348,7 @@ async function marketEnter(u) {
   if (!(await initSelf(u))) return false;
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
   startCommon(u);
-  if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
+  if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; THR = s.threshold || .6; POLL_SEC = +s.pollSec || 0; $("pollsel").value = String(POLL_SEC); POLL_MS = POLL_SEC ? POLL_SEC * 1000 : POLL_MS; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
   if (isAdmin) { try { const [a, b] = await Promise.all([dbr.ref("feed/src").get(), dbr.ref("feed/ts").get()]); SRV = { src: a.val(), ts: b.val() || 0 }; } catch {} }
   status(); render(); start();
   return true;
