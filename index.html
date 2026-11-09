@@ -1423,7 +1423,7 @@ function connectWS() {
 }
 async function pollOnce() {
   lastPoll = rt();
-  for (const s of PAIRS.filter((x, i) => isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) merge(P[s], await fetchCandles(s, 5)); } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1200)); }
+  for (const s of PAIRS.filter((x, i) => isOpen(x) && (!wsLive() || i >= WS_MAX))) { try { if (P[s]) { merge(P[s], await fetchCandles(s, 5)); const c = P[s].candles; P[s].price = c[c.length - 1].c; P[s].tickAt = rt(); P[s].dirty = true; } } catch (e) { loadErr = e.message; } await new Promise(r => setTimeout(r, PAIRS.length > 8 ? 7600 : 1200)); }
 }
 function every(fn, ms) { timers.push(setInterval(fn, ms)); }
 async function start() {
@@ -1450,7 +1450,7 @@ function compute() {
     if (t < p.dangerUntil) sig = "DANGER"; else p.reason = "";
     if (sig !== p.sig && (sig !== "WAIT" || ["BUY", "SELL", "DANGER"].includes(p.sig)) && sig !== "WAIT") raise(s, p.sig, sig, p.reason, str);
     const prevSig = p.sig; p.sig = sig; if (sig === "BUY" || sig === "SELL") p.str = str; else p.str = p.str || 0;
-    const stale = !isOpen(s) ? true : wsLive() ? t - p.tickAt > 120000 : t - lastPoll > POLL_MS * 2.2;
+    const polled = PAIRS.indexOf(s) >= WS_MAX, stale = !isOpen(s) ? true : (wsLive() && !polled) ? t - p.tickAt > 300000 : t - p.tickAt > POLL_MS * 2.5;
     data[s] = { pair: s, type: typeOf(s), open: isOpen(s), bid: p.price, signal: sig, reason: p.reason, pBuy: Math.max(0, dir), pSell: Math.max(0, -dir), pWait: 1 - str,
       trend: S.e9[i] > S.e21[i] ? "BULLISH" : "BEARISH", volatility: vr > 1.5 ? "HIGH" : vr < .7 ? "LOW" : "NORMAL",
       tf: { M5: tfTrend(S.c, 5), M15: tfTrend(S.c, 15), M30: tfTrend(S.c, 30), H1: tfTrend(S.c, 60) }, spark: S.c.slice(-60), age: Math.round((t - p.tickAt) / 1000), stale, bt: p.bt, lv: levels(p, S.atr[i], dir), day: dayStats(S, p.price) };
@@ -1472,7 +1472,7 @@ function status() {
   else if (!KEY) { st = "OFFLINE"; why = "Add your Twelve Data API key in Admin settings below."; }
   else if (!loaded) { st = "OFFLINE"; why = loadErr ? "Price source error: " + loadErr : "Loading price history..."; }
   else if (!PAIRS.some(isOpen)) { st = "STALE"; why = "All tracked markets are closed right now. Forex reopens Sunday about 22:00 UTC, US stocks trade Mon to Fri 9:30 to 16:00 New York time, and crypto never closes."; }
-  else if (wsLive()) { st = vals.some(d => d.stale) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
+  else if (wsLive()) { st = vals.some(d => d.stale && d.open !== false) ? "STALE" : "LIVE"; why = st === "LIVE" ? "Live stream connected." : "Stream connected but some pairs have no recent ticks."; }
   else { st = "STALE"; why = `No live stream. Falling back to refresh every ${Math.round(POLL_MS / 60000)} min to stay inside the free plan.${loadErr ? " Last error: " + loadErr : ""}`; }
   const sup = (() => { try { return amSuper(); } catch { return false; } })(), el = $("status"), mem = isMember() && !isAdmin && !sup && !demo;      // members never see feed or stream health, only admins do
   el.style.display = mem ? "none" : ""; el.textContent = st === "STALE" ? "STALE DATA" : st; el.className = "status " + st;
@@ -1522,7 +1522,7 @@ function sigState0() {
   if (adm) {
     if (!KEY) return { c: "r", t: "No signals", s: "The price data key is missing. Add it in Admin settings." };
     if (!loaded) return { c: "y", t: "Buffering", s: loadErr ? "Price source problem: " + loadErr : "Loading price history. Signals appear in a moment." };
-    if (wsLive() && !Object.values(data).some(d => d.stale)) return { c: "g", t: "Live signal", s: "Signals are updating in real time." };
+    if (wsLive() && !Object.values(data).some(d => d.stale && d.open !== false)) return { c: "g", t: "Live signal", s: "Signals are updating in real time." };
     return { c: "y", t: "Buffering", s: "Some prices are slow to arrive. Signals may be a little behind." };
   }
   const age = feedTs ? now - feedTs : null;
