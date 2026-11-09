@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Loyalty FX Radar</title>
+<meta name="description" content="Live forex, crypto and stock signals with clear buy, sell and wait calls, alerts and a public track record. Pay by M-Pesa.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Loyalty FX Radar">
+<meta property="og:title" content="Loyalty FX Radar: live market signals">
+<meta property="og:description" content="Live forex, crypto and stock signals with clear buy, sell and wait calls and alerts to your phone.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Loyalty FX Radar: live market signals">
+<meta name="twitter:description" content="Live forex, crypto and stock signals with clear buy, sell and wait calls and alerts to your phone.">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#12202e">
 <script>window.APPCHECK_KEY = ""; /* paste your reCAPTCHA v3 site key here after enabling Firebase App Check */</script>
@@ -661,7 +669,7 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
         <div class="meter"><i id="su_bar"></i></div><div id="su_str" class="mut" style="margin:-2px 0 8px;min-height:18px"></div>
         <label for="su_pw2" class="mut">Confirm password</label><input id="su_pw2" type="password" autocomplete="new-password" required>
         <label class="mut chk"><input id="su_sh" type="checkbox"> Show passwords</label>
-        <label class="mut chk"><input id="su_ok" type="checkbox"> I understand signals are not financial advice, access starts only after my payment is confirmed, and I will not share my login.</label>
+        <label class="mut chk"><input id="su_ok" type="checkbox"> I understand signals are not financial advice, access starts only after my payment is confirmed, and I will not share my login. I have read the <a href="#ld_priv" id="su_pl" style="color:inherit;text-decoration:underline">privacy notice</a>.</label>
         <input id="su_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;opacity:0">
         <button class="go" id="su_go" type="submit">Create my account</button>
       </form>
@@ -731,8 +739,16 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
 
   <section class="ld-sec" style="padding-top:0"><div class="ld-wrap"><div class="ld-band"><h2>Ready to see the market clearly?</h2><button type="button" class="btn-p" id="ld_up3" style="padding:13px 28px;font-size:16px">Open account</button></div></div></section>
 
+  <section class="ld-sec" id="ld_priv" style="padding-top:0"><div class="ld-wrap">
+    <h2>Privacy notice</h2>
+    <p class="ld-sub" style="max-width:900px;margin:0 0 8px"><b>What we keep:</b> your name, email address, phone number (if you give one), your plan and payment codes, when your membership starts and ends, and basic activity needed to keep your account secure.</p>
+    <p class="ld-sub" style="max-width:900px;margin:0 0 8px"><b>Why:</b> to create your account, confirm your payment, give you access to signals, send alerts you turn on, and answer support questions. We do not sell your details and we do not share them, except with the service providers that run the app (hosting, sign-in and messaging) or where the law requires it.</p>
+    <p class="ld-sub" style="max-width:900px;margin:0 0 8px"><b>Your rights:</b> under Kenya's Data Protection Act, 2019 you may ask to see, correct or delete your information. Message us on WhatsApp or email <a href="mailto:wanjohisteve85@gmail.com" style="color:inherit">wanjohisteve85@gmail.com</a> and we will respond. Some payment records may be kept for the period the law requires.</p>
+    <p class="ld-sub" style="max-width:900px;margin:0"><b>Terms in short:</b> signals are information only, not financial advice and not guaranteed. Access starts after your payment is confirmed. Your login is personal and must not be shared.</p>
+  </div></section>
+
   <footer class="ld-foot"><div class="ld-wrap">
-    <div class="ld-fl"><span class="ld-brand">Loyalty FX Radar</span><span><button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_help">Support</button></span></div>
+    <div class="ld-fl"><span class="ld-brand">Loyalty FX Radar</span><span><button type="button" data-to="ld_markets">Markets</button><button type="button" data-to="ld_features">Features</button><button type="button" data-to="ld_steps">How it works</button><button type="button" data-to="ld_help">Support</button><button type="button" data-to="ld_priv">Privacy</button></span></div>
     <p class="ld-risk">Loyalty FX Radar provides market information and alerts only. It is not a broker, does not hold your money and does not place trades. Signals are rule-based estimates built from public price data. They are not financial advice and are not guaranteed, and prices can differ from your broker's quotes. Trading forex, crypto and stocks carries a high risk of losing money. Only use money you can afford to lose.</p>
   </div></footer>
 </div>
@@ -925,6 +941,7 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
     <span id="nu_msg" class="mut" role="status"></span>
   </div>
   <div id="nu_share" class="adduser" style="margin-top:0"></div>
+  <div style="margin:8px 0"><button id="mem_csv" type="button" style="display:none">Export members CSV (backup)</button></div>
   <div id="ulist"></div>
 </section>
 <section class="panel" id="pay" style="display:none;margin-top:16px"><b>Membership &amp; payments</b> <span id="pay_n" class="pill apr" style="display:none"></span>
@@ -2115,7 +2132,7 @@ function startAdminUsers() {
 function renderUsers() {
   if (!isAdmin || !auth.currentUser) return;
   const now = rt(), me = auth.currentUser.uid, mt = myTier();
-  $("lg_clr").style.display = amSuper() ? "" : "none"; $("goacc").style.display = amSuper() ? "" : "none"; $("nu_ad").parentElement.style.display = amSuper() ? "" : "none";
+  $("lg_clr").style.display = amSuper() ? "" : "none"; $("mem_csv").style.display = amSuper() ? "" : "none"; $("goacc").style.display = amSuper() ? "" : "none"; $("nu_ad").parentElement.style.display = amSuper() ? "" : "none";
   const rows = Object.entries(U).filter(([, v]) => v && !v.removed).map(([id, v]) => ({ id, v, t: tier(id, v), blk: v.blocked === true, apr: AP[id] === true,
     live: !!(PR[id] && PR[id].online && now - (PR[id].last || 0) < 180000) }));
   const n = f => rows.filter(f).length;
@@ -2552,6 +2569,19 @@ $("pay_csv").onclick = () => {
     .map(p => [new Date(p.ts || 0).toISOString(), nm(p.uid) !== p.uid ? nm(p.uid) : (p.email || p.uid), p.method, p.code, p.amount, p.days ? durText(p.days) : "", p.status, p.receipt]));
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(cell).join(",")).join("\n")], { type: "text/csv" }));
   a.download = "payments.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$("mem_csv").onclick = () => {                           // super admin: one-tap backup of members and subscriptions
+  if (!amSuper()) return;
+  const cell = v => { let t = String(v ?? ""); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const d = t => t ? new Date(t).toISOString() : "", now = rt();
+  const rows = [["Member ID", "Name", "Email", "Phone", "Joined", "Approved", "Blocked", "Plan", "Level", "Access until", "Days left"]].concat(
+    Object.entries(U).filter(([, v]) => v && !v.removed).sort((a, b) => (a[1].email || "").localeCompare(b[1].email || "")).map(([id, v]) => {
+      const m = MS[id] || {};
+      return [id, v.name || "", v.email || "", v.phone || "", typeof v.createdAt === "number" ? d(v.createdAt) : "", AP[id] === true ? "yes" : "no", v.blocked === true ? "yes" : "no", m.plan || "", m.level || "", m.until ? d(m.until) : "", m.until ? Math.max(0, Math.ceil((m.until - now) / 864e5)) : ""];
+    }));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + rows.map(r => r.map(cell).join(",")).join("\n")], { type: "text/csv" }));
+  a.download = "members-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  try { logEvt("Exported members CSV"); } catch {}
 };
 function fillSite() {
   if (!isAdmin) return;
