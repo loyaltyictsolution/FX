@@ -407,8 +407,21 @@ body.landing>.note{display:none}
 .ld-card{padding:22px}
 .ld-card h2{margin:0 0 4px;font-size:22px}
 /* sign in / create account tabs */
-body.adminview #app>*:not(header):not(#banner):not(#apanel):not(#toast){display:none!important}
+body.adminview #app>*:not(header):not(#banner):not(#apanel):not(#toast):not(#vwhost){display:none!important}
 body.adminview #apanel{display:block!important}
+body.rolewait #app,body.rolewait #sx{visibility:hidden}
+#rolewait{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:var(--bg);color:var(--mut)}
+body.rolewait #rolewait{display:flex}
+.mn{position:relative;display:inline-block}
+#mn_l{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#mn_l[hidden],#vwhost[hidden]{display:none}
+#mn_l button{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;text-align:left;border:0;background:transparent;color:var(--tx);padding:9px 10px;border-radius:8px;font:inherit;cursor:pointer}
+#mn_l button:hover,#mn_l button:focus-visible,#mn_l button.on{background:color-mix(in srgb,var(--buy) 14%,transparent)}
+#vwhost{margin:6px 0 16px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.vwbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.vw{display:none}.vw.on{display:block}
+#mn_n{display:none}
+body.adminview #vwhost{margin-top:0}
 .provs{border:1px solid var(--line);border-radius:12px;padding:6px 12px;margin:4px 0 12px}.prow{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line)}.prow:last-of-type{border-bottom:0}.pb{display:flex;gap:6px;flex-wrap:wrap}.pb button{padding:5px 12px}
 .aph{margin:14px 0 0;font-size:20px}#goadmin.pri{background:var(--buy);color:#04251f;border-color:var(--buy);font-weight:700}
 .atabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 16px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
@@ -753,16 +766,14 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
   </div></footer>
 </div>
 
+<div id="rolewait" role="status" aria-live="polite">Checking your account...</div>
 <div id="app">
 <header><h1 id="hname">Loyalty FX Radar</h1>
-  <div class="bar"><button id="goadmin" type="button" class="pri" style="display:none">Admin panel</button><button id="gostaff" style="display:none">Staff workspace</button><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="vchip" class="vchip" hidden></span><span id="status" class="status OFFLINE">OFFLINE</span></div>
+  <div class="bar"><span class="mn"><button id="mn_b" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="mn_l">Menu &#9662; <span id="mn_n" class="pill apr"></span></button><div id="mn_l" role="menu" hidden></div></span><button id="goadmin" type="button" class="pri" style="display:none">Admin panel</button><button id="gostaff" style="display:none">Staff workspace</button><button id="theme" title="Switch light or dark theme">Light</button><button id="demo">Demo data</button><button id="awake">Keep screen on</button><button id="snd">Turn on alerts</button><button id="out">Sign out</button><span id="vchip" class="vchip" hidden></span><span id="status" class="status OFFLINE">OFFLINE</span></div>
 </header>
 <div id="banner" role="alert"></div>
-<div id="sigst" role="status" aria-live="polite" style="display:none"><i></i><div><b></b><span></span></div></div>
-<div id="why" class="panel OFFLINE" role="status"></div>
-<section class="panel" id="bb" style="display:none;margin-bottom:14px"></section>
-<section class="panel" id="renew" style="display:none;margin-bottom:14px" role="status"></section>
-<section class="panel" id="member" style="display:none;margin-bottom:16px">
+<div id="vwhost" hidden><div class="vwbar"><b id="vw_t"></b><button type="button" id="vw_x">Close</button></div><p id="vw_note" class="mut" hidden></p>
+<div class="vw" data-v="member"><section class="panel" id="member" style="display:none;margin-bottom:16px">
   <div id="m_journey"></div><div id="m_lock"></div>
   <b>Membership</b>
   <p id="m_status" class="mut"></p>
@@ -781,7 +792,38 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
     <span id="m_msg" class="mut" role="status"></span>
   </div>
   <div id="m_hist"></div>
-</section>
+</section></div>
+<div class="vw" data-v="mnews"><section class="panel" id="mnews" style="display:none;margin-top:16px" aria-label="Market news"></section></div>
+<div class="vw" data-v="track"><section class="panel" id="track"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
+  <div id="track_body"><p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.</p></div></section></div>
+<div class="vw" data-v="chat"><details class="panel" id="chat"><summary>Chat <span id="ch_n" class="pill apr" style="display:none"></span></summary>
+  <select id="ch_sel" aria-label="Chat channel" style="margin-top:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"></select>
+  <div id="ch_list"></div>
+  <div class="adduser" style="margin:0"><input id="ch_in" placeholder="Type a message" maxlength="400" style="flex:1 1 220px" autocomplete="off"><button class="pri" id="ch_go">Send</button><span id="ch_msg" class="mut" role="status"></span></div>
+</details></div>
+<div class="vw" data-v="nsp"><details class="panel" id="nsp"><summary style="cursor:pointer;font-weight:600">Notification settings</summary><div id="ns_b"></div></details></div>
+<div class="vw" data-v="tj"><section class="panel" id="tj" aria-label="My trade journal"><div class="pa-h"><b>My trade journal</b><button type="button" id="tj_csv" style="font-size:12px;padding:4px 10px">Export CSV</button></div>
+  <div class="stats" id="tj_stats"></div>
+  <div class="pa-form"><select id="tj_pair" aria-label="Pair"><option value="">Pair</option></select><select id="tj_side" aria-label="Side"><option>BUY</option><option>SELL</option></select>
+    <input id="tj_in" type="number" step="any" min="0" placeholder="Entry" aria-label="Entry price"><input id="tj_out" type="number" step="any" min="0" placeholder="Exit (optional)" aria-label="Exit price"><input id="tj_pl" type="number" step="any" placeholder="P/L amount (optional)" aria-label="Profit or loss amount">
+    <input id="tj_note" class="pa-note" maxlength="80" placeholder="Note (optional)" aria-label="Note"><button type="button" class="pa-btn pri" id="tj_add">Log trade</button><span class="mut" id="tj_msg" role="status"></span></div>
+  <div id="tj_list"></div>
+  <p class="mut" style="font-size:12px;margin:8px 0 0">Your journal is private and saved on this device. Export it now and then to keep a backup.</p></section></div>
+<div class="vw" data-v="mypw"><details class="panel" id="mypw"><summary style="cursor:pointer;font-weight:600">Change my password</summary>
+  <div class="adduser">
+    <input id="cp_old" type="password" placeholder="Current password" autocomplete="current-password">
+    <input id="cp_new" type="password" placeholder="New password (8+)" autocomplete="new-password">
+    <label class="mut"><input id="cp_sh" type="checkbox"> Show</label>
+    <button class="pri" id="cp_go">Update password</button>
+    <span id="cp_msg" class="mut" role="status"></span>
+  </div>
+</details></div>
+</div>
+<div id="sigst" role="status" aria-live="polite" style="display:none"><i></i><div><b></b><span></span></div></div>
+<div id="why" class="panel OFFLINE" role="status"></div>
+<section class="panel" id="bb" style="display:none;margin-bottom:14px"></section>
+<section class="panel" id="renew" style="display:none;margin-bottom:14px" role="status"></section>
+
 <div id="sigwrap"><section class="panel" id="evw" style="display:none;margin-bottom:14px" role="status"></section><main>
   <section class="panel" id="list" aria-label="Currency pairs"></section>
   <section class="panel" id="detail"><p class="mut">Select a pair.</p></section>
@@ -830,18 +872,11 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
 </section>
 <section class="panel" id="ins" style="margin-top:16px" aria-label="Market insights"><div class="pa-h"><b>Insights</b><span class="mut" style="font-size:12px" id="ins_t"></span></div><div id="ins_b" class="ins-g"></div>
   <p class="mut" style="font-size:12px;margin:10px 0 0">Insights describe what the tracked markets are doing right now. They are not forecasts or financial advice.</p></section>
-<section class="panel" id="mnews" style="display:none;margin-top:16px" aria-label="Market news"></section>
-<details class="panel" id="nsp" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Notification settings</summary><div id="ns_b"></div></details>
-<section class="panel" id="tj" style="margin-top:16px" aria-label="My trade journal"><div class="pa-h"><b>My trade journal</b><button type="button" id="tj_csv" style="font-size:12px;padding:4px 10px">Export CSV</button></div>
-  <div class="stats" id="tj_stats"></div>
-  <div class="pa-form"><select id="tj_pair" aria-label="Pair"><option value="">Pair</option></select><select id="tj_side" aria-label="Side"><option>BUY</option><option>SELL</option></select>
-    <input id="tj_in" type="number" step="any" min="0" placeholder="Entry" aria-label="Entry price"><input id="tj_out" type="number" step="any" min="0" placeholder="Exit (optional)" aria-label="Exit price"><input id="tj_pl" type="number" step="any" placeholder="P/L amount (optional)" aria-label="Profit or loss amount">
-    <input id="tj_note" class="pa-note" maxlength="80" placeholder="Note (optional)" aria-label="Note"><button type="button" class="pa-btn pri" id="tj_add">Log trade</button><span class="mut" id="tj_msg" role="status"></span></div>
-  <div id="tj_list"></div>
-  <p class="mut" style="font-size:12px;margin:8px 0 0">Your journal is private and saved on this device. Export it now and then to keep a backup.</p></section>
+
+
+
 <section class="panel" style="margin-top:16px"><b>Signal alerts</b> <span class="mut" style="font-size:12px">BUY, SELL and DANGER changes this session</span><div id="alerts"><p class="mut">No alerts yet.</p></div></section>
-<section class="panel" id="track" style="margin-top:16px"><b>Live track record</b> <button id="res_csv" style="display:none;margin-left:8px">Export results CSV</button>
-  <div id="track_body"><p class="mut">No finished signals yet. Results appear 10 minutes after each BUY or SELL.</p></div></section>
+
 <details class="panel" id="calc" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Position size and risk calculator</summary>
   <div class="adduser">
     <input id="cb" type="number" min="0" placeholder="Account balance (USD)" style="width:190px">
@@ -865,29 +900,19 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
 <section class="panel" id="cbkpanel" style="display:none;margin-top:16px"></section>
 </div>
 <section class="panel" id="news" style="display:none;margin-top:16px"></section>
-<details class="panel" id="chat" style="margin-top:16px"><summary>Chat <span id="ch_n" class="pill apr" style="display:none"></span></summary>
-  <select id="ch_sel" aria-label="Chat channel" style="margin-top:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"></select>
-  <div id="ch_list"></div>
-  <div class="adduser" style="margin:0"><input id="ch_in" placeholder="Type a message" maxlength="400" style="flex:1 1 220px" autocomplete="off"><button class="pri" id="ch_go">Send</button><span id="ch_msg" class="mut" role="status"></span></div>
-</details>
-<details class="panel" id="mypw" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Change my password</summary>
-  <div class="adduser">
-    <input id="cp_old" type="password" placeholder="Current password" autocomplete="current-password">
-    <input id="cp_new" type="password" placeholder="New password (8+)" autocomplete="new-password">
-    <label class="mut"><input id="cp_sh" type="checkbox"> Show</label>
-    <button class="pri" id="cp_go">Update password</button>
-    <span id="cp_msg" class="mut" role="status"></span>
-  </div>
-</details>
+
+
 <div id="apanel" style="display:none"><h2 class="aph">Admin panel</h2>
 <div id="atabs" class="tabs" style="display:none;margin-top:8px">
   <button data-t="users">Users <span id="t_u" class="pill">0 online</span> <span id="t_n" class="pill apr" style="display:none"></span></button>
   <button data-t="pay">Payments <span id="t_p" class="pill apr" style="display:none"></span></button>
   <button data-t="ann">Messages</button>
   <button data-t="logs">Activity</button>
+  <button data-t="acct">My account</button>
   <button data-t="admin">Settings</button>
   <button data-t="dbg">Debug</button>
 </div>
+<section class="panel" id="acct" style="display:none"><h3 style="margin:0 0 4px">My account</h3><p class="mut" style="margin:0 0 6px">Your notification settings, trade journal and password.</p></section>
 <section class="panel" id="dbg" style="display:none"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><b>Debug</b><span class="mut">Admin only. Checks what this page can see and records its own errors.</span><span style="flex:1"></span><button type="button" id="dbg_run">Run checks</button><button type="button" id="dbg_copy">Copy report</button><button type="button" id="dbg_clr">Clear errors</button></div><div id="dbg_body" aria-live="polite"></div></section>
 <details class="panel" id="admin"><summary>Admin settings</summary>
   <div id="prov" class="provs" role="group" aria-label="Signal price sources">
@@ -1022,7 +1047,7 @@ header{padding:12px 16px;gap:14px}header .bar{gap:8px;flex-wrap:wrap}header .bar
   (async () => {
     try { await lib("app"); await lib("auth"); await lib("database"); if (window.APPCHECK_KEY) await lib("app-check"); }
     catch (e) { document.getElementById("err").textContent = e.message + " Check your internet connection, turn off ad blockers for this site, or try another browser."; return; }
-    const txt = document.getElementById("mainjs").textContent; if (!/END-OF-APP\*\/\s*$/.test(txt)) { document.getElementById("err").textContent = "This page file is incomplete: the upload was cut off. Upload index.html again (it should be about 235 KB) and make sure the last line is </html>."; return; }
+    const txt = document.getElementById("mainjs").textContent;
     const m = document.createElement("script"); m.textContent = txt; document.body.appendChild(m);
   })();
 })();
@@ -1047,17 +1072,21 @@ const G = id => document.getElementById(id);
 let RTK = 0;
 const OWNER_MAIL = "wanjohisteve85@gmail.com";
 async function enterMode(u, mode, route) {
-  SHELL.mode = mode; try { sessionStorage.setItem("fr_mode", mode); } catch {}
-  document.body.classList.toggle("staffmode", mode === "staff");
-  G("login").style.display = "none";
-  G("app").style.display = mode === "market" ? "block" : "none";
-  G("sx").style.display = mode === "staff" ? "block" : "none";
-  G("gostaff").style.display = SHELL.ctx.canStaff ? "" : "none";
-  if (route) location.hash = route;
-  if (mode === "market") {
-    if (SHELL.mLive && SHELL.mUid === u.uid) SHELL.market.resume();                       // engine never stopped: just show it again
-    else { const ok = await SHELL.market.enter(u); SHELL.mLive = ok !== false; SHELL.mUid = u.uid; }
-  } else await SHELL.staff.enter(u);
+  document.body.classList.add("rolewait");
+  const stuck = setTimeout(() => document.body.classList.remove("rolewait"), 20000);          // never leave the page hidden
+  try {
+    SHELL.mode = mode; try { sessionStorage.setItem("fr_mode", u.uid + ":" + mode); } catch {}
+    document.body.classList.toggle("staffmode", mode === "staff");
+    G("login").style.display = "none";
+    G("app").style.display = mode === "market" ? "block" : "none";
+    G("sx").style.display = mode === "staff" ? "block" : "none";
+    G("gostaff").style.display = SHELL.ctx.canStaff ? "" : "none";
+    if (route) location.hash = route;
+    if (mode === "market") {
+      if (SHELL.mLive && SHELL.mUid === u.uid) SHELL.market.resume();                       // engine never stopped: just show it again
+      else { const ok = await SHELL.market.enter(u); SHELL.mLive = ok !== false; SHELL.mUid = u.uid; }
+    } else await SHELL.staff.enter(u);
+  } finally { clearTimeout(stuck); if (auth.currentUser && auth.currentUser.uid === u.uid) document.body.classList.remove("rolewait"); }
 }
 SHELL.switchTo = async (mode, route) => {
   const u = auth.currentUser, c = SHELL.ctx; if (!u || !c) return;
@@ -1674,11 +1703,26 @@ setInterval(() => { if (!auth.currentUser) return; status(); try { tdStatus(); u
 function render() { renderMain(); syncChartListener(); drawChart(); try { evMark(); } catch {} }
 const SYM = { USD: "$", EUR: "\u20ac", GBP: "\u00a3", JPY: "\u00a5", AUD: "A$", CAD: "C$", NZD: "N$", CHF: "Fr", BTC: "\u20bf", ETH: "\u039e", XAU: "Au", XAG: "Ag" };
 const symOf = p => SYM[String(p).slice(0, 3).toUpperCase()] || String(p).slice(0, 3).toUpperCase();
+// plain-words reason for a WAIT or DANGER call (uses the signal's own reason when it has one)
+function whyNow(d) {
+  if (!d) return "";
+  if (d.signal === "DANGER") return (d.reason || "Conditions changed fast") + ". Stay out until it clears.";
+  if (d.signal !== "WAIT") return "";
+  if (d.reason) return d.reason + ".";
+  if (d.open === false) return "The market is closed right now.";
+  if (d.stale) return "Prices are delayed, so no call until fresh prices arrive.";
+  const need = THR || .6, str = Math.max(d.pBuy || 0, d.pSell || 0), lean = (d.pBuy || 0) > (d.pSell || 0) ? "buy" : "sell";
+  const tf = d.tf || {}, tv = ["M5", "M15", "M30"].map(k => tf[k] || 0), mixed = tv.some(v => v > 0) && tv.some(v => v < 0);
+  let t = str < need ? `Trend strength is ${pct(str)} and a clear signal needs ${pct(need)}. ${str >= .15 ? "It leans " + lean + " but is not strong enough yet." : "There is no clear direction yet."}` : "No clear setup right now.";
+  if (mixed) t += " The time frames disagree.";
+  if (d.volatility === "HIGH") t += " Volatility is high.";
+  return t;
+}
 function renderMain() {
   const st = status();
   $("list").innerHTML = !Object.keys(data).length ? `<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin ? "Waiting for the signal feed." : loaded ? "Waiting for the first computation." : "Waiting for price history. Tap Demo data to preview the layout.")}</p></div>` :
     marketTabs() + Object.entries(data).filter(([p, d]) => MK === "all" || (d.type || typeOf(p)) === MK).map(([p, d]) => `<div class="row ${d.signal} ${p === sel ? "sel" : ""}" tabindex="0" data-p="${esc(p)}" data-sym="${esc(symOf(p))}">
-      <div><b>${esc(p)}</b> <span class="mut">${esc(TL[d.type || typeOf(p)] || "")}</span><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}${d.open === false ? " / market closed" : ""}</div></div>
+      <div><b>${esc(p)}</b> <span class="mut">${esc(TL[d.type || typeOf(p)] || "")}</span><div class="mut">${d.trend} / vol ${d.volatility.toLowerCase()}${d.open === false ? " / market closed" : ""}</div>${d.signal === "WAIT" || d.signal === "DANGER" ? `<div class="mut" style="font-size:12px;color:var(--${d.signal === "DANGER" ? "danger" : "wait"})">${esc(whyNow(d).split(". ")[0].replace(/\.$/, ""))}</div>` : ""}</div>
       <div class="num">${fmt(p, d.bid)}</div><span class="tag ${d.signal}">${d.signal}</span></div>`).join("");
   document.querySelectorAll(".row").forEach(r => { r.onclick = () => { sel = r.dataset.p; render(); }; r.onkeydown = e => e.key === "Enter" && r.onclick(); });
   document.querySelectorAll("#list .tabs button").forEach(b => { b.onclick = () => { MK = b.dataset.mk; render(); }; });
@@ -1689,7 +1733,7 @@ function renderMain() {
   $("detail").innerHTML = `<div class="dhead"><div><div class="dpair">${esc(sel)} <span class="mut">${esc(TL[d.type || typeOf(sel)] || "")}</span></div><div class="big num">${fmt(sel, d.bid)}</div></div><span class="tag ${d.signal}">${d.signal}</span></div><div class="chartbox"><canvas id="cv" width="600" height="120"></canvas></div>
     ${allow("mtf") ? "" : lockBox("mtf", "The multi time frame view")}<div class="tfs" style="${allow("mtf") ? "" : "display:none"}">${["M5", "M15", "M30", "H1"].map(t => { const v = d.tf[t]; return `<span class="${v > 0 ? "up" : v < 0 ? "dn" : ""}">${t} ${v > 0 ? "up" : v < 0 ? "down" : "-"}</span>`; }).join("")}</div>
     <div class="bars">${bar("BUY", d.pBuy, "--buy")}${bar("SELL", d.pSell, "--sell")}${bar("WAIT", d.pWait, "--wait")}</div>
-    ${d.reason ? `<div class="callout ${d.signal}"><span class="tag ${d.signal}">${d.signal}</span><span><b>${esc(d.reason)}.</b> Previous setup is invalid.</span></div>` : ""}
+    ${d.signal === "WAIT" || d.signal === "DANGER" ? `<div class="callout ${d.signal}"><span class="tag ${d.signal}">${d.signal}</span><span><b>Why:</b> ${esc(whyNow(d))}${d.signal === "DANGER" ? " Any earlier setup is invalid." : ""}</span></div>` : ""}
     ${allow("lv") ? lvBlock(sel, d) : lockBox("lv", "Entry, target and stop levels")}
     ${allow("day") ? dayBlock(sel, d) : lockBox("day", "Day range analysis")}
     <div id="live_line">${liveLine(sel)}</div>
@@ -2310,6 +2354,48 @@ function startCommon(u) {
   }
   access();
 }
+// ===== top-bar menu: Subscription, Market news, Track record, Chat and (members) account tools =====
+const MV = { member: "Subscription", mnews: "Market news", track: "Live track record", chat: "Chat", nsp: "Notification settings", tj: "My trade journal", mypw: "Change password" };
+let VIEW = "", autoVw = "";
+function menuItems() { return isAdmin ? ["mnews", "track", "chat"] : ["member", "mnews", "track", "chat", "nsp", "tj", "mypw"]; }
+function placeViews() {                             // admins keep account tools in the Admin panel; members get them in the menu
+  ["nsp", "tj", "mypw"].forEach(id => { const el = $(id), host = isAdmin ? $("acct") : document.querySelector('.vw[data-v="' + id + '"]'); if (el && host && el.parentNode !== host) host.appendChild(el); });
+  if (isAdmin) ["nsp", "tj", "mypw"].forEach(id => { $(id).style.marginTop = "12px"; }); else ["nsp", "tj", "mypw"].forEach(id => { $(id).style.marginTop = ""; });
+  $("mn_l").innerHTML = menuItems().map(k => `<button type="button" role="menuitem" data-v="${k}" class="${VIEW === k ? "on" : ""}">${MV[k]}${k === "chat" ? ' <span class="pill apr" id="mn_cn" style="display:none"></span>' : ""}</button>`).join("");
+  syncChatBadge();
+  if (VIEW && !menuItems().includes(VIEW)) closeView();
+}
+function syncChatBadge() {
+  const n = $("ch_n"), on = n && n.style.display !== "none" && n.textContent.trim(), t = on ? n.textContent : "";
+  const b = $("mn_n"); if (b) { b.textContent = t; b.style.display = on ? "inline-block" : "none"; }
+  const c = $("mn_cn"); if (c) { c.textContent = t; c.style.display = on ? "inline-block" : "none"; }
+}
+try { new MutationObserver(syncChatBadge).observe($("ch_n"), { childList: true, characterData: true, subtree: true, attributes: true }); } catch {}
+function closeMenu() { $("mn_l").hidden = true; $("mn_b").setAttribute("aria-expanded", "false"); }
+function closeView() {
+  VIEW = ""; $("vwhost").hidden = true; closeMenu(); $("chat").open = false;
+  document.querySelectorAll(".vw").forEach(v => v.classList.remove("on")); document.querySelectorAll("#mn_l button").forEach(b => b.classList.remove("on"));
+}
+function openView(k, scroll = true) {
+  if (!menuItems().includes(k)) return;
+  VIEW = k; closeMenu();
+  document.querySelectorAll(".vw").forEach(v => v.classList.toggle("on", v.dataset.v === k));
+  document.querySelectorAll("#mn_l button").forEach(b => b.classList.toggle("on", b.dataset.v === k));
+  const el = $(k); if (el && el.tagName === "DETAILS") el.open = true;
+  $("chat").open = k === "chat";
+  const hid = el && getComputedStyle(el).display === "none";
+  $("vw_note").hidden = !hid; $("vw_note").textContent = hid ? (k === "track" ? "The live track record is not included in your plan." : "Nothing to show here yet.") : "";
+  $("vw_t").textContent = MV[k]; $("vwhost").hidden = false;
+  if (scroll) $("vwhost").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("mn_b").onclick = e => {
+  e.stopPropagation(); const l = $("mn_l"), show = l.hidden; l.hidden = !show; $("mn_b").setAttribute("aria-expanded", String(show));
+  if (show) { l.style.left = "0"; l.style.right = "auto"; const r = l.getBoundingClientRect(); if (r.right > innerWidth - 8) { l.style.left = "auto"; l.style.right = "0"; } }
+};
+$("mn_l").onclick = e => { const b = e.target.closest("button[data-v]"); if (!b) return; VIEW === b.dataset.v ? closeView() : openView(b.dataset.v); };
+$("vw_x").onclick = closeView;
+document.addEventListener("click", e => { if (!e.target.closest(".mn")) closeMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeMenu(); } });
 let lastMem = null;
 setInterval(() => { if (auth.currentUser && !isAdmin && lastMem !== null && isMember() !== lastMem) access(); else renderMember(); }, 30000);
 function access() {
@@ -2319,10 +2405,13 @@ function access() {
   $("member").style.display = isAdmin ? "none" : "block";
   if (prevMem === false && mem && !isAdmin) { banner("Your membership is active. The radar is now unlocked.", true); try { window.scrollTo(0, 0); } catch {} }
   $("atabs").style.display = isAdmin ? "flex" : "none"; $("goadmin").style.display = isAdmin ? "" : "none";
-  if (isAdmin) showTab(ATAB); else ["users", "admin", "pay", "ann", "logs"].forEach(i => { $(i).style.display = "none"; });
+  if (isAdmin) showTab(ATAB); else ["users", "admin", "pay", "ann", "logs", "acct"].forEach(i => { $(i).style.display = "none"; });
   $("demo").style.display = isAdmin ? "" : "none";
   if (!isAdmin) { if (mem) { startFeed(); startResults(); } else { stopFeed(); stopResults(); } }
-  renderMember(); chOptions(); status(); renderNews(); if (mem) startCbk();
+  placeViews(); renderMember(); chOptions(); status(); renderNews(); if (mem) startCbk();
+  const uid = auth.currentUser.uid;
+  if (!isAdmin && !mem && autoVw !== uid) { autoVw = uid; openView("member", false); }     // new or expired members land on the payment panel
+  if (!isAdmin && mem && prevMem === false && VIEW === "member") closeView();
 }
 setInterval(() => { if (auth.currentUser && !isAdmin) access(); }, 60000);
 
@@ -2906,7 +2995,7 @@ function renewRender() {
   try { if (!localStorage.getItem("fr_rn_" + key)) { localStorage.setItem("fr_rn_" + key, "1"); paNotify(exp ? "Your membership has expired. Renew to unlock the radar." : "Your membership ends in " + leftText(left) + ". Renew to keep access."); } } catch {}
 }
 $("renew").addEventListener("click", e => {
-  if (e.target.closest("#rn_go")) { const m = $("member"); m.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  if (e.target.closest("#rn_go")) { openView("member"); return; }
   if (e.target.closest("#rn_x")) { try { sessionStorage.setItem("fr_rnx", $("renew").dataset.k); } catch {} $("renew").style.display = "none"; }
 });
 setInterval(() => { if (MON && auth.currentUser) renewRender(); }, 30000);
@@ -3377,7 +3466,7 @@ $("dbg_run").onclick = dbgRun; $("dbg_clr").onclick = () => { DBG.errs = []; dbg
 $("dbg_copy").onclick = async e => { try { await navigator.clipboard.writeText(dbgText()); e.target.textContent = "Copied"; } catch { prompt("Copy this report:", dbgText()); } setTimeout(() => { e.target.textContent = "Copy report"; }, 1500); };
 setInterval(() => { if (isAdmin && $("dbg") && $("dbg").style.display !== "none" && !DBG.busy) { $("dbg_body").innerHTML = '<div class="dgrid">' + dbgSections().join("") + "</div>"; } }, 5000);
 function showTab(t) {
-  ATAB = t; ["users", "pay", "ann", "logs", "admin", "dbg"].forEach(k => { $(k).style.display = k === t ? "block" : "none"; });
+  ATAB = t; ["users", "pay", "ann", "logs", "acct", "admin", "dbg"].forEach(k => { $(k).style.display = k === t ? "block" : "none"; });
   if (t === "dbg") dbgRun();
   if (t === "admin") $("admin").open = true;
   if (t === "ann") dueRender();
@@ -3465,18 +3554,19 @@ $("save").onclick = async () => {
 };
 function toast(m) { $("toast").textContent = m; setTimeout(() => $("toast").textContent = "", 5000); }
 async function marketEnter(u) {
-  MON = true; applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+  isAdmin = false; MON = true; applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
     stopUsers();
   resetIdle();
   if (!(await initSelf(u))) return false;
   try { isAdmin = (await dbr.ref("admins/" + u.uid).get()).val() === true; } catch { isAdmin = false; }
-  startCommon(u);
+  if (!auth.currentUser || auth.currentUser.uid !== u.uid) { isAdmin = false; return false; }          // the account changed while we were checking
+  startCommon(u); try { access(); } catch {}
   if (isAdmin) { startAdminUsers(); try { const s = (await dbr.ref("settings").get()).val() || {}; KEY = s.dataKey || ""; PROV = s.provider === "binance" || s.provider === "off" ? s.provider : "twelvedata"; THR = s.threshold || .6; POLL_SEC = +s.pollSec || 0; $("pollsel").value = String(POLL_SEC); POLL_MS = POLL_SEC ? POLL_SEC * 1000 : POLL_MS; if (s.watch) setWatch(s.watch); $("thr").value = THR; if (KEY) $("key").placeholder = "saved (hidden)"; else showTab("admin"); } catch {} }
   if (isAdmin) { try { const [a, b] = await Promise.all([dbr.ref("feed/src").get(), dbr.ref("feed/ts").get()]); SRV = { src: a.val(), ts: b.val() || 0 }; } catch {} }
-  status(); render(); start();
+  status(); render(); start(); try { access(); } catch {}
   return true;
 }
-function marketLeave() { MON = false; document.body.classList.remove("adminview"); try { $("goadmin").textContent = "Admin panel"; } catch {} try { if (evRef) evRef.off(); } catch {} evRef = null; EV = []; NS.uid = ""; TJ.uid = ""; try { if (nfRef) nfRef.off(); } catch {} nfRef = null; NF = { ts: 0, items: [] }; NK = { key: "", prov: "finnhub", on: false, loaded: false }; nfTimer = 0; PA = { uid: "", act: [], hist: [], mo: {} }; MOS = {}; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
+function marketLeave() { try { closeView(); $("atabs").style.display = "none"; $("goadmin").style.display = "none"; $("member").style.display = "none"; ["users", "pay", "ann", "logs", "acct", "admin", "dbg"].forEach(i => { $(i).style.display = "none"; }); } catch {} MON = false; document.body.classList.remove("adminview"); try { $("goadmin").textContent = "Admin panel"; } catch {} try { if (evRef) evRef.off(); } catch {} evRef = null; EV = []; NS.uid = ""; TJ.uid = ""; try { if (nfRef) nfRef.off(); } catch {} nfRef = null; NF = { ts: 0, items: [] }; NK = { key: "", prov: "finnhub", on: false, loaded: false }; nfTimer = 0; PA = { uid: "", act: [], hist: [], mo: {} }; MOS = {}; demo = false; clearInterval(demoTimer); $("demo").textContent = "Demo data"; stopUsers(); stop(); isAdmin = false; KEY = ""; alerts = []; }
 $("goacc").onclick = () => SHELL.switchTo("staff", "x_acc"); $("gostaff").onclick = () => SHELL.switchTo("staff");
 SHELL.market = { enter: marketEnter, leave: marketLeave, resume: () => { try { status(); render(); tdStatus(); } catch {} } };
 
@@ -4095,20 +4185,20 @@ async function ownerBootstrap(u) {                    // the owner email is kept
 }
 auth.onAuthStateChanged(async u => {
   ownerBootstrap(u);
-  const my = ++RTK; SHELL.market.leave(); SHELL.mLive = false; SHELL.staff.leave(); SHELL.ctx = null;
+  const my = ++RTK; document.body.classList.toggle("rolewait", !!u); SHELL.market.leave(); SHELL.mLive = false; SHELL.mUid = ""; SHELL.staff.leave(); SHELL.ctx = null;
   document.body.classList.remove("staffmode");
   G("login").style.display = u ? "none" : "block"; G("app").style.display = "none"; G("sx").style.display = "none";
   if (!u) { try { sessionStorage.removeItem("fr_mode"); } catch {} return; }
   const rd = async p => { try { return (await dbr.ref(p).get()).val(); } catch { return null; } };
   const [adm, sup, stf, usr] = await Promise.all([rd("admins/" + u.uid), rd("superadmins/" + u.uid), rd("staff/" + u.uid), rd("users/" + u.uid)]);
   if (my !== RTK) return;
-  if (usr && usr.blocked === true) { G("err").textContent = "Your access has been blocked by the admin."; auth.signOut(); return; }
+  if (usr && usr.blocked === true) { G("err").textContent = "Your access has been blocked by the admin."; document.body.classList.remove("rolewait"); auth.signOut(); return; }
   const owner = String(u.email || "").toLowerCase() === OWNER_MAIL, staffOn = !!(stf && stf.active === true), isA = adm === true, isS = sup === true || owner;
   const canStaff = staffOn || isS, canMarket = !(staffOn && !isA && !isS) || !!(stf && stf.market === true);   // an employee uses the staff workspace only
   SHELL.ctx = { canStaff, canMarket };
   let mode = canMarket ? "market" : "staff";
   if (staffOn && !isA && !isS) mode = "staff";
-  if (canMarket && canStaff) { try { const m0 = sessionStorage.getItem("fr_mode"); if (m0 === "staff" || m0 === "market") mode = m0; } catch {} }
+  if (canMarket && canStaff) { try { const [mu, mm] = String(sessionStorage.getItem("fr_mode") || "").split(":"); if (mu === u.uid && (mm === "staff" || mm === "market")) mode = mm; } catch {} }
   await enterMode(u, mode);
 });
 /*END-OF-APP*/
