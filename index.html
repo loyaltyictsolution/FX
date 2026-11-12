@@ -102,6 +102,33 @@ input[type=checkbox],input[type=radio]{accent-color:var(--buy)}
 @media(max-width:900px){#ld_features .ld-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){#ld_features .ld-grid{grid-template-columns:minmax(0,1fr)}.ld-grph{padding:32px 0 20px}}
 </style>
+<style id="live-icon-css">
+#sigst{gap:14px}
+#sigst i.lvi{position:relative;flex:none;display:block;width:96px;height:auto;aspect-ratio:120/104;border-radius:0;background:none!important;box-shadow:none!important;animation:none!important;color:#8a97a6}
+#sigst i.lvi::before,#sigst i.lvi::after{display:none!important}
+#sigst i.lvi svg{display:block;width:100%;height:100%;overflow:visible}
+#sigst.g i.lvi{color:#2ecc71;filter:drop-shadow(0 0 7px rgba(46,204,113,.55))}
+#sigst.y i.lvi{color:#f5b82e;filter:drop-shadow(0 0 7px rgba(245,184,46,.5))}
+#sigst.r i.lvi{color:#ef4444;filter:drop-shadow(0 0 7px rgba(239,68,68,.5))}
+#sigst i.lvi text{display:none}
+#sigst.g i.lvi .tg,#sigst.y i.lvi .ty,#sigst.r i.lvi .tr{display:inline}
+#sigst:not(.g):not(.y):not(.r) i.lvi .tg{display:inline}
+#sigst.g b::after{display:none!important}
+#sigst i.lvi .w{opacity:.3}
+#sigst i.lvi .core{transform-box:fill-box;transform-origin:center}
+#sigst.g i.lvi .w{animation:lvw 1.2s ease-in-out infinite}
+#sigst.g i.lvi .w2{animation-delay:.4s}
+#sigst.g i.lvi .core{animation:lvc 1.2s ease-in-out infinite}
+#sigst.y i.lvi .w{animation:lvw 2.2s ease-in-out infinite}
+#sigst.y i.lvi .w2{animation-delay:.7s}
+#sigst.y i.lvi .core{animation:lvc 2.2s ease-in-out infinite}
+#sigst.r i.lvi .w{animation:lvb 1.6s ease-in-out infinite}
+@keyframes lvw{0%,100%{opacity:.18}45%{opacity:1}}
+@keyframes lvc{0%,100%{transform:scale(1)}45%{transform:scale(1.08)}}
+@keyframes lvb{0%,100%{opacity:.15}50%{opacity:.75}}
+@media(max-width:600px){#sigst i.lvi{width:80px}}
+@media(prefers-reduced-motion:reduce){#sigst i.lvi .w,#sigst i.lvi .core{animation:none!important;opacity:1}}
+</style>
 </head>
 <body>
 <div id="login">
@@ -346,7 +373,13 @@ input[type=checkbox],input[type=radio]{accent-color:var(--buy)}
   </div>
 </details></div>
 </div>
-<div id="sigst" role="status" aria-live="polite" style="display:none"><i></i><div><b></b><span></span></div><button type="button" id="sig_refresh" title="Fetch the newest signals now">Refresh signals</button><button type="button" id="sig_refresh_users" style="display:none" title="Fetch fresh prices and send them to all users">Refresh users' signals</button></div>
+<div id="sigst" role="status" aria-live="polite" style="display:none"><i class="lvi" aria-hidden="true"><svg viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg" focusable="false">
+<g class="w w1" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M37 22.7A30 30 0 0 0 37 61.3"/><path d="M83 22.7A30 30 0 0 1 83 61.3"/></g>
+<g class="w w2" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M20.6 11.2A50 50 0 0 0 20.6 72.8"/><path d="M99.4 11.2A50 50 0 0 1 99.4 72.8"/></g>
+<g class="core"><circle cx="60" cy="42" r="20" fill="currentColor"/><path d="M54 32.5v19l16.5-9.5z" fill="#fff"/></g>
+<rect x="30" y="76" width="60" height="22" rx="3" fill="currentColor"/>
+<g fill="#fff" font-weight="700" font-size="14" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif" letter-spacing="1.5"><text class="tg" x="60" y="92">LIVE</text><text class="ty" x="60" y="92">WAIT</text><text class="tr" x="60" y="92">OFF</text></g>
+</svg></i><div><b></b><span></span></div><button type="button" id="sig_refresh" title="Fetch the newest signals now">Refresh signals</button><button type="button" id="sig_refresh_users" style="display:none" title="Fetch fresh prices and send them to all users">Refresh users' signals</button></div>
 <div id="why" class="panel OFFLINE" role="status"></div>
 <section class="panel" id="bb" style="display:none;margin-bottom:14px"></section>
 <section class="panel" id="renew" style="display:none;margin-bottom:14px" role="status"></section>
