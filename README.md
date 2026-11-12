@@ -1,81 +1,33 @@
-# Server setup (phone alerts + 24/7 news)
+# Loyalty FX Radar: Server account runner
 
-The page works without this. Do this once if you want alerts when the app is closed and headlines that refresh without an admin page open.
+Keeps the hidden **Server** account (loyaltyitsolutionss@gmail.com) signed in 24/7 so users get
+live signals even when every admin is offline. It publishes the feed marked as "server"; admin pages
+step back while it is fresh and take over again automatically if it goes quiet for 2 minutes.
 
-Needs: Firebase **Blaze** (pay-as-you-go) plan. At this size the cost is usually a few cents a month, but check Firebase pricing.
+## 1. Create the account (once)
+1. As owner or super admin, add a user with email loyaltyitsolutionss@gmail.com and a strong password
+   (Admin panel, Add user), or sign up on the login page.
+2. Open that Gmail inbox and confirm the verification email. The page only treats the account as Server
+   once the email is verified.
+3. As owner, make it **Admin** and **Super admin** in the users list. The page labels it "Server" and hides
+   it from normal admins; only super admins and the owner can see it.
 
-1. Install tools:  `npm i -g firebase-tools`  then  `firebase login`
-2. In an empty folder run `firebase init functions` (JavaScript, Node 20, project `loyalty-fx`). Replace the generated `functions/index.js` and `functions/package.json` with the ones here, then `cd functions && npm install`.
-3. Open `functions/index.js` and set `SITE_URL` to your real site address (or deploy with `SITE_URL` as an environment variable).
-4. Deploy:  `firebase deploy --only functions`
-5. Upload `firebase-messaging-sw.js` to the **same folder as index.html** on your host.
-6. Firebase console, Project settings, Cloud Messaging, Web Push certificates: Generate key pair, copy the public key. In the app, Admin settings, Phone push key: paste and Save.
-7. Publish `database_rules.json` (it adds `fcmtokens` and `palerts`).
-8. Members open Notification settings, then Turn on phone alerts.
+## 2. Host the runner (any always-on host)
+Render, Railway, Fly.io or any VPS. Use the Dockerfile in this folder. Set these environment variables
+(never put the password in a file or in the page):
 
-What runs:
-- `newsRefresh` every 10 min: uses the news key saved in Admin settings.
-- `radarPush` every minute: news-event warnings, market opens, renewal reminders, price alerts, signal changes.
+| Variable | Value |
+| --- | --- |
+| APP_URL | the web address where your index.html is hosted |
+| SERVER_PASSWORD | the Server account password |
+| SERVER_EMAIL | optional, defaults to loyaltyitsolutionss@gmail.com |
 
-Notes:
-- Phone alerts need the page opened over https and a browser that supports web push. On iPhone the app must be added to the Home Screen first.
-- Price alerts are watched by the server only for members who turned on phone alerts.
-- If the server and an open page both catch the same price alert, the member may get two notices.
+Run as a Web Service (the runner answers a health check on $PORT) or a Background Worker.
 
-# Install on phones (Android and iPhone)
+## 3. Check it works
+- Super admin: the users list shows loyaltyitsolutionss@gmail.com with a "Server" label and online.
+- Users: status bar is green and stays green with all admins offline.
+- Health endpoint of the runner returns {"ok":true,...}.
 
-Upload these files next to `index.html`: `manifest.webmanifest`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`, and the updated `firebase-messaging-sw.js`. The site must use https.
-
-Send members this link: `https://YOUR-SITE/?install=1`
-- Android (Chrome): an Install button appears. If it does not, the page explains Menu, Install app.
-- iPhone: the page shows Share, Add to Home Screen. It must be opened in Safari (links opened inside WhatsApp or Instagram should be copied into Safari).
-- Once installed it opens like an app and phone alerts work on iPhone too.
-
-# Extra protection
-
-- Firebase App Check: Firebase console, App Check, register the web app with reCAPTCHA v3, then paste the site key into `window.APPCHECK_KEY` at the top of `index.html`. Watch the metrics for a few days, then switch on enforcement for Realtime Database.
-- Google Cloud console, APIs and Services, Credentials: restrict the browser API key to your site address (HTTP referrers).
-- `pushCleanup` runs daily and removes old push log entries. `settings/newsErr` shows the last news fetch error.
-- Redeploy functions after updating: `firebase deploy --only functions`. Publish the new `database_rules.json`.
-
-# Phone alerts now follow each member's settings
-
-Quiet hours, muted pairs and switched-off signal types (BUY/SELL/DANGER) from Notification settings are now sent with the device and respected by the server. Quiet hours mute everything except renewal reminders and price alerts. Members' settings sync when they change them, so ask existing members to open Notification settings once. Redeploy functions and publish the new rules.
-
-# App icon
-
-`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` carry the Loyalty FX Radar design. The name under the icon on a phone is "Loyalty FX" (phones cut long names); the install screen shows the full "Loyalty FX Radar". If a phone shows the old icon, remove the app and install it again.
-
-# Tap to open, no double alerts, backups
-
-- Phone alerts now open the right place: price and signal alerts open that pair, renewal reminders open the renew box.
-- If a member's page is open (seen online in the last 2.5 minutes), the server skips price, signal and news alerts for them, because the page alerts on its own. This removes the double notice.
-- `weeklyBackup` saves users, memberships, payments, staff, finance, HR and payroll data to Cloud Storage every Sunday 03:00 Nairobi time. Deploy with the bucket name: `firebase functions:secrets` is not needed, use an environment variable: create `functions/.env` containing `BACKUP_BUCKET=your-bucket-name` before `firebase deploy --only functions`. Keep the bucket private and add a lifecycle rule in Google Cloud to delete backups older than 90 days. The backup holds personal and payment data, so limit who can open that bucket.
-
-# Staging
-
-1. Firebase console: create a second project, for example `loyalty-fx-staging`, with Realtime Database, Authentication and (for push) the Blaze plan.
-2. Copy `firebaserc.example` to `.firebaserc` next to your `firebase.json`.
-3. Test deploys: `firebase use staging`, then `firebase deploy --only functions,database`. Go live with `firebase use default` and deploy again.
-4. The page has the Firebase config inside `index.html` (and `firebase-messaging-sw.js`). For a staging copy of the site, change those values to the staging project's.
-
-# Payment check, results periods, caps, owner rules, recovery
-
-**Payment check** (Admin, Membership & payments, Payment check): matches M-Pesa prompts, payment entries and memberships. Red items: a prompt with no answer after 10 minutes, a paid prompt with no payment entry, an amount that differs, a confirmed payment where the member has no valid end date, a code used twice. Amber items: payments pending over 24 hours, no amount written, an amount that matches no plan price. It reads `stkreq`, so it only works where your STK server writes statuses `queued`, `sent`, `paid`, `failed` as the page expects. If your server writes payment entries in another shape, tell me and I will adjust the matching. Treat it as a second pair of eyes, not as proof: always compare with your M-Pesa statement.
-
-**Track record** now has Last 7 days, Last 30 days and All time buttons.
-
-**Caps**: `capDevices` keeps the newest 10 devices per member and `capAlerts` keeps the newest 30 price alerts. Deploy with the other functions.
-
-**Owner email in the rules** is now used in only 4 places on purpose: to let the owner save the owner as a super admin, to read the secret log, and for the owner-only payment reversal steps. Everywhere else the rules use `superadmins/`. Safe order:
-1. Upload the new `index.html`.
-2. Sign in once as the owner. The page saves `superadmins/<owner uid>` = true automatically.
-3. In the Firebase console, Realtime Database, check `superadmins` now contains your uid set to true.
-4. Only then publish the new `database_rules.json` (test it on staging first).
-If you ever get locked out after publishing: Realtime Database, Rules, paste the previous rules file back, publish, and sign in as owner again.
-
-**Account recovery**
-- Members and admins: Forgot password on the sign-in page sends a reset link. Admins can also send a reset link from the member list.
-- Owner: use Forgot password with the owner email. If you lose access to that mailbox, sign in to the Firebase console (Authentication, Users) with the Google account that owns the project and use Reset password, or change the email on that user. Keep the Google account for Firebase protected with two-step verification and a recovery phone.
-- Add a second super admin you trust (Admin, Staff) so one lost account never stops the business. Do not share the owner login.
-- Keep the weekly backup bucket private; it is your way back if data is deleted.
+The price source key and the database rules are unchanged: the Server account needs the same Admin and
+Super admin access in the database that your current super admin has.
