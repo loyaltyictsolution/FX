@@ -137,10 +137,11 @@ async function tick() {
 
 // ---- Status page ----
 const level = () => (!st.lastPublish || Date.now() - st.lastPublish > 18e4 ? "r" : Date.now() - st.lastPublish > 9e4 || !st.loaded ? "y" : "g");
-const statusJson = () => ({
+const statusJson = (full) => ({
   state: level(), note: st.note, uptimeMin: Math.round((Date.now() - st.startedAt) / 6e4), lastPublishSecAgo: st.lastPublish ? Math.round((Date.now() - st.lastPublish) / 1e3) : null,
   publishes: st.publishes, stream: wsLive(), loaded: st.loaded + "/" + st.total, error: st.error,
-  pairs: Object.values(eng.data).map((d) => ({ pair: d.pair, signal: d.signal, bid: d.bid, open: d.open, stale: d.stale })),
+  pairs: full ? Object.values(eng.data).map((d) => ({ pair: d.pair, signal: d.signal, bid: d.bid, open: d.open, stale: d.stale })) : [],
+  pairCount: Object.keys(eng.data).length,
 });
 const PAGE = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Loyalty FX Server</title>
 <style>body{margin:0;background:#0b1620;color:#e8eef5;font:15px system-ui,sans-serif;display:flex;justify-content:center;padding:24px}main{width:100%;max-width:560px}
@@ -152,12 +153,17 @@ const PAGE = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 <div class="top"><svg id="ic" class="ic" viewBox="0 0 120 104"><g class="w w1" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M37 22.7A30 30 0 0 0 37 61.3"/><path d="M83 22.7A30 30 0 0 1 83 61.3"/></g><g class="w w2" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M20.6 11.2A50 50 0 0 0 20.6 72.8"/><path d="M99.4 11.2A50 50 0 0 1 99.4 72.8"/></g><circle cx="60" cy="42" r="20" fill="currentColor"/><path d="M54 32.5v19l16.5-9.5z" fill="#fff"/><rect x="30" y="76" width="60" height="22" rx="3" fill="currentColor"/><text id="bt" x="60" y="92" fill="#fff" font-weight="700" font-size="16" text-anchor="middle">...</text></svg>
 <div><h1>Loyalty FX Server</h1><small id="sub">starting</small></div></div>
 <div class="card" id="info"></div><div class="card" id="pairs"></div></main>
-<script>const L={g:"LIVE",y:"WAIT",r:"OFF"};async function u(){try{const j=await (await fetch("status.json")).json();ic.setAttribute("class","ic "+j.state);bt.textContent=L[j.state];sub.textContent=j.note+" · up "+j.uptimeMin+" min";
+<script>const L={g:"LIVE",y:"WAIT",r:"OFF"};async function u(){try{const j=await (await fetch("status.json"+location.search)).json();ic.setAttribute("class","ic "+j.state);bt.textContent=L[j.state];sub.textContent=j.note+" · up "+j.uptimeMin+" min";
 info.innerHTML=[["Last publish",j.lastPublishSecAgo==null?"never":j.lastPublishSecAgo+"s ago"],["Pairs loaded",j.loaded],["Live stream",j.stream?"connected":"polling"],["Publishes",j.publishes]].map(r=>'<div class="row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join("")+(j.error?'<div class="err">'+j.error+'</div>':"");
-pairs.innerHTML=j.pairs.map(p=>'<div class="row"><span>'+p.pair+'</span><span class="'+p.signal+'">'+p.signal+(p.open?"":" (closed)")+'</span><span>'+p.bid+'</span></div>').join("")||"<small>No pairs yet</small>"}catch(e){}}u();setInterval(u,5000)</script></body></html>`;
+pairs.innerHTML=j.pairs.map(p=>'<div class="row"><span>'+p.pair+'</span><span class="'+p.signal+'">'+p.signal+(p.open?"":" (closed)")+'</span><span>'+p.bid+'</span></div>').join("")||"<small>"+(j.pairCount||0)+" pairs loaded. Add ?t=YOUR_TOKEN to the address to see signals.</small>"}catch(e){}}u();setInterval(u,5000)</script></body></html>`;
+const STATUS_TOKEN = env.STATUS_TOKEN || "";
 http.createServer((req, res) => {
-  if (req.url.startsWith("/status.json")) { res.writeHead(200, { "content-type": "application/json" }); return res.end(JSON.stringify(statusJson())); }
-  if (req.url.startsWith("/health")) { res.writeHead(st.lastPublish ? 200 : 503); return res.end(st.lastPublish ? "ok" : "starting"); }
+  const cors = { "access-control-allow-origin": "*" };
+  if (req.url.startsWith("/status.json")) {
+    const full = !!STATUS_TOKEN && new URL(req.url, "http://x").searchParams.get("t") === STATUS_TOKEN; // signals only with the token
+    res.writeHead(200, { "content-type": "application/json", ...cors }); return res.end(JSON.stringify(statusJson(full)));
+  }
+  if (req.url.startsWith("/health")) { res.writeHead(st.lastPublish ? 200 : 503, cors); return res.end(st.lastPublish ? "ok" : "starting"); }
   res.writeHead(200, { "content-type": "text/html" }); res.end(PAGE);
 }).listen(PORT, () => log("status page on :" + PORT));
 
