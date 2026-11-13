@@ -101,6 +101,20 @@ input[type=checkbox],input[type=radio]{accent-color:var(--buy)}
 #sigfx #list{margin-top:0}
 @media(max-width:900px){#ld_features .ld-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){#ld_features .ld-grid{grid-template-columns:minmax(0,1fr)}.ld-grph{padding:32px 0 20px}}
+
+/* Stretch the signal list across the full width */
+#sigfx{grid-template-columns:minmax(0,1fr)}
+#sigfx #list{
+  grid-column:1;grid-row:1;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:12px;padding:12px;align-content:start
+}
+#sigfx #list>.tabs{grid-column:1/-1}
+#sigfx #list>div[style]{grid-column:1/-1}
+#sigfx #list .row{margin:0}
+#sigfx #chartpanel{grid-column:1;grid-row:2}
+#sigfx #detail{grid-column:1;grid-row:3}
 </style>
 <style id="live-icon-css">
 header #status{display:none!important}
