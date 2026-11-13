@@ -1,8 +1,9 @@
 {
-  "name": "loyalty-fx-server-runner",
+  "name": "loyalty-fx-signal-server",
   "version": "1.0.0",
   "private": true,
-  "main": "runner.js",
-  "scripts": { "start": "node runner.js" },
-  "dependencies": { "playwright": "1.48.2" }
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "test": "node selftest.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "firebase-admin": "^12.6.0", "ws": "^8.18.0" }
 }

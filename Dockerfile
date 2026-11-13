@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/playwright:v1.48.2-jammy
+FROM node:20-slim
 WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev
-COPY runner.js ./
+COPY engine.js server.js ./
 ENV NODE_ENV=production
-CMD ["node", "runner.js"]
+CMD ["node", "server.js"]

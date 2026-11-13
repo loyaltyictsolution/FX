@@ -1,33 +1,29 @@
-# Loyalty FX Radar: Server account runner
+# Loyalty FX Radar: Signal Server
 
-Keeps the hidden **Server** account (loyaltyitsolutionss@gmail.com) signed in 24/7 so users get
-live signals even when every admin is offline. It publishes the feed marked as "server"; admin pages
-step back while it is fresh and take over again automatically if it goes quiet for 2 minutes.
+A small always-on program that fetches prices, works out signals with the **same engine as the app**,
+and publishes the shared feed marked as `server`. Users stay green even when every admin is offline.
+Admin pages step back while the feed is fresh and take over again if the server is silent for 2 minutes.
 
-## 1. Create the account (once)
-1. As owner or super admin, add a user with email loyaltyitsolutionss@gmail.com and a strong password
-   (Admin panel, Add user), or sign up on the login page.
-2. Open that Gmail inbox and confirm the verification email. The page only treats the account as Server
-   once the email is verified.
-3. As owner, make it **Admin** and **Super admin** in the users list. The page labels it "Server" and hides
-   it from normal admins; only super admins and the owner can see it.
+It signs in to your database with a **service account key** (full access), so it needs no login account,
+no roles and no database-rule changes. It has its own status page (the live icon, last publish time, pairs).
 
-## 2. Host the runner (any always-on host)
-Render, Railway, Fly.io or any VPS. Use the Dockerfile in this folder. Set these environment variables
-(never put the password in a file or in the page):
+## What it does
+- Reads your Twelve Data key and tracked markets from the app's saved settings (or from environment variables).
+- Loads 1 day of history per pair, then follows the live price stream (polls if the stream is quiet).
+- Every 5 seconds recomputes signals, then publishes the feed (at most once per 4 seconds), plus the charts
+  and the signal-results records the app already uses.
 
-| Variable | Value |
-| --- | --- |
-| APP_URL | the web address where your index.html is hosted |
-| SERVER_PASSWORD | the Server account password |
-| SERVER_EMAIL | optional, defaults to loyaltyitsolutionss@gmail.com |
+## Set up (once)
+1. Firebase console > Project settings > Service accounts > **Generate new private key**. Keep the file private.
+2. Pick a host that stays on (Render, Railway, Fly.io, or a small VPS). Deploy this folder with the Dockerfile.
+3. Add the key as a **secret** named `FIREBASE_SERVICE_ACCOUNT` (paste the whole JSON). Nothing else is required.
+4. Open the host's address: you should see the live icon turn green and your pairs listed.
+5. Optional: run `npm install && npm test` first to check the engine on your own computer.
 
-Run as a Web Service (the runner answers a health check on $PORT) or a Background Worker.
-
-## 3. Check it works
-- Super admin: the users list shows loyaltyitsolutionss@gmail.com with a "Server" label and online.
-- Users: status bar is green and stays green with all admins offline.
-- Health endpoint of the runner returns {"ok":true,...}.
-
-The price source key and the database rules are unchanged: the Server account needs the same Admin and
-Super admin access in the database that your current super admin has.
+## Notes
+- Price source: Twelve Data (the free plan is enough for about 5 pairs). Other sources are not in this version.
+- The public landing-page preview and win-rate stats that the admin page writes are not included yet.
+  The signal results records are written, so results tracking keeps working.
+- The `loyaltyitsolutionss@gmail.com` Server account in the app is no longer needed to keep things running;
+  it can stay as the owner-only label.
+- Never put the key in the web page or in a public repository.
