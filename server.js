@@ -130,6 +130,7 @@ async function tick() {
     await pollOnce();
     if (Date.now() - lastRefresh > 3e4) { lastRefresh = Date.now(); eng.markAllDirty(); } // keeps age/ts fresh, also when markets are closed
     if (eng.compute(ctx) && Date.now() - st.lastPublish > 4e3) await publish();
+    signalAlerts(); healthAlerts(); landingPreview();
     st.note = !st.loaded ? "loading history" : wsLive() ? "live stream" : "polling";
   } catch (e) { st.error = e.message; log("tick", e.message); }
 }
@@ -160,10 +161,51 @@ http.createServer((req, res) => {
   res.writeHead(200, { "content-type": "text/html" }); res.end(PAGE);
 }).listen(PORT, () => log("status page on :" + PORT));
 
+
+// ---- Free extras: Telegram alerts, health alerts, landing-page preview, keep-awake ----
+const TG_TOKEN = env.TELEGRAM_TOKEN || "", TG_CHAT = env.TELEGRAM_CHAT_ID || "", SELF_URL = (env.SELF_URL || "").replace(/\/$/, "");
+async function notify(text) {
+  log("notify:", text.replace(/\n/g, " | "));
+  if (!TG_TOKEN || !TG_CHAT) return;
+  try { await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: TG_CHAT, text }) }); }
+  catch (e) { log("telegram", e.message); }
+}
+const num = (v, d = 5) => (Number.isFinite(v) ? (+v).toFixed(v >= 100 ? 2 : d) : "-");
+const lastSig = {}, lastSent = {};
+function signalAlerts() {
+  for (const d of Object.values(eng.data)) {
+    const prev = lastSig[d.pair]; lastSig[d.pair] = d.signal;
+    if (prev === undefined || prev === d.signal || d.stale || d.open === false) continue;
+    if (!["BUY", "SELL", "DANGER"].includes(d.signal)) continue;
+    const k = d.pair + d.signal; if (Date.now() - (lastSent[k] || 0) < 3e5) continue; lastSent[k] = Date.now();
+    const L = d.lv, pc = Math.round(Math.max(d.pBuy || 0, d.pSell || 0) * 100);
+    notify(d.signal === "DANGER" ? `DANGER ${d.pair}: ${d.reason || "unstable market"}. Do not enter.`
+      : `${d.signal} ${d.pair} (${pc}%)\nPrice ${num(d.bid)}` + (L ? `\nTarget 1 ${num(L.t1)}  Target 2 ${num(L.t2)}\nStop ${num(L.stop)}` : ""));
+  }
+}
+let healthBad = false, errSent = "";
+function healthAlerts() {
+  const stalled = st.loaded > 0 && st.lastPublish && Date.now() - st.lastPublish > 18e4 && Object.values(eng.data).some((d) => d.open !== false);
+  if (stalled && !healthBad) { healthBad = true; notify("Signal server: prices have not published for 3 minutes. Users may see Buffering."); }
+  if (!stalled && healthBad && Date.now() - st.lastPublish < 3e4) { healthBad = false; notify("Signal server: back to normal."); }
+  if (st.error && st.error !== errSent && /apikey|api key|invalid|daily limit|run out of|premium/i.test(st.error)) { errSent = st.error; notify("Signal server problem: " + st.error); }
+}
+const PVB = []; let lastPrev = 0;
+function landingPreview() {
+  const t = Date.now(), pp = pairs.find((x) => eng.typeOf(x) === "forex") || pairs[0], d = pp && eng.data[pp];
+  if (d && !d.stale && d.open !== false && (!PVB.length || t - PVB[PVB.length - 1].t > 3e4)) PVB.push({ t, sig: d.signal, bid: d.bid });
+  while (PVB.length && t - PVB[0].t > 36e5) PVB.shift();
+  if (t - lastPrev < 3e5) return; lastPrev = t;
+  const old = PVB.filter((x) => t - x.t >= 9e5).pop();
+  if (old && pp) db.ref("pub").update({ preview: { pair: pp, signal: old.sig, bid: old.bid, at: t - (t - old.t), ts: TS } }).catch(() => {});
+}
+if (SELF_URL) setInterval(() => fetch(SELF_URL + "/health").catch(() => {}), 10 * 6e4); // keeps free hosts awake
+
 // ---- Main ----
 (async () => {
   for (;;) { try { await loadSettings(); if (KEY) break; st.error = "No Twelve Data key found (settings/dataKey or DATA_KEY)"; } catch (e) { st.error = e.message; } log(st.error); await sleep(3e4); }
   log("watching", pairs.join(", "));
+  notify("Signal server started. Watching " + pairs.join(", "));
   bootstrap();
   setInterval(tick, 5e3);
   setInterval(() => { loadSettings().then(() => { if (pairs.some((s) => !eng.P[s])) bootstrap(); }).catch(() => {}); }, 5 * 6e4);

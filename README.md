@@ -27,3 +27,10 @@ no roles and no database-rule changes. It has its own status page (the live icon
 - The `loyaltyitsolutionss@gmail.com` Server account in the app is no longer needed to keep things running;
   it can stay as the owner-only label.
 - Never put the key in the web page or in a public repository.
+
+## Free extras
+- **Telegram alerts:** message @BotFather, send /newbot, copy the token into `TELEGRAM_TOKEN`. Send your bot a
+  message, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` to find your chat id for `TELEGRAM_CHAT_ID`.
+  You get BUY, SELL and DANGER alerts, plus a message if prices stop publishing and when they recover.
+- **Keep a free host awake:** set `SELF_URL` to the server's public address (it pings itself every 10 minutes),
+  and add the same address to a free monitor such as UptimeRobot (5-minute checks, emails you if it goes down).
