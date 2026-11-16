@@ -119,15 +119,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--buy)}
 
 /* Stretch the signal list across the full width */
 #sigfx{grid-template-columns:minmax(0,1fr)}
-#sigfx #list{
-  grid-column:1;grid-row:1;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
-  gap:12px;padding:12px;align-content:start
-}
-#sigfx #list>.tabs{grid-column:1/-1}
+#sigfx #list{grid-column:1;grid-row:1;display:block;padding:16px 16px 12px;align-content:start}
 #sigfx #list>div[style]{grid-column:1/-1}
-#sigfx #list .row{margin:0}
 #sigfx #chartpanel{grid-column:1;grid-row:2}
 #sigfx #detail{grid-column:1;grid-row:3}
 </style>
@@ -196,7 +189,51 @@ body.nodata #list .row::after{content:"NO DATA";position:absolute;inset:0;displa
 #risknote{padding:6px 12px;text-align:center;font-size:12px;color:var(--mut);background:var(--panel);border-bottom:1px solid var(--line)}body.landing #risknote{display:none}
 @media(max-width:760px){#calc input,#calc select,#calc button{min-height:44px;font-size:16px}}
 @media(prefers-reduced-motion:reduce){.num.fu,.num.fd,.row .tag.BUY,.row .tag.SELL{animation:none}}
-</style></head>
+</style><style id="board-css">
+/* ===== Smart signals board: only open markets, grouped and sorted ===== */
+.lbhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px;margin:0 0 6px}
+.lbhead .tabs{padding:0!important;gap:8px}
+.lbhead .tabs button{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:7px 8px 7px 15px;font-weight:600}
+.lbhead .tabs button em{font-style:normal;font-size:11px;font-weight:700;min-width:22px;text-align:center;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--tx) 13%,transparent)}
+.lbhead .tabs button.on em{background:rgba(0,0,0,.2)}
+.lbsum{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;font-size:12.5px;color:var(--mut)}
+.lbsum b{color:var(--tx);font-size:14px}
+.lbdot{width:9px;height:9px;border-radius:50%;background:var(--buy);animation:lbp 1.8s infinite}
+@keyframes lbp{0%{box-shadow:0 0 0 0 rgba(46,196,182,.55)}70%{box-shadow:0 0 0 9px rgba(46,196,182,0)}100%{box-shadow:0 0 0 0 rgba(46,196,182,0)}}
+.lbsec{display:flex;align-items:center;gap:10px;margin:20px 0 12px;font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;color:var(--c,var(--mut))}
+.lbsec i{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+.lbsec span{font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--mut)}
+.lbsec::after{content:"";order:9;flex:1;height:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--c,var(--line)) 50%,transparent),transparent)}
+.lbsec.t{--c:var(--buy)}.lbsec.d{--c:var(--danger)}.lbsec.w{--c:var(--wait)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;align-items:stretch}
+#sigfx #list .row{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:start;align-items:start;gap:5px 12px;padding:14px 16px 12px 18px;border-radius:16px;min-width:0}
+#sigfx #list .row>*{position:relative;z-index:1}
+#sigfx #list .row .rh{grid-column:1;grid-row:1;display:flex;align-items:center;gap:8px;min-width:0}
+#sigfx #list .row .rh b{font-size:17px;letter-spacing:.3px}
+#sigfx #list .row .rt{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
+#sigfx #list .row .tag{grid-column:2;grid-row:1;justify-self:end;min-width:78px;padding:6px 12px;border-radius:10px;font-size:13px;letter-spacing:.07em}
+#sigfx #list .row .rp{grid-column:1/-1;grid-row:2;font-size:25px;font-weight:700;letter-spacing:-.5px;line-height:1.15}
+#sigfx #list .row.BUY .rp,#sigfx #list .row.SELL .rp{font-size:29px}
+#sigfx #list .sgrid.w .row .rp{font-size:21px}
+#sigfx #list .row .rm{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12.5px;color:var(--mut)}
+#sigfx #list .row .rm .hit,#sigfx #list .row .rm .sage{margin:0}
+#sigfx #list .row .rw{grid-column:1/-1;font-size:12.5px;line-height:1.4}
+#sigfx #list .row .lvs{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:3px 0;margin-top:6px;padding-top:9px}
+#sigfx #list .row .lvs .lvl,#sigfx #list .row .lvs .nowgo{flex:1 1 100%}
+#sigfx #list .row .spk{position:static;grid-column:1/-1;width:100%;height:28px;margin-top:6px;opacity:.5}
+body:not(.nodata) #sigfx #list .row::after{top:44px;right:16px;transform:none;font-size:40px;opacity:.08;z-index:0}
+#sigfx #list .row.BUY{background:linear-gradient(135deg,color-mix(in srgb,var(--buy) 15%,var(--panel)),color-mix(in srgb,var(--panel) 78%,transparent) 70%)}
+#sigfx #list .row.SELL{background:linear-gradient(135deg,color-mix(in srgb,var(--sell) 15%,var(--panel)),color-mix(in srgb,var(--panel) 78%,transparent) 70%)}
+#sigfx #list .row.WAIT{box-shadow:none}
+.lbclosed{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:22px 0 4px;padding:11px 15px;border:1px dashed var(--line);border-radius:14px;color:var(--mut);font-size:12.5px}
+.lbclosed b{color:var(--tx)}.lbmoon{font-size:16px}
+.lbch{display:flex;flex-wrap:wrap;gap:5px}.lbch span{padding:1px 9px;border-radius:999px;border:1px solid var(--line);font-size:11.5px;opacity:.8}
+.lbnx{margin-left:auto;font-weight:600;color:var(--wait)}
+.lbempty{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;padding:34px 16px;margin-top:12px;border:1px dashed var(--line);border-radius:16px;color:var(--mut)}
+.lbempty b{color:var(--tx);font-size:16px}
+@media(max-width:600px){.sgrid{grid-template-columns:minmax(0,1fr)}.lbnx{margin-left:0;flex-basis:100%}#sigfx #list{padding:12px 10px}}
+</style>
+</head>
 <body>
 <div id="login">
   <div class="ld-nav"><div class="ld-wrap">
@@ -735,9 +772,28 @@ return`<div class="lvb" style="border-color:var(--wait)"><b style="color:var(--w
 function lvLine(p,d){const w=h=>h?`<div class="lvs">${h}</div>`:"";return w(lvIn(p,d))}function lvIn(p,d){if(d&&d.signal==="DANGER")return`<div class="lvl" style="color:var(--danger)"><b style="color:var(--danger)">Avoid ${esc(dgInfo(d).avoid)}</b></div>`;const L=d&&d.lv;if(!L||d.stale||d.open===false)return"";const f=v=>fmt(p,v),sl=Math.abs(L.stop-L.entry);if(d.signal==="BUY"||d.signal==="SELL"){const b=d.signal==="BUY";return`<div class="lvl">Start <b class="num">${f(L.entry)}</b> &middot; Stop loss <b class="num" style="color:var(--danger)">${f(L.stop)}</b></div><div class="nowgo ${b?"nb":"ns"}"><i class="nw-dot"></i><span class="nw-t">${b?"NOW BUY":"NOW SELL"}</span><span class="nw-s">${b?"Buyers in control":"Sellers in control"}</span><span class="nw-a">${b?"&#9650;":"&#9660;"}</span></div>`}if(d.signal==="WAIT")return`<div class="lvl"><span style="color:var(--buy)">If BUY</span> start <b class="num">${f(L.entry)}</b> &middot; stop <b class="num">${f(L.entry-sl)}</b></div><div class="lvl"><span style="color:var(--sell)">If SELL</span> start <b class="num">${f(L.entry)}</b> &middot; stop <b class="num">${f(L.entry+sl)}</b></div>`;return""}
 const SGS={};function sgSince(p,d){let t=d.since;if(!t){const r=SGS[p];if(!r||r.s!==d.signal)SGS[p]={s:d.signal,t:rt()};t=SGS[p].t}return t}const sgLive=d=>d&&(d.signal==="BUY"||d.signal==="SELL")&&!d.stale&&d.open!==false,sgTxt=t=>{const m=Math.floor((rt()-t)/6e4);return m>=30?"Signal expired":"Signal active for "+(m<1?"<1m":m+"m")},sgExp=(p,d)=>sgLive(d)&&rt()-sgSince(p,d)>=18e5;function ageTag(p,d){if(!sgLive(d))return"";const t=sgSince(p,d);return' <span class="sage'+(sgExp(p,d)?" x":"")+'" data-since="'+t+'">'+sgTxt(t)+"</span>"}function sgTick(){document.querySelectorAll(".sage").forEach(e=>{const t=+e.dataset.since,x=rt()-t>=18e5;e.textContent=sgTxt(t);e.classList.toggle("x",x);const r=e.closest(".row");if(r)r.classList.toggle("expd",x)})}setInterval2(sgTick,2e4);
 const PXL={};function fl(p,b){const o=PXL[p];PXL[p]=b;return o==null||o===b?"":b>o?"fu":"fd"}function hitTag(d){try{return allow("tested")&&d&&d.bt&&d.bt.rate!=null?' <span class="hit" title="Share of past signals that moved the right way, last ~24 hours">'+pct(d.bt.rate)+' hit rate</span>':""}catch{return""}}function spk(d){const a=d&&d.spark;if(!a||a.length<2)return"";const lo=Math.min(...a),r=Math.max(...a)-lo||1,n=a.length;return'<svg class="spk" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+a.map((v,i)=>(i/(n-1)*100).toFixed(1)+","+(22-(v-lo)/r*20).toFixed(1)).join(" ")+'" fill="none" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>'}
-function renderMain(){const st=status();try{document.body.classList.toggle("nodata",/OFFLINE/.test($("status").className)&&!demo)}catch{}$("list").innerHTML=!Object.keys(data).length?`<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin?"Waiting for the signal feed.":loaded?"Waiting for the first computation.":"Waiting for price history. Tap Demo data to preview the layout.")}</p></div>`:marketTabs()+Object.entries(data).filter(([p,d2])=>MK==="all"||(d2.type||typeOf(p))===MK).map(([p,d2])=>`<div class="row ${d2.signal} ${p===sel?"sel":""} ${sgExp(p,d2)?"expd":""}" tabindex="0" data-p="${esc(p)}" data-sym="${esc(symOf(p))}">
-      <div><b>${esc(p)}</b> <span class="mut">${esc(TL[d2.type||typeOf(p)]||"")}</span><div class="mut">${d2.trend} / vol ${d2.volatility.toLowerCase()}${d2.open===false?" / market closed":""} / <span class="upd" data-at="${rt()-(d2.age||0)*1e3}">${d2.age||0}s ago</span>${hitTag(d2)}${ageTag(p,d2)}</div>${d2.signal==="WAIT"||d2.signal==="DANGER"?`<div class="mut" style="font-size:12px;color:var(--${d2.signal==="DANGER"?"danger":"wait"})">${esc(whyNow(d2).split(". ")[0].replace(/\.$/,""))}</div>`:""}</div>
-      <div class="num ${fl(p,d2.bid)}">${fmt(p,d2.bid)}<span class="pxi" title="Prices are indicative. Always verify with your broker before entering.">i</span></div><span class="tag ${d2.signal}">${d2.signal}</span>${lvLine(p,d2)}${spk(d2)}</div>`).join("");document.querySelectorAll(".row").forEach(r2=>{r2.onclick=()=>{sel=r2.dataset.p;render()};r2.onkeydown=e=>e.key==="Enter"&&r2.onclick()});document.querySelectorAll("#list .tabs button").forEach(b=>{b.onclick=()=>{MK=b.dataset.mk;render()}});const d=data[sel];if(!d){$("detail").innerHTML='<p class="mut">Select a pair.</p>';return}const bar=(n,v,c2)=>`<div><span>${n}</span><span class="trk"><i style="width:${Math.max(2,v*100)}%;background:linear-gradient(90deg,color-mix(in srgb,var(${c2}) 55%,transparent),var(${c2}))"></i></span><span class="num">${pct(v)}</span></div>`;const bt=d.bt&&d.bt.rate!=null?`${pct(d.bt.rate)} of ${d.bt.hit+d.bt.miss} past signals moved the right way (last ~24 hours, spread ignored)`:"not enough past signals to measure";$("detail").dataset.wm=sel.replace(/[^A-Za-z0-9]/g,"");$("detail").dataset.sig=d.signal;$("detail").innerHTML=`<div class="dhead"><div><div class="dpair">${esc(sel)} <span class="mut">${esc(TL[d.type||typeOf(sel)]||"")}</span></div><div class="big num">${fmt(sel,d.bid)}</div></div><span class="tag ${d.signal}">${d.signal}</span></div><div class="chartbox"><canvas id="cv" width="600" height="120"></canvas></div>
+let BSIG="";const mkOpen=(p,d)=>demo||(d.open!==false&&isOpen(p));const bStr=d=>Math.max(d.pBuy||0,d.pSell||0);
+function bNext(types){try{const now=rt(),o=[],fx=MOK.find(k=>k.k==="fx"),us=MOK.find(k=>k.k==="us");if(types.has("forex")&&fx){const n=nextOpen(fx.f,now);if(n)o.push("Forex opens "+paWhen(n))}if(types.has("stocks")&&us){const n=nextOpen(us.f,now);if(n)o.push("US stocks open "+paWhen(n))}return o.join(" \u00b7 ")}catch{return""}}
+function boardCard(p,d2){const bull=d2.trend==="BULLISH",why=d2.signal==="WAIT"||d2.signal==="DANGER"?`<div class="rw" style="color:var(--${d2.signal==="DANGER"?"danger":"wait"})">${esc(whyNow(d2).split(". ")[0].replace(/\.$/,""))}</div>`:"";
+return`<div class="row ${d2.signal} ${p===sel?"sel":""} ${sgExp(p,d2)?"expd":""}" tabindex="0" data-p="${esc(p)}" data-sym="${esc(symOf(p))}"><div class="rh"><b>${esc(p)}</b><span class="rt">${esc(TL[d2.type||typeOf(p)]||"")}</span></div><span class="tag ${d2.signal}">${d2.signal}</span><div class="rp num ${fl(p,d2.bid)}">${fmt(p,d2.bid)}<span class="pxi" title="Prices are indicative. Always verify with your broker before entering.">i</span></div><div class="rm"><span class="${bull?"up":"dn"}">${bull?"\u25b2 Bullish":"\u25bc Bearish"}</span><span>vol ${esc(String(d2.volatility||"").toLowerCase())}</span><span class="upd" data-at="${rt()-(d2.age||0)*1e3}">${d2.age||0}s ago</span>${hitTag(d2)}${ageTag(p,d2)}</div>${why}${lvLine(p,d2)}${spk(d2)}</div>`}
+function boardHtml(){const E=Object.entries(data);if(!E.length)return`<div style="padding:8px"><b>No signals yet</b><p class="mut">${esc(!isAdmin?"Waiting for the signal feed.":loaded?"Waiting for the first computation.":"Waiting for price history. Tap Demo data to preview the layout.")}</p></div>`;
+BSIG=E.map(([p,d])=>p+(mkOpen(p,d)?1:0)).join();const live=E.filter(([p,d])=>mkOpen(p,d)),shut=E.filter(([p,d])=>!mkOpen(p,d));
+const ORD={forex:0,crypto:1,stocks:2},tyOf=(p,d)=>d.type||typeOf(p),types=[...new Set(live.map(([p,d])=>tyOf(p,d)))].sort((x,y)=>(ORD[x]??9)-(ORD[y]??9));if(MK!=="all"&&!types.includes(MK))MK="all";
+const shown=live.filter(([p,d])=>MK==="all"||tyOf(p,d)===MK);
+const tr=shown.filter(([p,d])=>d.signal==="BUY"||d.signal==="SELL").sort((a,b)=>(sgExp(a[0],a[1])?1:0)-(sgExp(b[0],b[1])?1:0)||bStr(b[1])-bStr(a[1]));
+const dg=shown.filter(([p,d])=>d.signal==="DANGER").sort((a,b)=>bStr(b[1])-bStr(a[1]));
+const wt=shown.filter(([p,d])=>d.signal!=="BUY"&&d.signal!=="SELL"&&d.signal!=="DANGER").sort((a,b)=>(a[1].stale?1:0)-(b[1].stale?1:0)||bStr(b[1])-bStr(a[1]));
+const first=[...tr,...dg,...wt][0];if(first&&(!data[sel]||!mkOpen(sel,data[sel])))sel=first[0];
+const nT=live.filter(([p,d])=>d.signal==="BUY"||d.signal==="SELL").length,nW=live.filter(([p,d])=>d.signal==="WAIT").length,nD=live.filter(([p,d])=>d.signal==="DANGER").length;
+const tabs=types.length>1?'<div class="tabs">'+[["all","All",live.length],...types.map(t=>[t,TLONG[t]||t,live.filter(([p,d])=>tyOf(p,d)===t).length])].map(([k,t,n])=>`<button data-mk="${k}" class="${MK===k?"on":""}">${t}<em>${n}</em></button>`).join("")+"</div>":"<div></div>";
+const head=`<div class="lbhead">${tabs}<div class="lbsum"><span class="lbdot"></span><span><b>${live.length}</b> live market${live.length===1?"":"s"}</span><span><b>${nT}</b> to trade</span>${nD?`<span><b>${nD}</b> caution</span>`:""}<span><b>${nW}</b> watching</span></div></div>`;
+const sec=(c,t,sub,arr,g)=>arr.length?`<div class="lbsec ${c}"><i></i>${t}<span>${sub}</span></div><div class="sgrid ${g||""}">${arr.map(([p,d])=>boardCard(p,d)).join("")}</div>`:"";
+let out=head;if(!live.length){const nx=bNext(new Set(shut.map(([p,d])=>tyOf(p,d))));out+=`<div class="lbempty"><b>All tracked markets are closed right now</b><span>${esc(nx||"They will appear here automatically the moment they open.")}</span></div>`}
+else out+=sec("t","Trade now",tr.length+" ready",tr)+sec("d","Caution","Stay out until it clears",dg)+sec("w","Watching","Waiting for a clear setup",wt,"w");
+if(shut.length){const nx=bNext(new Set(shut.map(([p,d])=>tyOf(p,d))));out+=`<div class="lbclosed"><span class="lbmoon">\u263E</span><b>${shut.length} closed, hidden</b><span class="lbch">${shut.map(([p])=>`<span>${esc(p)}</span>`).join("")}</span>${nx?`<span class="lbnx">${esc(nx)} (your time)</span>`:""}</div>`}
+return out}
+setInterval2(()=>{try{if(!auth.currentUser||!Object.keys(data).length)return;const g=Object.entries(data).map(([p,d])=>p+(mkOpen(p,d)?1:0)).join();if(g!==BSIG)render()}catch{}},15e3);
+function renderMain(){const st=status();try{document.body.classList.toggle("nodata",/OFFLINE/.test($("status").className)&&!demo)}catch{}$("list").innerHTML=boardHtml();document.querySelectorAll(".row").forEach(r2=>{r2.onclick=()=>{sel=r2.dataset.p;render()};r2.onkeydown=e=>e.key==="Enter"&&r2.onclick()});document.querySelectorAll("#list .tabs button").forEach(b=>{b.onclick=()=>{MK=b.dataset.mk;render()}});const d=data[sel];if(!d){$("detail").innerHTML='<p class="mut">Select a pair.</p>';return}const bar=(n,v,c2)=>`<div><span>${n}</span><span class="trk"><i style="width:${Math.max(2,v*100)}%;background:linear-gradient(90deg,color-mix(in srgb,var(${c2}) 55%,transparent),var(${c2}))"></i></span><span class="num">${pct(v)}</span></div>`;const bt=d.bt&&d.bt.rate!=null?`${pct(d.bt.rate)} of ${d.bt.hit+d.bt.miss} past signals moved the right way (last ~24 hours, spread ignored)`:"not enough past signals to measure";$("detail").dataset.wm=sel.replace(/[^A-Za-z0-9]/g,"");$("detail").dataset.sig=d.signal;$("detail").innerHTML=`<div class="dhead"><div><div class="dpair">${esc(sel)} <span class="mut">${esc(TL[d.type||typeOf(sel)]||"")}</span></div><div class="big num">${fmt(sel,d.bid)}</div></div><span class="tag ${d.signal}">${d.signal}</span></div><div class="chartbox"><canvas id="cv" width="600" height="120"></canvas></div>
     ${allow("mtf")?"":lockBox("mtf","The multi time frame view")}<div class="tfs" style="${allow("mtf")?"":"display:none"}">${["M5","M15","M30","H1"].map(t=>{const v=d.tf[t];return`<span class="${v>0?"up":v<0?"dn":""}">${t} ${v>0?"up":v<0?"down":"-"}</span>`}).join("")}</div>
     <div class="bars">${bar("BUY",d.pBuy,"--buy")}${bar("SELL",d.pSell,"--sell")}${bar("WAIT",d.pWait,"--wait")}</div>
     ${d.signal==="WAIT"||d.signal==="DANGER"?`<div class="callout ${d.signal}"><span class="tag ${d.signal}">${d.signal}</span><span><b>Why:</b> ${esc(whyNow(d))}${d.signal==="DANGER"?" Any earlier setup is invalid.":""}</span></div>`:""}
