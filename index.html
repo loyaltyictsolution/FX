@@ -249,6 +249,46 @@ body:not(.nodata) #sigfx #list .row::after{top:44px;right:16px;transform:none;fo
 .lbnx{margin-left:auto;font-weight:600;color:var(--wait)}
 .lbempty{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;padding:34px 16px;margin-top:12px;border:1px dashed var(--line);border-radius:16px;color:var(--mut)}
 .lbempty b{color:var(--tx);font-size:16px}
+/* ===== Light mode: "frosted paper" signal board ===== */
+[data-theme=light] #why{background:linear-gradient(90deg,rgba(46,196,182,.16),#fff 38%);border:1px solid #b6e3de;box-shadow:0 6px 18px -10px rgba(20,60,70,.35)}
+[data-theme=light] #why .chips span{background:#fff;border-color:#d5e0ea;color:#3d5266}
+[data-theme=light] #why .lv{color:#0b7d72;background:rgba(46,196,182,.14);border-color:#2ec4b6}
+[data-theme=light] #why.STALE .lv{color:#8a5a00;border-color:#d9a21b;background:rgba(245,184,46,.16)}
+[data-theme=light] #why.OFFLINE .lv{color:#c4163a;border-color:#e0405f;background:rgba(255,77,106,.10)}
+[data-theme=light] #sigfx #list{background:linear-gradient(180deg,#f4f8fc,#e8f0f7)}
+[data-theme=light] .lbsec.t{--c:#0b7d72}[data-theme=light] .lbsec.d{--c:#c4163a}[data-theme=light] .lbsec.w{--c:#8a5a00}
+[data-theme=light] .lbsec span{color:#566a7d}
+[data-theme=light] #sigfx #list .row{--tx:#14202c;--mut:#5b6f82;--acc:#8a97a5;--accd:#566a7d;color:#14202c;
+ border:1px solid color-mix(in srgb,var(--acc) 30%,#d3dee8);border-left:5px solid var(--acc);border-radius:16px;
+ background:radial-gradient(130% 100% at 0% 0%,color-mix(in srgb,var(--acc) 15%,#fff),#fff 60%);
+ box-shadow:0 1px 0 #fff inset,0 10px 22px -12px color-mix(in srgb,var(--acc) 70%,transparent),0 2px 5px rgba(20,40,60,.05);
+ transition:transform .18s ease,box-shadow .18s ease}
+[data-theme=light] #sigfx #list .row:hover{transform:translateY(-2px);box-shadow:0 1px 0 #fff inset,0 16px 28px -12px color-mix(in srgb,var(--acc) 85%,transparent)}
+[data-theme=light] #sigfx #list .row.BUY{--acc:#2ec4b6;--accd:#0b7d72;border-left-color:var(--acc);background:radial-gradient(130% 100% at 0% 0%,color-mix(in srgb,var(--acc) 15%,#fff),#fff 60%)}
+[data-theme=light] #sigfx #list .row.SELL{--acc:#ef6a5b;--accd:#b8392c;border-left-color:var(--acc);background:radial-gradient(130% 100% at 0% 0%,color-mix(in srgb,var(--acc) 15%,#fff),#fff 60%)}
+[data-theme=light] #sigfx #list .row.WAIT{--acc:#f2b84b;--accd:#8a5a00;border-left-color:var(--acc);background:radial-gradient(130% 100% at 0% 0%,color-mix(in srgb,var(--acc) 15%,#fff),#fff 60%)}
+[data-theme=light] #sigfx #list .row.DANGER{--acc:#ff3b5c;--accd:#c4163a;border-color:#ff9bab;border-left-color:var(--acc);padding-top:20px;
+ background:radial-gradient(130% 100% at 0% 0%,#ffe1e7,#fff 62%);animation:lgd 2.2s ease-in-out infinite}
+[data-theme=light] #sigfx #list .row.DANGER::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;z-index:2;background:repeating-linear-gradient(135deg,#ff3b5c 0 9px,#ffd2da 9px 18px)}
+@keyframes lgd{0%,100%{box-shadow:0 10px 22px -12px rgba(255,59,92,.55)}50%{box-shadow:0 0 0 3px rgba(255,59,92,.16),0 14px 28px -10px rgba(255,59,92,.7)}}
+[data-theme=light] #sigfx #list .row .rp{color:#14202c}
+[data-theme=light] #sigfx #list .row.BUY .rp,[data-theme=light] #sigfx #list .row.SELL .rp,[data-theme=light] #sigfx #list .row.DANGER .rp{color:var(--accd)}
+[data-theme=light] #sigfx #list .row .rp .num,[data-theme=light] #sigfx #list .row .rp{text-shadow:0 1px 0 #fff}
+[data-theme=light] body:not(.nodata) #sigfx #list .row::after{color:var(--acc);opacity:.17}
+[data-theme=light] #sigfx #list .row .spk{color:var(--acc);opacity:.95;filter:drop-shadow(0 3px 3px color-mix(in srgb,var(--acc) 35%,transparent))}
+[data-theme=light] #sigfx #list .row .tag{box-shadow:0 6px 12px -5px color-mix(in srgb,var(--acc) 80%,transparent)}
+[data-theme=light] #sigfx #list .row .rm>span,[data-theme=light] #sigfx #list .row .rt{background:rgba(255,255,255,.85);border-color:color-mix(in srgb,var(--acc) 28%,#d3dee8);color:#3d5266}
+[data-theme=light] #sigfx #list .row .rm>span.up{color:#0b7d72}
+[data-theme=light] #sigfx #list .row .rm>span.dn{color:#b8392c}
+[data-theme=light] #sigfx #list .row .rw{color:#5b6f82}
+[data-theme=light] #sigfx #list .row.WAIT .rw{color:#8a5a00}
+[data-theme=light] #sigfx #list .row.DANGER .rw{color:#c4163a;font-weight:600}
+[data-theme=light] #sigfx #list .row .lvs{border-top:1px dashed color-mix(in srgb,var(--acc) 45%,#cdd8e3)}
+[data-theme=light] #sigfx #list .row .exrow button{background:#fff;color:#14202c;border:1.5px solid #14202c;border-radius:999px;transition:background .15s,color .15s}
+[data-theme=light] #sigfx #list .row .exrow button:hover{background:#14202c;color:#fff}
+[data-theme=light] #sigfx #list .row .exrow a.exgo{background:#ffe600;border-color:#f2d500;color:#111;border-radius:999px;box-shadow:0 6px 12px -5px rgba(230,190,0,.8)}
+@media(prefers-reduced-motion:reduce){[data-theme=light] #sigfx #list .row.DANGER{animation:none}[data-theme=light] #sigfx #list .row{transition:none}}
+
 @media(max-width:600px){.sgrid{grid-template-columns:minmax(0,1fr)}.lbnx{margin-left:0;flex-basis:100%}#sigfx #list{padding:12px 10px}}
 </style>
 </head>
