@@ -10,16 +10,21 @@ admin.initializeApp({
 });
 const db = admin.database();
 const OWNER = "wanjohisteve85@gmail.com";
-const origins = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim().replace(/\/$/, "")).filter(Boolean);
+// ALLOWED_ORIGINS may be typed with a path or trailing slash; only the scheme + host is used.
+const toOrigin = v => { try { return new URL(v.trim()).origin.toLowerCase(); } catch { return v.trim().replace(/\/+$/, "").toLowerCase(); } };
+const origins = (process.env.ALLOWED_ORIGINS || "").split(/[\s,]+/).filter(Boolean).map(toOrigin);
+console.log("Allowed origins:", origins.length ? origins.join(", ") : "(none set)");
 
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "20kb" }));
 app.use((req, res, next) => {
   const o = req.headers.origin;
-  if (o && origins.includes(o.replace(/\/$/, ""))) {
-    res.setHeader("Access-Control-Allow-Origin", o); res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type"); res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (o) {
+    if (origins.includes(toOrigin(o))) {
+      res.setHeader("Access-Control-Allow-Origin", o); res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type"); res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    } else if (!/\/mpesa\/callback\//.test(req.path)) console.warn("Blocked origin: " + o + "  (add exactly this to ALLOWED_ORIGINS)");
   }
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
@@ -43,7 +48,7 @@ const canUseRadar = async u => {
 const ctx = { admin, db, auth, isSuper, isAdmin, canUseRadar };
 
 app.get("/", (req, res) => res.json({ ok: true, name: "Loyalty FX server" }));
-app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/health", (req, res) => res.json({ ok: true, engines: ["ai", "mpesa"], originAllowed: !req.headers.origin ? null : origins.includes(toOrigin(req.headers.origin)) }));
 
 require("./ai-engine")(app, ctx);      // MOUNT 1
 require("./mpesa-engine")(app, ctx);   // MOUNT 2
