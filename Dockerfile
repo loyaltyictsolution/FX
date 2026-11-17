@@ -2,6 +2,6 @@ FROM node:20-slim
 WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev
-COPY engine.js server.js ./
+COPY engine.js server.js api.js ai-engine.js mpesa-stk.js ./
 ENV NODE_ENV=production
 CMD ["node", "server.js"]
