@@ -1113,5 +1113,97 @@ function toast(m){$("toast").textContent=m;setTimeout(()=>$("toast").textContent
 <div id="ins" role="dialog" aria-label="Install app"></div>
 <script>(function(){if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("firebase-messaging-sw.js").catch(()=>{}));const box=document.getElementById("ins"),ua=navigator.userAgent,q=new URLSearchParams(location.search);const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;const ios=/iphone|ipad|ipod/i.test(ua)||navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1;const safari=ios&&/safari/i.test(ua)&&!/crios|fxios|edgios|instagram|fban|fbav|line|micromessenger/i.test(ua);let dp=null,shown=false,forced=q.get("install")==="1";const seen=()=>{try{return localStorage.getItem("fx_ins")==="1"}catch{return false}};const hide=keep=>{box.style.display="none";if(!keep)try{localStorage.setItem("fx_ins","1")}catch{}};function show(){if(standalone||shown||seen()&&!forced)return;shown=true;if(dp){box.innerHTML='<b>Install Loyalty FX Radar</b><div>Add it to your phone like a normal app, with alerts and one-tap opening.</div><div class="r"><button id="ins_x">Not now</button><button class="go" id="ins_go">Install</button></div>';box.style.display="block";document.getElementById("ins_x").onclick=()=>hide();document.getElementById("ins_go").onclick=async()=>{try{dp.prompt();await dp.userChoice}catch{}dp=null;hide()}}else if(ios){box.innerHTML=safari?'<b>Install on iPhone</b><ol><li>Tap the <b>Share</b> button (square with arrow) at the bottom of Safari.</li><li>Scroll and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Open the app from your Home Screen.</li></ol><div class="r"><button id="ins_x">Got it</button></div>':'<b>Install on iPhone</b><div>Open this link in <b>Safari</b> (copy the link and paste it in Safari), then tap Share and <b>Add to Home Screen</b>.</div><div class="r"><button id="ins_x">Got it</button></div>';box.style.display="block";document.getElementById("ins_x").onclick=()=>hide()}else if(forced){box.innerHTML='<b>Install on Android</b><ol><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>menu</b> (three dots) at the top right.</li><li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li></ol><div class="r"><button id="ins_x">Got it</button></div>';box.style.display="block";document.getElementById("ins_x").onclick=()=>hide()}else shown=false}addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;shown=false;setTimeout(show,forced?300:4e3)});addEventListener("appinstalled",()=>hide());if(ios)setTimeout(show,forced?300:6e3);else if(forced)setTimeout(show,1500);window.fxInstall=()=>{forced=true;shown=false;show()}})();</script>
 <script>(function(){var y=new Date().getFullYear(),t=y>2026?"2026\u2013"+y:"2026";document.querySelectorAll(".cy").forEach(function(e){e.textContent=t})})();</script>
+<!-- PASTE THIS BLOCK just before the final </body> in index.html -->
+<style id="sigpulse-css">
+#sigpulse{margin:12px 0}
+#sigpulse .sp-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+#sigpulse .sp-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mut)}
+#sigpulse .sp-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+#sigpulse .sp-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sp-c{position:relative;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 80%,transparent);overflow:hidden}
+.sp-c b{display:block;font-size:14px;letter-spacing:.2px}
+.sp-c small{display:block;font-size:11.5px;color:var(--mut)}
+.sp-d{position:relative;flex:none;width:14px;height:14px;border-radius:50%;background:var(--k)}
+.sp-d::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--k);opacity:.55}
+.sp-c.live{--k:#46e6a8;border-color:color-mix(in srgb,#46e6a8 45%,var(--line));box-shadow:0 0 16px -4px #46e6a8aa}
+.sp-c.live .sp-d{animation:spglow 1.4s ease-in-out infinite}
+.sp-c.live .sp-d::after{animation:spring 1.4s ease-out infinite}
+.sp-c.slow{--k:#f5c04e}
+.sp-c.slow .sp-d{animation:spglow 3s ease-in-out infinite}
+.sp-c.slow .sp-d::after{animation:spring 3s ease-out infinite}
+.sp-c.old{--k:#ef6a5b}
+.sp-c.old .sp-d::after{display:none}
+.sp-c.shut{--k:#7b8b9c;opacity:.6}
+.sp-c.shut .sp-d::after{display:none}
+.sp-c.fresh::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,#46e6a833 50%,transparent 70%);transform:translateX(-100%);animation:spsweep 1.6s ease-out 3}
+.sp-new{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.1em;padding:2px 7px;border-radius:999px;background:#46e6a8;color:#04251f;animation:spblink 1s ease-in-out infinite}
+.sp-sig{font-size:11px;font-weight:700;padding:1px 7px;border-radius:6px;margin-left:6px}
+.sp-sig.BUY{background:var(--buy);color:#06231f}.sp-sig.SELL{background:var(--sell);color:#2b0904}
+.sp-sig.WAIT{background:var(--wait);color:#2b1d03}.sp-sig.DANGER{background:var(--danger);color:#fff}
+@keyframes spglow{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@keyframes spring{0%{transform:scale(1);opacity:.55}100%{transform:scale(3);opacity:0}}
+@keyframes spblink{50%{opacity:.35}}
+@keyframes spsweep{to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.sp-c *,.sp-c::before{animation:none!important}}
+</style>
+<script>
+(function(){
+  const apanel=document.getElementById("apanel"),tabs=document.getElementById("atabs");
+  if(!apanel||!tabs)return;
+  const box=document.createElement("section");
+  box.className="panel";box.id="sigpulse";
+  box.innerHTML='<div class="sp-h"><b>Signal pulse</b><div class="sp-leg">'+
+    '<span><i style="background:#46e6a8"></i>Updated in last 90s</span>'+
+    '<span><i style="background:#f5c04e"></i>Slow (under 10 min)</span>'+
+    '<span><i style="background:#ef6a5b"></i>Stale</span>'+
+    '<span><i style="background:#7b8b9c"></i>Market closed</span></div></div>'+
+    '<div class="sp-g" id="sp_g"></div>';
+  tabs.after(box);
+
+  const seen={};        // pair -> {sig, at}
+  let lastKey="";
+
+  function scan(){
+    const out=[],now=Date.now();
+    document.querySelectorAll("#list .row[data-p]").forEach(r=>{
+      const p=r.dataset.p,tag=r.querySelector(".tag"),sig=tag?tag.textContent.trim():"",
+            u=r.querySelector(".upd"),at=u?+u.dataset.at:0,
+            age=at?Math.max(0,Math.round((now-at)/1000)):null;
+      const s=seen[p];
+      if(!s)seen[p]={sig,at:0};
+      else if(s.sig!==sig){s.sig=sig;s.at=now}
+      out.push({p,sig,age,closed:false,isNew:seen[p].at&&now-seen[p].at<12e4});
+    });
+    document.querySelectorAll("#list .lbch span").forEach(c=>{
+      out.push({p:c.textContent.trim(),sig:"",age:null,closed:true,isNew:false});
+    });
+    return out;
+  }
+  const state=i=>i.closed?"shut":i.age==null?"old":i.age<=90?"live":i.age<=600?"slow":"old";
+  const ageTxt=a=>a==null?"no price":a<90?a+"s ago":Math.round(a/60)+" min ago";
+
+  function paint(){
+    const items=scan(),g=document.getElementById("sp_g");if(!g)return;
+    const key=items.map(i=>i.p+state(i)+i.sig+(i.isNew?1:0)).join("|");
+    if(key!==lastKey){
+      lastKey=key;
+      g.innerHTML=items.map(i=>{
+        const st=state(i);
+        return '<div class="sp-c '+st+(i.isNew?" fresh":"")+'" data-p="'+i.p+'">'+
+          '<span class="sp-d"></span><div><b>'+i.p+(i.sig?'<span class="sp-sig '+i.sig+'">'+i.sig+'</span>':'')+'</b>'+
+          '<small data-a>'+(i.closed?"Market closed":ageTxt(i.age))+'</small></div>'+
+          (i.isNew?'<span class="sp-new">NEW</span>':'')+'</div>';
+      }).join("")||'<span class="mut">Waiting for the first prices...</span>';
+    }else{
+      items.forEach(i=>{
+        const el=g.querySelector('[data-p="'+i.p+'"] [data-a]');
+        if(el&&!i.closed)el.textContent=ageTxt(i.age);
+      });
+    }
+  }
+  setInterval(paint,2000);paint();
+})();
+</script>
+
 </body>
 </html>
