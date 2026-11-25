@@ -1205,5 +1205,56 @@ function toast(m){$("toast").textContent=m;setTimeout(()=>$("toast").textContent
 })();
 </script>
 
+<style id="autotick-css">
+#wl label{position:relative}
+#wl .at-d{width:8px;height:8px;border-radius:50%;flex:none;background:#7b8b9c;opacity:.5}
+#wl .at-d.live{background:#46e6a8;opacity:1;animation:atpulse 1.4s ease-in-out infinite}
+#wl .at-d.slow{background:#f5c04e;opacity:1;animation:atpulse 3s ease-in-out infinite}
+#wl .at-d.old{background:#ef6a5b;opacity:1}
+#wl label.at-live{border-color:#46e6a8!important;box-shadow:0 0 12px -4px #46e6a8aa}
+#wl label.at-auto{animation:atflash 1.2s ease-out 2}
+#at_bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0;font-size:13px}
+#at_bar label{display:flex;gap:6px;align-items:center;cursor:pointer}
+#at_bar input{width:auto;margin:0}
+@keyframes atpulse{0%,100%{box-shadow:0 0 0 0 #46e6a888}50%{box-shadow:0 0 0 5px #46e6a800}}
+@keyframes atflash{0%{background:#46e6a844}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){#wl .at-d,#wl label.at-auto{animation:none!important}}
+</style>
+<script>
+(function(){
+  const wl=document.getElementById("wl");if(!wl)return;
+  const bar=document.createElement("div");bar.id="at_bar";
+  bar.innerHTML='<label><input type="checkbox" id="at_on"> Auto-tick pairs that have live prices</label><span class="mut" id="at_msg"></span>';
+  wl.before(bar);
+  const on=document.getElementById("at_on"),msg=document.getElementById("at_msg");
+  try{on.checked=localStorage.getItem("fx_autotick")==="1"}catch(e){}
+  on.onchange=()=>{try{localStorage.setItem("fx_autotick",on.checked?"1":"0")}catch(e){}tick()};
+  function ages(){
+    const m={},now=Date.now();
+    document.querySelectorAll("#list .row[data-p]").forEach(r=>{
+      const u=r.querySelector(".upd"),at=u?+u.dataset.at:0;
+      m[r.dataset.p]=at?Math.max(0,Math.round((now-at)/1000)):null;
+    });
+    return m;
+  }
+  let flagged=0;
+  function tick(){
+    const a=ages();let added=[];
+    wl.querySelectorAll("input[data-s]").forEach(c=>{
+      const p=c.dataset.s,age=a[p],lab=c.closest("label");
+      const st=!(p in a)?"":age==null?"old":age<=90?"live":age<=600?"slow":"old";
+      let d=lab.querySelector(".at-d");
+      if(!d){d=document.createElement("i");d.className="at-d";lab.prepend(d)}
+      const cls="at-d "+st;if(d.className!==cls)d.className=cls;
+      lab.classList.toggle("at-live",st==="live");
+      d.title=st==="live"?"Live price":st==="slow"?"Slow price":st==="old"?"Stale price":"Not receiving prices";
+      if(on.checked&&st==="live"&&!c.checked){c.click();lab.classList.add("at-auto");added.push(p)}
+    });
+    if(added.length){flagged+=added.length;msg.textContent=added.join(", ")+" ticked automatically. Press Save markets to keep."}
+  }
+  setInterval(tick,2000);tick();
+})();
+</script>
+
 </body>
 </html>
